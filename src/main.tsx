@@ -10,11 +10,10 @@ import { createRoot } from 'react-dom/client';
 
 const root = document.getElementById('root');
 if (root) {
+  // StrictMode disabled: react-leaflet hooks (useMap) are incompatible with double-mount
   createRoot(root).render(
-    <React.StrictMode>
-      <Provider store={store}>
-        <App />
-      </Provider>
-    </React.StrictMode>
+    <Provider store={store}>
+      <App />
+    </Provider>
   );
 }

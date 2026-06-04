@@ -1,107 +1,178 @@
 import React, { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { buyTicket } from '@/store/store';
+import { buyTicket, useTicket, showToast } from '@/store/store';
 import { QRCodeSVG } from 'qrcode.react';
+
+const OPS = [
+  { op:'DDD'  as const, p:200, c:'#2563eb', e:'🚌', l:'Bus Urbain',    s:'Dakar Dem Dikk' },
+  { op:'AFTU' as const, p:150, c:'#e11d48', e:'🚐', l:'Car Rapide',    s:'AFTU' },
+  { op:'BRT'  as const, p:300, c:'#7c3aed', e:'🚍', l:'BRT Climatisé', s:'Bus Rapid Transit' },
+  { op:'TER'  as const, p:500, c:'#059669', e:'🚆', l:'TER Train',      s:'Train Express Rég.' },
+];
+
+const PAY = [
+  { id:'wave',   l:'Wave',         e:'🌊', g:'linear-gradient(135deg,#00c5e3,#0082a3)' },
+  { id:'orange', l:'Orange Money', e:'🟠', g:'linear-gradient(135deg,#f97316,#c2410c)' },
+  { id:'free',   l:'Free Money',   e:'🏦', g:'linear-gradient(135deg,#7c3aed,#4c1d95)' },
+];
 
 export default function TicketsPage() {
   const dispatch = useAppDispatch();
-  const { myTickets } = useAppSelector(s => s.tickets);
-  const [tab, setTab] = useState<'buy' | 'wallet'>('wallet');
+  const { myTickets } = useAppSelector(s=>s.tickets);
+  const [tab, setTab]         = useState<'wallet'|'buy'>('wallet');
+  const [selOp, setSelOp]     = useState<typeof OPS[number]['op']>('DDD');
+  const [expanded, setExpanded]= useState<string|null>(null);
+  const [confirming, setConfirming] = useState<string|null>(null);
+  const op = OPS.find(o=>o.op===selOp)!;
+  const validCount = myTickets.filter(t=>t.status==='valid').length;
 
-  const [buyOp, setBuyOp] = useState<'DDD' | 'AFTU' | 'BRT' | 'TER'>('DDD');
-  const [buyPrice, setBuyPrice] = useState(200);
-
-  const handleBuy = () => {
-    dispatch(buyTicket({ operator: buyOp, price: buyPrice }));
+  const buy = (method:string) => {
+    dispatch(buyTicket({operator:selOp, price:op.p}));
+    dispatch(showToast({type:'success',message:`Billet ${selOp} acheté via ${method} !`}));
     setTab('wallet');
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-slate-900 overflow-hidden">
-      <div className="p-4 bg-slate-800/50 border-b border-slate-700 shrink-0">
-        <h2 className="text-xl font-black text-white flex items-center gap-2">
-          <span>🎟️</span> Billetterie
-        </h2>
-        <div className="flex gap-2 mt-4">
-          <button 
-            onClick={() => setTab('wallet')}
-            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${tab === 'wallet' ? 'bg-brand-600 text-white' : 'bg-slate-700 text-slate-300'}`}
-          >
-            Mes Billets
-          </button>
-          <button 
-            onClick={() => setTab('buy')}
-            className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${tab === 'buy' ? 'bg-green-600 text-white' : 'bg-slate-700 text-slate-300'}`}
-          >
-            Acheter
-          </button>
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="px-4 pt-4 pb-3 flex-shrink-0" style={{borderBottom:'1px solid var(--c-border)'}}>
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="text-xl font-black text-white">Billetterie</h2>
+          {validCount>0&&<span className="badge" style={{background:'rgba(34,197,94,.1)',color:'#4ade80',border:'1px solid rgba(34,197,94,.2)'}}>{validCount} valide{validCount>1?'s':''}</span>}
+        </div>
+        <div className="flex gap-1.5 p-1 rounded-2xl" style={{background:'var(--c-surface)'}}>
+          {[{id:'wallet',l:`Mes billets${myTickets.length>0?` (${myTickets.length})`:''}`,a:'#2563eb'},{id:'buy',l:'Acheter +',a:'#059669'}].map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id as any)}
+              className="flex-1 py-2.5 rounded-xl text-sm font-black transition-all"
+              style={tab===t.id?{background:t.a,color:'white',boxShadow:`0 4px 16px ${t.a}40`}:{color:'#475569'}}>
+              {t.l}
+            </button>
+          ))}
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
-        {tab === 'wallet' && (
-          <div className="space-y-4 pb-20">
-            {myTickets.length === 0 ? (
-              <div className="text-center text-slate-500 mt-10">
-                <div className="text-4xl mb-3">🎫</div>
-                <p>Aucun billet pour le moment.</p>
+        {/* WALLET */}
+        {tab==='wallet'&&(
+          <div className="space-y-3 pb-20">
+            {myTickets.length===0 ? (
+              <div className="text-center mt-14">
+                <div className="text-6xl mb-4">🎫</div>
+                <p className="font-black text-lg text-white">Aucun billet</p>
+                <p className="text-sm mt-1 mb-6" style={{color:'#475569'}}>Achetez votre premier M-Ticket</p>
+                <button onClick={()=>setTab('buy')} className="btn btn-primary px-8">Acheter maintenant</button>
               </div>
-            ) : (
-              myTickets.map(t => (
-                <div key={t.id} className="bg-white rounded-2xl p-4 shadow-xl flex flex-col items-center relative overflow-hidden">
-                  <div className={`absolute top-0 left-0 w-full h-2 ${t.status === 'valid' ? 'bg-green-500' : 'bg-slate-400'}`}></div>
-                  <h3 className="font-black text-slate-800 text-lg">{t.operator} - {t.price} FCFA</h3>
-                  <p className="text-xs text-slate-500 mb-4">{new Date(t.purchaseTime).toLocaleString('fr-FR')}</p>
-                  
-                  <div className={`p-2 bg-white rounded-xl ${t.status === 'used' ? 'opacity-30' : ''}`}>
-                    <QRCodeSVG value={t.qrData} size={150} level="M" />
+            ) : myTickets.map(t=>{
+              const o=OPS.find(x=>x.op===t.operator);
+              const isExp=expanded===t.id;
+              const isCfm=confirming===t.id;
+              const valid=t.status==='valid';
+              return (
+                <div key={t.id} className="rounded-3xl overflow-hidden transition-all"
+                  style={{background:valid?`linear-gradient(160deg,${o?.c||'#2563eb'}12,var(--c-surface) 60%)`:'var(--c-surface)',
+                    border:`1px solid ${valid?(o?.c||'#2563eb')+'30':'var(--c-border)'}`}}>
+                  <div className="h-1" style={{background:valid?(o?.c||'#2563eb'):'#1e293b'}}/>
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{o?.e||'🎫'}</span>
+                        <div>
+                          <div className="font-black text-white">{o?.l||t.operator}</div>
+                          <div className="text-[10px] mt-0.5" style={{color:'#475569'}}>{new Date(t.purchaseTime).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-black" style={{color:o?.c||'#2563eb'}}>{t.price}</div>
+                        <div className="text-[10px]" style={{color:'#334155'}}>FCFA</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="badge" style={valid?{background:'rgba(34,197,94,.12)',color:'#4ade80',border:'1px solid rgba(34,197,94,.2)'}:{background:'rgba(255,255,255,.05)',color:'#475569',border:'1px solid var(--c-border)'}}>
+                        {valid?'✓ VALIDE':t.status==='used'?'✗ UTILISÉ':'⌛ EXPIRÉ'}
+                      </span>
+                      <button onClick={()=>setExpanded(isExp?null:t.id)}
+                        className="text-xs font-bold transition-colors" style={{color:isExp?'#60a5fa':'#475569'}}>
+                        {isExp?'Masquer ▲':'QR Code ▼'}
+                      </button>
+                    </div>
+                    {isExp&&(
+                      <div className="mt-4 flex flex-col items-center animate-fade-up">
+                        <div className={`p-4 rounded-2xl ${!valid?'opacity-30 grayscale':''}`} style={{background:'white',boxShadow:'0 8px 32px rgba(0,0,0,.4)'}}>
+                          <QRCodeSVG value={t.qrData} size={160} level="M" />
+                        </div>
+                        <p className="text-[10px] mt-2 font-mono" style={{color:'#334155'}}>{t.qrData}</p>
+                        {valid&&(
+                          <div className="mt-3 w-full">
+                            {!isCfm
+                              ? <button onClick={()=>setConfirming(t.id)} className="w-full py-2 rounded-xl text-xs font-black btn btn-ghost">Marquer utilisé</button>
+                              : <div className="flex gap-2">
+                                  <button onClick={()=>{dispatch(useTicket(t.id));setConfirming(null);setExpanded(null);dispatch(showToast({type:'info',message:'Billet utilisé.'}));}}
+                                    className="flex-1 py-2 rounded-xl text-xs font-black text-white" style={{background:'#dc2626'}}>Confirmer</button>
+                                  <button onClick={()=>setConfirming(null)} className="px-4 py-2 rounded-xl text-xs btn btn-ghost">Annuler</button>
+                                </div>
+                            }
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  
-                  {t.status === 'used' ? (
-                    <div className="mt-4 font-bold text-slate-400 bg-slate-100 px-4 py-1 rounded-full text-sm">UTILISÉ</div>
-                  ) : (
-                    <div className="mt-4 font-bold text-green-600 bg-green-50 px-4 py-1 rounded-full text-sm animate-pulse">VALIDE</div>
-                  )}
                 </div>
-              ))
-            )}
+              );
+            })}
           </div>
         )}
 
-        {tab === 'buy' && (
-          <div className="space-y-6">
+        {/* BUY */}
+        {tab==='buy'&&(
+          <div className="space-y-5 pb-20">
             <div>
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 block">Choisissez le réseau</label>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { op: 'DDD', p: 200, c: 'bg-blue-600' },
-                  { op: 'AFTU', p: 150, c: 'bg-yellow-500' },
-                  { op: 'BRT', p: 300, c: 'bg-orange-500' },
-                  { op: 'TER', p: 500, c: 'bg-slate-800' }
-                ].map(x => (
-                  <button 
-                    key={x.op}
-                    onClick={() => { setBuyOp(x.op as any); setBuyPrice(x.p); }}
-                    className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-1 ${buyOp === x.op ? `border-${x.c.split('-')[1]}-500 ${x.c} text-white` : 'border-slate-700 bg-slate-800 text-slate-300'}`}
-                  >
-                    <span className="font-black">{x.op}</span>
-                    <span className="text-xs opacity-80">{x.p} FCFA</span>
+              <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{color:'var(--c-muted)'}}>Réseau</p>
+              <div className="grid grid-cols-2 gap-2.5">
+                {OPS.map(x=>(
+                  <button key={x.op} onClick={()=>setSelOp(x.op)}
+                    className="p-4 rounded-2xl text-left transition-all active:scale-95"
+                    style={selOp===x.op
+                      ?{background:`${x.c}20`,border:`1.5px solid ${x.c}55`,transform:'scale(1.02)',boxShadow:`0 8px 24px ${x.c}25`}
+                      :{background:'var(--c-surface)',border:'1px solid var(--c-border)',opacity:.65}}>
+                    <div className="text-2xl mb-2">{x.e}</div>
+                    <div className="font-black text-white text-sm">{x.op}</div>
+                    <div className="text-[10px] mt-0.5 mb-2" style={{color:'#64748b'}}>{x.l}</div>
+                    <div className="font-black text-sm" style={{color:x.c}}>{x.p} <span className="text-[10px] opacity-60">FCFA</span></div>
                   </button>
                 ))}
               </div>
             </div>
 
+            {/* Summary */}
+            <div className="flex items-center gap-4 p-4 rounded-2xl" style={{background:'var(--c-surface)',border:'1px solid var(--c-border)'}}>
+              <span className="text-3xl">{op.e}</span>
+              <div className="flex-1">
+                <div className="font-black text-white">{op.l}</div>
+                <div className="text-xs" style={{color:'#475569'}}>{op.s}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-black" style={{color:op.c}}>{op.p}</div>
+                <div className="text-[10px]" style={{color:'#334155'}}>FCFA</div>
+              </div>
+            </div>
+
             <div>
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 block">Moyen de paiement</label>
-              <div className="space-y-3">
-                <button onClick={handleBuy} className="w-full flex items-center justify-between p-4 rounded-xl bg-[#00a8cc] hover:bg-[#0090b0] text-white transition-colors">
-                  <span className="font-bold">Payer avec Wave 🌊</span>
-                  <span className="font-black">{buyPrice} F</span>
-                </button>
-                <button onClick={handleBuy} className="w-full flex items-center justify-between p-4 rounded-xl bg-[#ff6600] hover:bg-[#e05a00] text-white transition-colors">
-                  <span className="font-bold">Orange Money 🟠</span>
-                  <span className="font-black">{buyPrice} F</span>
-                </button>
+              <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{color:'var(--c-muted)'}}>Payer avec</p>
+              <div className="space-y-2.5">
+                {PAY.map(m=>(
+                  <button key={m.id} onClick={()=>buy(m.l)}
+                    className="w-full flex items-center justify-between p-4 rounded-2xl text-white font-bold transition-all hover:scale-[1.01] active:scale-[.98]"
+                    style={{background:m.g,boxShadow:'0 8px 28px rgba(0,0,0,.3)'}}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{m.e}</span>
+                      <div className="text-left">
+                        <div className="font-black">{m.l}</div>
+                        <div className="text-xs opacity-60">Paiement instantané · sécurisé</div>
+                      </div>
+                    </div>
+                    <span className="font-black text-xl">{op.p} F</span>
+                  </button>
+                ))}
               </div>
             </div>
           </div>

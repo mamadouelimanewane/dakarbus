@@ -86,7 +86,7 @@ export interface Report {
 }
 
 export interface RouteResult {
-  type: 'direct' | 'transfer';
+  type: 'direct' | 'transfer' | 'none';
   duration: number;
   distance: number;
   fare: number;
@@ -104,6 +104,7 @@ export interface RouteSegment {
 }
 
 export interface BusPosition {
+  busId: string;
   lineId: string;
   lat: number;
   lng: number;
@@ -145,4 +146,42 @@ export interface CrowdsourceReport {
   location: [number, number];
   timestamp: number;
   upvotes: number;
+}
+
+export interface Toast {
+  id: string;
+  type: 'success' | 'error' | 'info' | 'warning';
+  message: string;
+}
+
+export type JourneyStatus = 'walking' | 'waiting' | 'on_bus' | 'arrived';
+
+export interface ActiveJourney {
+  id: string;
+  originStop: Stop;
+  destinationStop: Stop;
+  walkingStop: Stop;        // stop to walk to (= originStop for direct)
+  walkingMeters: number;
+  lineId: string;
+  lineName: string;
+  lineColor: string;
+  operator: OperatorId;
+  fare: number;
+  transfers: number;
+  startedAt: number;        // timestamp ms
+  estimatedDuration: number; // total minutes
+  status: JourneyStatus;
+  ticketId: string | null;
+}
+
+export interface JourneyRecord {
+  id: string;
+  originName: string;
+  destName: string;
+  lineId: string;
+  operator: OperatorId;
+  fare: number;
+  duration: number;  // minutes
+  co2: number;       // kg
+  date: number;      // timestamp
 }

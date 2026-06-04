@@ -1,9 +1,9 @@
 import { configureStore, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import type { OperatorId, Stop, BusPosition, Lang } from '@/types';
+import type { OperatorId, Stop, BusPosition, Lang, Ticket, CrowdsourceReport, Toast, ActiveJourney, JourneyRecord, JourneyStatus } from '@/types';
 
 // ── Mobility Slice ─────────────────────────────────────────────
 interface MobilityState {
-  activeTab: 'plan' | 'lines' | 'stops' | 'alerts' | 'tickets';
+  activeTab: 'plan' | 'lines' | 'stops' | 'alerts' | 'tickets' | 'profile';
   selectedOperator: OperatorId;
   selectedStop: string | null;
   focusedLine: string | null;
@@ -85,7 +85,7 @@ interface UIState {
 const uiSlice = createSlice({
   name: 'ui',
   initialState: {
-    darkMode: window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false,
+    darkMode: window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true,
     lang: 'fr' as Lang,
     sidebarCollapsed: false,
     showQR: false,
@@ -99,8 +99,6 @@ const uiSlice = createSlice({
 });
 
 // ── Ticket Slice ────────────────────────────────────────────────
-import type { Ticket, CrowdsourceReport } from '@/types';
-
 interface TicketState {
   myTickets: Ticket[];
   reports: CrowdsourceReport[];
@@ -112,22 +110,24 @@ const ticketSlice = createSlice({
   initialState: {
     myTickets: [],
     reports: [
-      { id: '1', type: 'delay', description: 'Bouchon énorme sur VDN', location: [14.71, -17.46], timestamp: Date.now() - 1000 * 60 * 15, upvotes: 12 },
-      { id: '2', type: 'accident', description: 'Accident au croisement', location: [14.73, -17.45], timestamp: Date.now() - 1000 * 60 * 45, upvotes: 5 }
-    ],
+      { id: '1', type: 'delay', description: 'Bouchon énorme sur VDN, retard estimé 20 min', location: [14.71, -17.46] as [number, number], timestamp: Date.now() - 1000 * 60 * 15, upvotes: 12 },
+      { id: '2', type: 'accident', description: 'Accident au croisement Liberté 6 / VDN', location: [14.73, -17.45] as [number, number], timestamp: Date.now() - 1000 * 60 * 45, upvotes: 5 },
+      { id: '3', type: 'crowd', description: 'Arrêt Petersen très chargé, bus pleins', location: [14.678, -17.44] as [number, number], timestamp: Date.now() - 1000 * 60 * 8, upvotes: 23 },
+    ] as CrowdsourceReport[],
     adminRevenue: { DDD: 450000, AFTU: 320000, BRT: 890000, TER: 1250000, all: 0 },
   } as TicketState,
   reducers: {
     buyTicket: (s, a: PayloadAction<Omit<Ticket, 'id' | 'purchaseTime' | 'status' | 'qrData'>>) => {
-      const id = Math.random().toString(36).substr(2, 9).toUpperCase();
-      s.myTickets.push({
+      const id = Math.random().toString(36).substring(2, 11).toUpperCase();
+      const ticket: Ticket = {
         ...a.payload,
         id,
         purchaseTime: Date.now(),
         status: 'valid',
-        qrData: `TICKET-${id}-${a.payload.operator}`,
-      });
-      s.adminRevenue[a.payload.operator] += a.payload.price;
+        qrData: `TICKET-${id}-${a.payload.operator}-${Date.now()}`,
+      };
+      s.myTickets.push(ticket);
+      s.adminRevenue[a.payload.operator] = (s.adminRevenue[a.payload.operator] || 0) + a.payload.price;
     },
     useTicket: (s, a: PayloadAction<string>) => {
       const t = s.myTickets.find(x => x.id === a.payload);
@@ -139,7 +139,109 @@ const ticketSlice = createSlice({
     upvoteReport: (s, a: PayloadAction<string>) => {
       const r = s.reports.find(x => x.id === a.payload);
       if (r) r.upvotes += 1;
-    }
+    },
+    acknowledgeReport: (s, a: PayloadAction<string>) => {
+      s.reports = s.reports.filter(r => r.id !== a.payload);
+    },
+  },
+});
+
+// ── Toast Slice ───────────────────────────────────────────────
+const toastSlice = createSlice({
+  name: 'toasts',
+  initialState: { items: [] as Toast[] },
+  reducers: {
+    showToast: (s, a: PayloadAction<Omit<Toast, 'id'>>) => {
+      const id = Math.random().toString(36).substring(2, 9);
+      s.items.push({ ...a.payload, id });
+      if (s.items.length > 3) s.items.shift();
+    },
+    dismissToast: (s, a: PayloadAction<string>) => {
+      s.items = s.items.filter(t => t.id !== a.payload);
+    },
+  },
+});
+
+// ── Favorites Slice ───────────────────────────────────────────────
+interface FavState {
+  stopIds: string[];
+  lineIds: string[];
+  tripCount: number;
+  totalFCFA: number;
+  co2SavedKg: number;
+  favOperator: OperatorId | null;
+}
+
+const favSlice = createSlice({
+  name: 'favorites',
+  initialState: {
+    stopIds: [],
+    lineIds: [],
+    tripCount: 0,
+    totalFCFA: 0,
+    co2SavedKg: 0,
+    favOperator: null,
+  } as FavState,
+  reducers: {
+    toggleFavStop: (s, a: PayloadAction<string>) => {
+      const idx = s.stopIds.indexOf(a.payload);
+      if (idx >= 0) s.stopIds.splice(idx, 1);
+      else s.stopIds.push(a.payload);
+    },
+    toggleFavLine: (s, a: PayloadAction<string>) => {
+      const idx = s.lineIds.indexOf(a.payload);
+      if (idx >= 0) s.lineIds.splice(idx, 1);
+      else s.lineIds.push(a.payload);
+    },
+    recordTrip: (s, a: PayloadAction<{ fare: number; operator: OperatorId }>) => {
+      s.tripCount += 1;
+      s.totalFCFA += a.payload.fare;
+      s.co2SavedKg += 0.12;
+      s.favOperator = a.payload.operator;
+    },
+  },
+});
+
+// ── Active Journey Slice ──────────────────────────────────────
+const journeySlice = createSlice({
+  name: 'journey',
+  initialState: {
+    active: null as ActiveJourney | null,
+    history: [] as JourneyRecord[],
+    showEndModal: false,
+  },
+  reducers: {
+    startJourney: (s, a: PayloadAction<ActiveJourney>) => {
+      s.active = a.payload;
+      s.showEndModal = false;
+    },
+    updateJourneyStatus: (s, a: PayloadAction<JourneyStatus>) => {
+      if (s.active) s.active.status = a.payload;
+      if (a.payload === 'arrived') s.showEndModal = true;
+    },
+    attachTicketToJourney: (s, a: PayloadAction<string>) => {
+      if (s.active) s.active.ticketId = a.payload;
+    },
+    finishJourney: (s) => {
+      if (!s.active) return;
+      const elapsed = Math.round((Date.now() - s.active.startedAt) / 60000);
+      s.history.unshift({
+        id: s.active.id,
+        originName: s.active.originStop.name,
+        destName: s.active.destinationStop.name,
+        lineId: s.active.lineId,
+        operator: s.active.operator,
+        fare: s.active.fare,
+        duration: elapsed || s.active.estimatedDuration,
+        co2: Math.round((elapsed || s.active.estimatedDuration) * 0.008 * 100) / 100,
+        date: Date.now(),
+      });
+      if (s.history.length > 20) s.history.pop();
+      s.active = null;
+      s.showEndModal = false;
+    },
+    cancelJourney: (s) => { s.active = null; s.showEndModal = false; },
+    dismissEndModal: (s) => { s.showEndModal = false; },
   },
 });
 
@@ -150,6 +252,9 @@ export const store = configureStore({
     auth: authSlice.reducer,
     ui: uiSlice.reducer,
     tickets: ticketSlice.reducer,
+    favorites: favSlice.reducer,
+    toasts: toastSlice.reducer,
+    journey: journeySlice.reducer,
   },
 });
 
@@ -165,4 +270,7 @@ export const {
 
 export const { loginPassenger, loginDriver, loginAdmin, logout } = authSlice.actions;
 export const { toggleDarkMode, setLang, toggleSidebar, setShowQR } = uiSlice.actions;
-export const { buyTicket, useTicket, addReport, upvoteReport } = ticketSlice.actions;
+export const { buyTicket, useTicket, addReport, upvoteReport, acknowledgeReport } = ticketSlice.actions;
+export const { toggleFavStop, toggleFavLine, recordTrip } = favSlice.actions;
+export const { showToast, dismissToast } = toastSlice.actions;
+export const { startJourney, updateJourneyStatus, attachTicketToJourney, finishJourney, cancelJourney, dismissEndModal } = journeySlice.actions;

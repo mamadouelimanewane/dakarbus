@@ -1,42 +1,44 @@
 import React from 'react';
+import { useAppDispatch } from '@/store/hooks';
+import { setActiveTab } from '@/store/store';
 import RoutePanel from '@/components/RoutePanel';
 
+const FARES = [
+  { id:'DDD',  emoji:'🚌', label:'Bus Urbain',    price:'200', color:'#2563eb' },
+  { id:'AFTU', emoji:'🚐', label:'Car Rapide',    price:'150', color:'#e11d48' },
+  { id:'BRT',  emoji:'🚍', label:'BRT Climatisé', price:'300', color:'#7c3aed' },
+  { id:'TER',  emoji:'🚆', label:'TER Train',     price:'500', color:'#059669' },
+];
+
 export default function PlanPage() {
+  const dispatch = useAppDispatch();
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="overflow-y-auto pb-6">
       <RoutePanel />
-      
-      <div className="p-4 mt-4">
-        <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-          <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-            <span>🎫</span> Tarifs & Info
-          </h3>
-          <div className="space-y-2 text-xs text-slate-300">
-            <div className="flex justify-between items-center">
-              <span>DDD Bus</span>
-              <span className="font-bold text-white">200 FCFA</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>AFTU Car Rapide</span>
-              <span className="font-bold text-white">150 FCFA</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>BRT</span>
-              <span className="font-bold text-white">300 FCFA</span>
-            </div>
-            <div className="flex justify-between items-center border-t border-white/10 pt-2 mt-2">
-              <span>TER (Zone 1)</span>
-              <span className="font-bold text-white">500 FCFA</span>
-            </div>
-            
-            <div className="pt-3">
-              <button 
-                onClick={() => document.dispatchEvent(new CustomEvent('navToTickets'))}
-                className="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-2 rounded-xl transition-colors flex items-center justify-center gap-2"
-              >
-                <span>💳</span> Acheter un M-Ticket
-              </button>
-            </div>
+
+      {/* Tariffs */}
+      <div className="px-4 mt-1">
+        <div className="rounded-2xl overflow-hidden" style={{background:'var(--c-surface)',border:'1px solid var(--c-border)'}}>
+          <div className="px-4 pt-4 pb-2 flex items-center justify-between">
+            <h3 className="text-[10px] font-black uppercase tracking-widest" style={{color:'var(--c-muted)'}}>Tarifs réseau</h3>
+          </div>
+          <div className="grid grid-cols-2 gap-2 px-4 pb-3">
+            {FARES.map(f=>(
+              <div key={f.id} className="flex items-center gap-2.5 p-3 rounded-xl" style={{background:f.color+'10'}}>
+                <span className="text-xl">{f.emoji}</span>
+                <div>
+                  <div className="text-xs font-bold text-white truncate">{f.label}</div>
+                  <div className="text-sm font-black" style={{color:f.color}}>{f.price} <span className="text-[10px] opacity-70">FCFA</span></div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="px-4 pb-4">
+            <button onClick={()=>dispatch(setActiveTab('tickets'))}
+              className="w-full py-3 rounded-xl text-sm font-black text-white transition-all active:scale-95"
+              style={{background:'linear-gradient(135deg,#1d4ed8,#7c3aed)',boxShadow:'0 6px 20px rgba(37,99,235,.3)'}}>
+              💳 Acheter un M-Ticket
+            </button>
           </div>
         </div>
       </div>
