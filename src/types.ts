@@ -127,3 +127,22 @@ export interface POI {
   emoji: string;
   nearestStop: string;
 }
+
+export interface Ticket {
+  id: string;
+  operator: OperatorId;
+  lineId?: string;
+  price: number;
+  purchaseTime: number;
+  status: 'valid' | 'used' | 'expired';
+  qrData: string;
+}
+
+export interface CrowdsourceReport {
+  id: string;
+  type: 'delay' | 'accident' | 'crowd' | 'other';
+  description: string;
+  location: [number, number];
+  timestamp: number;
+  upvotes: number;
+}

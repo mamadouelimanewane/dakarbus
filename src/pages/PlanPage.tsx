@@ -28,6 +28,15 @@ export default function PlanPage() {
               <span>TER (Zone 1)</span>
               <span className="font-bold text-white">500 FCFA</span>
             </div>
+            
+            <div className="pt-3">
+              <button 
+                onClick={() => document.dispatchEvent(new CustomEvent('navToTickets'))}
+                className="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-2 rounded-xl transition-colors flex items-center justify-center gap-2"
+              >
+                <span>💳</span> Acheter un M-Ticket
+              </button>
+            </div>
           </div>
         </div>
       </div>

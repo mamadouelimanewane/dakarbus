@@ -8,12 +8,14 @@ import PlanPage from '@/pages/PlanPage';
 import LinesPage from '@/pages/LinesPage';
 import StopsPage from '@/pages/StopsPage';
 import AlertsPage from '@/pages/AlertsPage';
+import TicketsPage from '@/pages/TicketsPage';
 
 const TABS = [
   { id: 'plan', label: 'Planifier', icon: '🗺️' },
   { id: 'lines', label: 'Lignes', icon: '🛤️' },
   { id: 'stops', label: 'Arrêts', icon: '🚏' },
   { id: 'alerts', label: 'Alertes', icon: '⚠️' },
+  { id: 'tickets', label: 'Billets', icon: '🎫' },
 ] as const;
 
 const PAGES = {
@@ -21,6 +23,7 @@ const PAGES = {
   lines: LinesPage,
   stops: StopsPage,
   alerts: AlertsPage,
+  tickets: TicketsPage,
 };
 
 export default function PassengerApp() {
@@ -30,6 +33,15 @@ export default function PassengerApp() {
   
   const [geoReady, setGeoReady] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  React.useEffect(() => {
+    const handleNav = () => {
+      dispatch(setActiveTab('tickets'));
+      setSidebarCollapsed(false);
+    };
+    document.addEventListener('navToTickets', handleNav);
+    return () => document.removeEventListener('navToTickets', handleNav);
+  }, [dispatch]);
 
   const Page = PAGES[activeTab] || PlanPage;
 

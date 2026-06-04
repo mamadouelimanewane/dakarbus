@@ -3,7 +3,7 @@ import type { OperatorId, Stop, BusPosition, Lang } from '@/types';
 
 // ── Mobility Slice ─────────────────────────────────────────────
 interface MobilityState {
-  activeTab: 'plan' | 'lines' | 'stops' | 'alerts';
+  activeTab: 'plan' | 'lines' | 'stops' | 'alerts' | 'tickets';
   selectedOperator: OperatorId;
   selectedStop: string | null;
   focusedLine: string | null;
@@ -98,12 +98,58 @@ const uiSlice = createSlice({
   },
 });
 
+// ── Ticket Slice ────────────────────────────────────────────────
+import type { Ticket, CrowdsourceReport } from '@/types';
+
+interface TicketState {
+  myTickets: Ticket[];
+  reports: CrowdsourceReport[];
+  adminRevenue: Record<OperatorId, number>;
+}
+
+const ticketSlice = createSlice({
+  name: 'tickets',
+  initialState: {
+    myTickets: [],
+    reports: [
+      { id: '1', type: 'delay', description: 'Bouchon énorme sur VDN', location: [14.71, -17.46], timestamp: Date.now() - 1000 * 60 * 15, upvotes: 12 },
+      { id: '2', type: 'accident', description: 'Accident au croisement', location: [14.73, -17.45], timestamp: Date.now() - 1000 * 60 * 45, upvotes: 5 }
+    ],
+    adminRevenue: { DDD: 450000, AFTU: 320000, BRT: 890000, TER: 1250000, all: 0 },
+  } as TicketState,
+  reducers: {
+    buyTicket: (s, a: PayloadAction<Omit<Ticket, 'id' | 'purchaseTime' | 'status' | 'qrData'>>) => {
+      const id = Math.random().toString(36).substr(2, 9).toUpperCase();
+      s.myTickets.push({
+        ...a.payload,
+        id,
+        purchaseTime: Date.now(),
+        status: 'valid',
+        qrData: `TICKET-${id}-${a.payload.operator}`,
+      });
+      s.adminRevenue[a.payload.operator] += a.payload.price;
+    },
+    useTicket: (s, a: PayloadAction<string>) => {
+      const t = s.myTickets.find(x => x.id === a.payload);
+      if (t) t.status = 'used';
+    },
+    addReport: (s, a: PayloadAction<CrowdsourceReport>) => {
+      s.reports.unshift(a.payload);
+    },
+    upvoteReport: (s, a: PayloadAction<string>) => {
+      const r = s.reports.find(x => x.id === a.payload);
+      if (r) r.upvotes += 1;
+    }
+  },
+});
+
 // ── Store ─────────────────────────────────────────────────────
 export const store = configureStore({
   reducer: {
     mobility: mobilitySlice.reducer,
     auth: authSlice.reducer,
     ui: uiSlice.reducer,
+    tickets: ticketSlice.reducer,
   },
 });
 
@@ -119,3 +165,4 @@ export const {
 
 export const { loginPassenger, loginDriver, loginAdmin, logout } = authSlice.actions;
 export const { toggleDarkMode, setLang, toggleSidebar, setShowQR } = uiSlice.actions;
+export const { buyTicket, useTicket, addReport, upvoteReport } = ticketSlice.actions;

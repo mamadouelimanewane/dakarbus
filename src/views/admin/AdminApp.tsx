@@ -29,8 +29,9 @@ const INITIAL_FLEET: FleetBus[] = Object.entries(MOCK_DRIVERS).map(([busId, d]) 
 export default function AdminApp() {
   const dispatch = useAppDispatch();
   const { busPositions } = useAppSelector(s => s.mobility);
+  const { adminRevenue } = useAppSelector(s => s.tickets);
 
-  const [activeTab, setActiveTab] = useState<'map' | 'fleet' | 'routes' | 'alerts'>('map');
+  const [activeTab, setActiveTab] = useState<'map' | 'fleet' | 'routes' | 'alerts' | 'finance'>('map');
   const [selectedLine, setSelectedLine] = useState<string | null>(null);
   const [fleet, setFleet] = useState<FleetBus[]>(INITIAL_FLEET);
   const [showAddBus, setShowAddBus] = useState(false);
@@ -61,6 +62,7 @@ export default function AdminApp() {
     { id: 'fleet', label: 'Flotte', icon: '🚌' },
     { id: 'routes', label: 'Lignes', icon: '🛤️' },
     { id: 'alerts', label: 'Alertes', icon: '⚠️' },
+    { id: 'finance', label: 'Revenus', icon: '💰' },
   ] as const;
 
   return (
@@ -347,6 +349,61 @@ export default function AdminApp() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── FINANCE TAB ── */}
+        {activeTab === 'finance' && (
+          <div className="flex-1 overflow-y-auto p-4 bg-slate-900">
+            <h2 className="text-xl font-black text-white mb-6">Tableau de bord financier</h2>
+            
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="col-span-2 bg-gradient-to-r from-brand-600 to-blue-800 rounded-3xl p-6 text-white shadow-xl shadow-brand-900/50">
+                <p className="text-sm font-bold text-blue-200 mb-1">Chiffre d'Affaires Global (Aujourd'hui)</p>
+                <h3 className="text-4xl font-black tracking-tight">
+                  {(adminRevenue.DDD + adminRevenue.AFTU + adminRevenue.BRT + adminRevenue.TER).toLocaleString('fr-FR')} <span className="text-xl text-blue-300">FCFA</span>
+                </h3>
+                <div className="mt-4 flex items-center gap-2 text-xs font-bold text-green-300">
+                  <span className="bg-green-500/20 px-2 py-1 rounded-full">+14.5%</span>
+                  <span>vs hier</span>
+                </div>
+              </div>
+
+              {['DDD', 'AFTU', 'BRT', 'TER'].map(op => (
+                <div key={op} className="bg-slate-800 border border-slate-700 rounded-2xl p-4 flex flex-col justify-between">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-4 h-4 rounded-full" style={{ backgroundColor: opColor(op) }} />
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-400">{op}</span>
+                  </div>
+                  <h4 className="text-xl font-black text-white">
+                    {adminRevenue[op as keyof typeof adminRevenue].toLocaleString('fr-FR')} <span className="text-xs text-slate-500">FCFA</span>
+                  </h4>
+                </div>
+              ))}
+            </div>
+            
+            <div className="bg-slate-800 border border-slate-700 rounded-2xl p-4">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Dernières Transactions (M-Ticket)</h3>
+              <div className="space-y-3">
+                {[
+                  { id: 'T-8F9A', op: 'BRT', price: 300, time: 'À l\'instant', method: 'Wave' },
+                  { id: 'T-2B4C', op: 'DDD', price: 200, time: 'Il y a 2 min', method: 'Orange Money' },
+                  { id: 'T-9D1E', op: 'AFTU', price: 150, time: 'Il y a 5 min', method: 'Wave' },
+                  { id: 'T-5C7F', op: 'TER', price: 500, time: 'Il y a 8 min', method: 'Orange Money' },
+                ].map((tx, i) => (
+                  <div key={i} className="flex items-center justify-between bg-slate-900 rounded-xl p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white" style={{ backgroundColor: opColor(tx.op) }}>{tx.op[0]}</div>
+                      <div>
+                        <div className="font-bold text-sm text-white">{tx.id}</div>
+                        <div className="text-[10px] text-slate-500">{tx.time} · {tx.method}</div>
+                      </div>
+                    </div>
+                    <div className="font-black text-green-400">+{tx.price} F</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
