@@ -61,6 +61,9 @@ const authSlice = createSlice({
     isAuthenticated: false,
   } as AuthState,
   reducers: {
+    loginPassenger: (s) => {
+      s.role = 'passenger'; s.name = 'Voyageur'; s.isAuthenticated = true;
+    },
     loginDriver: (s, a: PayloadAction<{ name: string; lineId: string }>) => {
       s.role = 'driver'; s.name = a.payload.name; s.lineId = a.payload.lineId; s.isAuthenticated = true;
     },
@@ -114,5 +117,5 @@ export const {
   clearRoute, setBusPositions,
 } = mobilitySlice.actions;
 
-export const { loginDriver, loginAdmin, logout } = authSlice.actions;
+export const { loginPassenger, loginDriver, loginAdmin, logout } = authSlice.actions;
 export const { toggleDarkMode, setLang, toggleSidebar, setShowQR } = uiSlice.actions;

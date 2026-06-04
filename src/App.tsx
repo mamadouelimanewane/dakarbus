@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from './store/hooks';
-import { loginDriver, loginAdmin } from './store/store';
+import { loginPassenger, loginDriver, loginAdmin } from './store/store';
 import PassengerApp from './views/passenger/PassengerApp';
 import DriverApp from './views/driver/DriverApp';
 import AdminApp from './views/admin/AdminApp';
@@ -10,24 +10,47 @@ function RoleSelection() {
   const dispatch = useAppDispatch();
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-white font-sans">
-      <div className="text-6xl mb-6">🚌</div>
-      <h1 className="text-4xl font-black mb-2">SunuBus</h1>
-      <p className="text-slate-400 mb-10 text-center">Sélectionnez votre profil de démonstration</p>
+      <div className="text-7xl mb-6 animate-bounce">🚌</div>
+      <h1 className="text-4xl font-black mb-1 tracking-tight">DakarBus</h1>
+      <p className="text-brand-400 font-bold mb-2">SunuBus v5.0 · Dakar 🇸🇳</p>
+      <p className="text-slate-400 mb-10 text-center text-sm">Sélectionnez votre profil</p>
 
       <div className="w-full max-w-sm space-y-4">
-        <button className="w-full bg-brand-600 hover:bg-brand-500 text-white p-4 rounded-2xl font-bold flex items-center justify-center gap-3 transition-colors"
-          onClick={() => { /* default is passenger, just reload or set state, actually we dispatch a default passenger? we need a passenger login action */ window.location.reload(); }}>
-          <span className="text-2xl">👤</span> Mode Passager
+        <button
+          className="w-full bg-brand-600 hover:bg-brand-500 text-white p-5 rounded-2xl font-bold flex items-center gap-4 transition-all hover:scale-[1.02] shadow-lg shadow-brand-500/30"
+          onClick={() => dispatch(loginPassenger())}
+        >
+          <span className="text-3xl">👤</span>
+          <div className="text-left">
+            <div className="font-black">Mode Passager</div>
+            <div className="text-xs text-blue-200 font-normal">Planifier, voir les lignes, alertes</div>
+          </div>
         </button>
-        <button className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 p-4 rounded-2xl font-bold flex items-center justify-center gap-3 transition-colors"
-          onClick={() => dispatch(loginDriver({ name: 'Chauffeur Test', lineId: 'L8' }))}>
-          <span className="text-2xl">👨‍✈️</span> Mode Chauffeur
+
+        <button
+          className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 p-5 rounded-2xl font-bold flex items-center gap-4 transition-all hover:scale-[1.02]"
+          onClick={() => dispatch(loginDriver({ name: 'Chauffeur Test', lineId: 'L8' }))}
+        >
+          <span className="text-3xl">👨‍✈️</span>
+          <div className="text-left">
+            <div className="font-black">Mode Chauffeur</div>
+            <div className="text-xs text-slate-400 font-normal">GPS, signalement, service en cours</div>
+          </div>
         </button>
-        <button className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 p-4 rounded-2xl font-bold flex items-center justify-center gap-3 transition-colors"
-          onClick={() => dispatch(loginAdmin({ name: 'Admin Test' }))}>
-          <span className="text-2xl">🛡️</span> Mode Admin
+
+        <button
+          className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 p-5 rounded-2xl font-bold flex items-center gap-4 transition-all hover:scale-[1.02]"
+          onClick={() => dispatch(loginAdmin({ name: 'Admin' }))}
+        >
+          <span className="text-3xl">🛡️</span>
+          <div className="text-left">
+            <div className="font-black">Mode Admin</div>
+            <div className="text-xs text-slate-400 font-normal">Supervision, gestion flotte, alertes</div>
+          </div>
         </button>
       </div>
+
+      <p className="text-slate-600 text-xs mt-10">v5.0 — Simulation locale active</p>
     </div>
   );
 }
@@ -39,17 +62,8 @@ export default function App() {
     initSimulation();
   }, []);
 
-  if (!isAuthenticated && role === 'passenger') {
-    // Actually our initial state is role='passenger' but isAuthenticated=false. Let's show role selection if not authenticated, unless they click passenger.
-    // Let's modify: if role is passenger and not authenticated, we could show the selector, but we want Passenger to be default without login?
-    // Let's just use PassengerApp by default, and provide a way to switch.
-  }
-
-  // If we want a landing page:
   if (!isAuthenticated) return <RoleSelection />;
-
   if (role === 'driver') return <DriverApp />;
   if (role === 'admin') return <AdminApp />;
   return <PassengerApp />;
 }
-
