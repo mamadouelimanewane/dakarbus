@@ -2,98 +2,230 @@ import React, { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   setRouteOrigin, setRouteDestination, clearRoute, recordTrip,
-  setActiveTab, showToast, buyTicket, startJourney, attachTicketToJourney,
+  setActiveTab, showToast, buyTicket, startJourney, setFocusedLine,
 } from '@/store/store';
 import { STOPS, LINES, getNextDepartures, getAffluence } from '@/data/transportData';
-import { getNearestStop, walkingMinutes, stopDistance } from '@/utils/nearest';
-import type { Stop, OperatorId, ActiveJourney } from '@/types';
+import { getNearestStop, walkingMinutes } from '@/utils/nearest';
+import { findRoutes, type RouteOption } from '@/utils/routeFinder';
+import type { Stop, ActiveJourney } from '@/types';
 import SearchBar from './SearchBar';
 
-// ── Route computation ──────────────────────────────────────────
-interface Step { label: string; color: string; time: string; type: 'walk' | 'bus' | 'transfer' }
-interface RouteResult {
-  duration: number; fare: number; transfers: number;
-  operator: OperatorId; lineId: string; lineName: string; lineColor: string;
-  walkingStop: Stop; walkingMeters: number;
-  steps: Step[];
-}
-
-function computeRoute(o: Stop, d: Stop): RouteResult | null {
-  if (o.id === d.id) return null;
-  const common = o.lines.filter(id => d.lines.includes(id));
-  if (common.length) {
-    const line = LINES.find(l => l.id === common[0]); if (!line) return null;
-    const stops = Math.abs(line.stops.indexOf(o.id) - line.stops.indexOf(d.id));
-    const dur = Math.max(5, stops * 3 + 4);
-    return {
-      duration: dur, fare: line.tarif, transfers: 0,
-      operator: line.operator, lineId: line.id, lineName: line.name, lineColor: line.color,
-      walkingStop: o, walkingMeters: 0,
-      steps: [
-        { label: `Prendre ${line.name}`, color: line.color, time: 'au départ', type: 'bus' },
-        { label: `Descendre à ${d.name}`, color: line.color, time: `${dur} min`, type: 'bus' },
-      ],
-    };
-  }
-  for (const oId of o.lines) {
-    const oLine = LINES.find(l => l.id === oId); if (!oLine) continue;
-    for (const midId of oLine.stops) {
-      const mid = STOPS.find(s => s.id === midId); if (!mid) continue;
-      const dId = mid.lines.find(id => d.lines.includes(id)); if (!dId) continue;
-      const dLine = LINES.find(l => l.id === dId); if (!dLine) continue;
-      const d1 = Math.max(3, Math.abs(oLine.stops.indexOf(o.id) - oLine.stops.indexOf(midId)) * 3 + 3);
-      const d2 = Math.max(3, Math.abs(dLine.stops.indexOf(midId) - dLine.stops.indexOf(d.id)) * 3 + 3);
-      return {
-        duration: d1 + 5 + d2, fare: oLine.tarif + dLine.tarif, transfers: 1,
-        operator: oLine.operator, lineId: oLine.id, lineName: oLine.name, lineColor: oLine.color,
-        walkingStop: o, walkingMeters: 0,
-        steps: [
-          { label: `${oLine.name} → ${mid.name}`, color: oLine.color, time: `${d1} min`, type: 'bus' },
-          { label: `Correspondance · ${mid.name}`, color: '#475569', time: '5 min', type: 'transfer' },
-          { label: `${dLine.name} → ${d.name}`, color: dLine.color, time: `${d2} min`, type: 'bus' },
-        ],
-      };
-    }
-  }
-  return null;
-}
-
-// ── Live countdown hook ────────────────────────────────────────
-function useCountdown(targetSeconds: number) {
-  const [secs, setSecs] = useState(targetSeconds);
+// ── Live countdown ─────────────────────────────────────────────
+function Countdown({ seconds }: { seconds: number }) {
+  const [s, setS] = useState(seconds);
   useEffect(() => {
-    const t = setInterval(() => setSecs(s => Math.max(0, s - 1)), 1000);
+    const t = setInterval(() => setS(p => Math.max(0, p - 1)), 1000);
     return () => clearInterval(t);
   }, []);
-  const m = Math.floor(secs / 60), s = secs % 60;
-  return secs <= 0 ? 'maintenant' : m > 0 ? `${m} min ${String(s).padStart(2, '0')} s` : `${s} s`;
+  if (s <= 0) return <span className="text-emerald-400 font-black">Maintenant</span>;
+  const m = Math.floor(s / 60), ss = s % 60;
+  return <span>{m > 0 ? `${m} min ${String(ss).padStart(2,'0')} s` : `${ss} s`}</span>;
 }
 
-// ── Departure countdown item ───────────────────────────────────
-function DepartureItem({ waitMin, first }: { waitMin: number; first: boolean }) {
-  const display = useCountdown(waitMin * 60);
+// ── Option card ───────────────────────────────────────────────
+function OptionCard({
+  option, selected, onSelect,
+}: { option: RouteOption; selected: boolean; onSelect: () => void }) {
   return (
-    <div className={`flex-1 text-center py-2 rounded-xl`}
-      style={first
-        ? { background: 'rgba(37,99,235,.15)', border: '1px solid rgba(37,99,235,.35)' }
-        : { background: 'rgba(255,255,255,.04)', border: '1px solid transparent' }}>
-      <div className={`text-xs font-black leading-none ${first ? 'text-blue-400' : 'text-slate-400'}`}>{display}</div>
-      {first && <div className="text-[9px] mt-0.5" style={{ color: '#3b82f6' }}>prochain</div>}
+    <button
+      onClick={onSelect}
+      className="w-full text-left rounded-2xl overflow-hidden transition-all active:scale-[.98]"
+      style={{
+        background: selected
+          ? `linear-gradient(145deg, ${option.primaryLineColor}18 0%, var(--c-surface) 100%)`
+          : 'var(--c-surface)',
+        border: selected
+          ? `1.5px solid ${option.primaryLineColor}55`
+          : '1.5px solid var(--c-border)',
+        boxShadow: selected ? `0 6px 24px ${option.primaryLineColor}20` : 'none',
+      }}
+    >
+      {/* Top accent bar */}
+      <div className="h-0.5" style={{ background: selected ? option.primaryLineColor : 'transparent' }} />
+
+      <div className="px-4 py-3">
+        {/* Label + stats row */}
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="text-[10px] font-black px-2 py-0.5 rounded-full"
+            style={{ background: option.labelColor + '22', color: option.labelColor, border: `1px solid ${option.labelColor}33` }}>
+            {option.label}
+          </span>
+          <div className="flex items-center gap-3 text-right">
+            <div>
+              <div className="text-lg font-black text-white leading-none">{option.totalMin}</div>
+              <div className="text-[9px] uppercase tracking-wider" style={{ color: '#475569' }}>min</div>
+            </div>
+            <div className="w-px h-6 bg-white/8" />
+            <div>
+              <div className="text-lg font-black leading-none" style={{ color: option.primaryLineColor }}>{option.fare}</div>
+              <div className="text-[9px] uppercase tracking-wider" style={{ color: '#475569' }}>FCFA</div>
+            </div>
+            {option.transfers > 0 && (
+              <>
+                <div className="w-px h-6 bg-white/8" />
+                <div>
+                  <div className="text-lg font-black text-white leading-none">{option.transfers}</div>
+                  <div className="text-[9px] uppercase tracking-wider" style={{ color: '#475569' }}>corresp.</div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Steps preview */}
+        <div className="flex items-center gap-1 flex-wrap">
+          {option.steps.map((step, i) => (
+            <React.Fragment key={i}>
+              {i > 0 && <span className="text-[10px]" style={{ color: '#334155' }}>→</span>}
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${step.type === 'transfer' ? 'italic' : ''}`}
+                style={step.type !== 'transfer'
+                  ? { background: step.color + '22', color: step.color }
+                  : { color: '#475569' }}>
+                {step.type === 'walk'     ? `🚶 ${step.durationMin}m`
+                 : step.type === 'transfer' ? '↻'
+                 : step.lineId ? LINES.find(l => l.id === step.lineId)?.name || step.label.split('·')[0].trim()
+                 : step.label.split('·')[0].trim()}
+              </span>
+            </React.Fragment>
+          ))}
+        </div>
+
+        {/* Walk info */}
+        {option.walkMin > 0 && (
+          <div className="flex items-center gap-1.5 mt-2 text-[10px]" style={{ color: '#475569' }}>
+            <span>🚶</span>
+            <span>{option.walkMeters} m à pied jusqu'à l'arrêt</span>
+          </div>
+        )}
+      </div>
+    </button>
+  );
+}
+
+// ── Detail panel for selected option ─────────────────────────
+function OptionDetail({
+  option, origin, dest, onBuy, onStart,
+}: {
+  option: RouteOption;
+  origin: Stop; dest: Stop;
+  onBuy: (method: string) => void;
+  onStart: () => void;
+}) {
+  const [buying, setBuying] = useState(false);
+  const departures = getNextDepartures(origin.id).slice(0, 3);
+  const affluence  = getAffluence(origin.id);
+
+  return (
+    <div className="rounded-2xl overflow-hidden mt-2 animate-fade-up"
+      style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+
+      {/* Steps detail */}
+      <div className="px-4 pt-4 pb-3 space-y-2">
+        {option.steps.map((step, i) => (
+          <div key={i} className="flex items-center gap-3 py-2"
+            style={{ borderTop: i > 0 ? '1px solid var(--c-border)' : 'none' }}>
+            <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 text-sm"
+              style={step.type === 'transfer'
+                ? { background: 'rgba(255,255,255,.05)' }
+                : { background: step.color + '22' }}>
+              {step.type === 'walk' ? '🚶' : step.type === 'transfer' ? '↻' : '🚌'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm" style={{ color: step.type === 'transfer' ? '#475569' : '#e2e8f0' }}>
+                {step.label}
+              </p>
+            </div>
+            <span className="text-sm font-black flex-shrink-0"
+              style={{ color: step.type === 'transfer' ? '#334155' : 'white' }}>
+              {step.durationMin} min
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Next departures + affluence */}
+      {departures.length > 0 && (
+        <div className="px-4 pb-3" style={{ borderTop: '1px solid var(--c-border)' }}>
+          <div className="flex items-center justify-between pt-3 mb-2">
+            <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#334155' }}>Prochains départs</p>
+            {affluence && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                style={{ background: affluence.color + '20', color: affluence.color }}>
+                {affluence.emoji} {affluence.level}
+              </span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {departures.map((d, i) => (
+              <div key={i} className="flex-1 text-center py-2 rounded-xl"
+                style={i === 0
+                  ? { background: 'rgba(37,99,235,.15)', border: '1px solid rgba(37,99,235,.35)' }
+                  : { background: 'rgba(255,255,255,.04)', border: '1px solid transparent' }}>
+                <div className={`text-xs font-black ${i === 0 ? 'text-blue-400' : 'text-slate-400'}`}>
+                  <Countdown seconds={d.waitMin * 60} />
+                </div>
+                {i === 0 && <div className="text-[9px] mt-0.5 text-blue-500">prochain</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* CTA */}
+      {!buying ? (
+        <div className="flex gap-2 px-4 pb-4" style={{ borderTop: '1px solid var(--c-border)', paddingTop: 12 }}>
+          <button onClick={onStart}
+            className="flex-1 py-3 rounded-xl text-sm font-black text-white transition-all active:scale-95"
+            style={{ background: 'linear-gradient(135deg,#059669,#10b981)', boxShadow: '0 6px 20px rgba(5,150,105,.3)' }}>
+            🚀 Démarrer
+          </button>
+          <button onClick={() => setBuying(true)}
+            className="flex-1 py-3 rounded-xl text-sm font-black text-white transition-all active:scale-95"
+            style={{ background: 'linear-gradient(135deg,#1d4ed8,#2563eb)', boxShadow: '0 6px 20px rgba(37,99,235,.3)' }}>
+            🎫 Acheter {option.fare} F
+          </button>
+        </div>
+      ) : (
+        <div className="px-4 pb-4" style={{ borderTop: '1px solid var(--c-border)', paddingTop: 12 }}>
+          <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: '#475569' }}>
+            Payer {option.fare} FCFA via
+          </p>
+          <div className="space-y-2">
+            {[
+              { l:'Wave',         e:'🌊', g:'linear-gradient(135deg,#00c5e3,#0082a3)' },
+              { l:'Orange Money', e:'🟠', g:'linear-gradient(135deg,#f97316,#c2410c)' },
+              { l:'Free Money',   e:'🏦', g:'linear-gradient(135deg,#7c3aed,#4c1d95)' },
+            ].map(m => (
+              <button key={m.l} onClick={() => { onBuy(m.l); setBuying(false); }}
+                className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-white font-bold transition-all hover:scale-[1.01] active:scale-[.98]"
+                style={{ background: m.g }}>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xl">{m.e}</span>
+                  <span className="font-black">{m.l}</span>
+                </div>
+                <span className="font-black">{option.fare} F</span>
+              </button>
+            ))}
+            <button onClick={() => setBuying(false)} className="w-full py-2 rounded-xl text-xs btn btn-ghost">
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Main component ─────────────────────────────────────────────
+// ── Main RoutePanel ───────────────────────────────────────────
 export default function RoutePanel() {
   const dispatch = useAppDispatch();
   const { route, userLocation } = useAppSelector(s => s.mobility);
-  const { active: activeJourney } = useAppSelector(s => s.journey);
-  const { myTickets } = useAppSelector(s => s.tickets);
-  const [result, setResult] = useState<RouteResult | 'none' | null>(null);
+  const [options, setOptions]       = useState<RouteOption[]>([]);
+  const [selected, setSelected]     = useState<RouteOption | null>(null);
+  const [noRoute, setNoRoute]       = useState(false);
   const [nearestInfo, setNearestInfo] = useState<{ stop: Stop; meters: number } | null>(null);
-  const [buying, setBuying] = useState(false);
 
-  // Bloc 1: Auto-fill origin with nearest stop
+  // Auto-fill nearest stop as origin
   useEffect(() => {
     if (!userLocation || route.origin) return;
     const res = getNearestStop(userLocation[0], userLocation[1]);
@@ -104,72 +236,71 @@ export default function RoutePanel() {
 
   const calculate = () => {
     if (!route.origin || !route.destination) return;
-    const r = computeRoute(route.origin, route.destination);
-    if (!r) { setResult('none'); return; }
-    // Add walking distance from userLocation to origin stop
-    let walkMeters = 0;
-    if (userLocation) {
-      const { distanceMeters } = getNearestStop(userLocation[0], userLocation[1]) ?? { distanceMeters: 0 };
-      walkMeters = distanceMeters;
-    }
-    setResult({ ...r, walkingMeters: walkMeters });
-    dispatch(recordTrip({ fare: r.fare, operator: r.operator }));
+    setOptions([]); setSelected(null); setNoRoute(false);
+    const results = findRoutes(
+      route.origin, route.destination,
+      userLocation?.[0], userLocation?.[1]
+    );
+    if (results.length === 0) { setNoRoute(true); return; }
+    setOptions(results);
+    setSelected(results[0]);
+    if (results[0]) dispatch(recordTrip({ fare: results[0].fare, operator: results[0].operator }));
   };
 
-  // Bloc 2: Start journey action
   const handleStartJourney = () => {
-    if (!result || result === 'none' || !route.origin || !route.destination) return;
-    const r = result as RouteResult;
+    if (!selected || !route.origin || !route.destination) return;
     const journey: ActiveJourney = {
       id: Math.random().toString(36).substring(2, 11),
       originStop: route.origin,
       destinationStop: route.destination,
-      walkingStop: r.walkingStop,
-      walkingMeters: r.walkingMeters,
-      lineId: r.lineId, lineName: r.lineName, lineColor: r.lineColor,
-      operator: r.operator, fare: r.fare, transfers: r.transfers,
+      walkingStop: selected.walkingStop,
+      walkingMeters: selected.walkMeters,
+      lineId: selected.primaryLineId,
+      lineName: selected.primaryLineName,
+      lineColor: selected.primaryLineColor,
+      operator: selected.operator,
+      fare: selected.fare,
+      transfers: selected.transfers,
       startedAt: Date.now(),
-      estimatedDuration: r.duration + (r.walkingMeters > 0 ? walkingMinutes(r.walkingMeters) : 0),
-      status: r.walkingMeters > 60 ? 'walking' : 'waiting',
+      estimatedDuration: selected.totalMin,
+      status: selected.walkMin > 0 ? 'walking' : 'waiting',
       ticketId: null,
     };
     dispatch(startJourney(journey));
-    dispatch(setActiveTab('plan'));
-    dispatch(showToast({ type: 'success', message: `Trajet démarré vers ${route.destination.name} !` }));
+    dispatch(setFocusedLine(selected.primaryLineId));
+    dispatch(showToast({ type: 'success', message: `Trajet démarré → ${route.destination.name} !` }));
   };
 
-  // Bloc 2: Quick buy + auto-attach to journey
-  const handleQuickBuy = (method: string) => {
-    if (!result || result === 'none') return;
-    const r = result as RouteResult;
-    const id = Math.random().toString(36).substring(2, 11).toUpperCase();
-    dispatch(buyTicket({ operator: r.operator, price: r.fare }));
-    // Find the newly created ticket (last one)
+  const handleBuy = (method: string) => {
+    if (!selected) return;
+    dispatch(buyTicket({ operator: selected.operator, price: selected.fare }));
     dispatch(showToast({ type: 'success', message: `Billet acheté via ${method} !` }));
-    setBuying(false);
-    if (activeJourney) dispatch(attachTicketToJourney(id));
   };
 
-  const departures = route.origin ? getNextDepartures(route.origin.id).slice(0, 3) : [];
-  const affluence  = route.origin ? getAffluence(route.origin.id) : null;
-  const walkMin    = result && result !== 'none' && (result as RouteResult).walkingMeters > 60
-    ? walkingMinutes((result as RouteResult).walkingMeters) : 0;
+  const handleSelectOption = (opt: RouteOption) => {
+    setSelected(opt);
+    dispatch(setFocusedLine(opt.primaryLineId));
+    dispatch(recordTrip({ fare: opt.fare, operator: opt.operator }));
+  };
+
+  const departures = route.origin ? getNextDepartures(route.origin.id) : [];
 
   return (
     <div className="p-4 space-y-3">
-      <h2 className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Planifier un trajet</h2>
+      <h2 className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>
+        Planifier un trajet
+      </h2>
 
       {/* Nearest stop notice */}
-      {nearestInfo && !route.destination && (
+      {nearestInfo && !options.length && (
         <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs animate-fade-up"
           style={{ background: 'rgba(37,99,235,.08)', border: '1px solid rgba(37,99,235,.2)' }}>
-          <span className="text-base">📍</span>
-          <div>
-            <span className="font-bold text-white">Arrêt le plus proche détecté</span>
-            <span className="ml-1.5 font-medium" style={{ color: '#64748b' }}>
-              {route.origin?.name} · {nearestInfo.meters < 1000 ? `${nearestInfo.meters} m` : `${(nearestInfo.meters / 1000).toFixed(1)} km`}
-            </span>
-          </div>
+          <span>📍</span>
+          <span className="font-bold text-white">Arrêt le plus proche :</span>
+          <span style={{ color: '#64748b' }}>{route.origin?.name}</span>
+          <span style={{ color: '#334155' }}>
+            {nearestInfo.meters < 1000 ? `${nearestInfo.meters} m` : `${(nearestInfo.meters/1000).toFixed(1)} km`}
+          </span>
         </div>
       )}
 
@@ -178,13 +309,14 @@ export default function RoutePanel() {
         <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white flex-shrink-0"
           style={{ background: 'linear-gradient(135deg,#059669,#10b981)', boxShadow: '0 4px 12px rgba(5,150,105,.4)' }}>A</div>
         <SearchBar placeholder="D'où partez-vous ?" value={route.origin}
-          onSelect={s => { dispatch(setRouteOrigin(s)); setResult(null); }} className="flex-1" />
+          onSelect={s => { dispatch(setRouteOrigin(s)); setOptions([]); setSelected(null); setNoRoute(false); }}
+          className="flex-1" />
       </div>
 
       {/* Swap */}
       {route.origin && route.destination && (
         <div className="flex justify-center -my-1">
-          <button onClick={() => { dispatch(setRouteOrigin(route.destination)); dispatch(setRouteDestination(route.origin)); setResult(null); }}
+          <button onClick={() => { dispatch(setRouteOrigin(route.destination)); dispatch(setRouteDestination(route.origin)); setOptions([]); setSelected(null); }}
             className="w-8 h-8 rounded-xl flex items-center justify-center text-sm transition-all active:scale-90 hover:scale-110"
             style={{ background: 'rgba(255,255,255,.06)', border: '1px solid var(--c-border)', color: '#94a3b8' }}>⇅</button>
         </div>
@@ -195,10 +327,11 @@ export default function RoutePanel() {
         <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white flex-shrink-0"
           style={{ background: 'linear-gradient(135deg,#991b1b,#dc2626)', boxShadow: '0 4px 12px rgba(220,38,38,.4)' }}>B</div>
         <SearchBar placeholder="Où allez-vous ?" value={route.destination}
-          onSelect={s => { dispatch(setRouteDestination(s)); setResult(null); }} className="flex-1" />
+          onSelect={s => { dispatch(setRouteDestination(s)); setOptions([]); setSelected(null); setNoRoute(false); }}
+          className="flex-1" />
       </div>
 
-      {/* Calculate */}
+      {/* Calculate button */}
       <div className="flex gap-2">
         <button onClick={calculate} disabled={!route.origin || !route.destination}
           className="flex-1 py-3 rounded-xl text-sm font-black text-white transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -208,158 +341,62 @@ export default function RoutePanel() {
           Calculer l'itinéraire
         </button>
         {(route.origin || route.destination) && (
-          <button onClick={() => { dispatch(clearRoute()); setResult(null); setNearestInfo(null); }}
+          <button onClick={() => { dispatch(clearRoute()); setOptions([]); setSelected(null); setNoRoute(false); setNearestInfo(null); }}
             className="w-11 rounded-xl flex items-center justify-center text-sm transition-all active:scale-90"
             style={{ background: 'rgba(255,255,255,.05)', border: '1px solid var(--c-border)', color: '#64748b' }}>✕</button>
         )}
       </div>
 
       {/* No route */}
-      {result === 'none' && (
+      {noRoute && (
         <div className="rounded-2xl p-4 text-center animate-fade-up"
           style={{ background: 'rgba(217,119,6,.08)', border: '1px solid rgba(217,119,6,.2)' }}>
           <div className="text-2xl mb-1.5">🗺️</div>
           <p className="font-bold text-sm" style={{ color: '#fbbf24' }}>Aucun itinéraire trouvé</p>
-          <p className="text-xs mt-1" style={{ color: '#64748b' }}>Ces arrêts ne sont pas connectés.</p>
+          <p className="text-xs mt-1" style={{ color: '#64748b' }}>Ces arrêts ne sont pas connectés dans le réseau.</p>
         </div>
       )}
 
-      {/* ── RÉSULTATS ENRICHIS ─────────────────────────────────── */}
-      {result && result !== 'none' && (() => {
-        const r = result as RouteResult;
-        return (
-          <div className="rounded-2xl overflow-hidden animate-fade-up"
-            style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+      {/* ── OPTIONS ─────────────────────────────────────────────── */}
+      {options.length > 0 && (
+        <div className="space-y-2 animate-fade-up">
+          {options.length > 1 && (
+            <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#334155' }}>
+              {options.length} itinéraire{options.length > 1 ? 's' : ''} disponible{options.length > 1 ? 's' : ''}
+            </p>
+          )}
 
-            {/* Walking section */}
-            {walkMin > 0 && (
-              <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--c-border)', background: 'rgba(5,150,105,.06)' }}>
-                <span className="text-xl">🚶</span>
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-white">Marche vers {r.walkingStop.name}</p>
-                  <p className="text-[10px] mt-0.5" style={{ color: '#64748b' }}>
-                    {r.walkingMeters} m · environ {walkMin} min à pied
-                  </p>
-                </div>
-                <span className="text-sm font-black" style={{ color: '#34d399' }}>{walkMin} min</span>
-              </div>
-            )}
+          {/* Option cards */}
+          {options.map(opt => (
+            <OptionCard
+              key={opt.id} option={opt}
+              selected={selected?.id === opt.id}
+              onSelect={() => handleSelectOption(opt)}
+            />
+          ))}
 
-            {/* Stats row */}
-            <div className="grid grid-cols-3 divide-x py-4" style={{ borderBottom: '1px solid var(--c-border)' }}>
-              {[
-                { v: walkMin > 0 ? r.duration + walkMin : r.duration, u: 'min total' },
-                { v: r.fare, u: 'FCFA' },
-                { v: r.transfers, u: 'corresp.' },
-              ].map((s, i) => (
-                <div key={i} className="text-center px-3">
-                  <div className="text-2xl font-black text-white leading-none">{s.v}</div>
-                  <div className="text-[9px] font-bold uppercase tracking-wider mt-1" style={{ color: '#475569' }}>{s.u}</div>
-                </div>
-              ))}
-            </div>
+          {/* Detail of selected */}
+          {selected && route.origin && route.destination && (
+            <OptionDetail
+              option={selected}
+              origin={route.origin}
+              dest={route.destination}
+              onBuy={handleBuy}
+              onStart={handleStartJourney}
+            />
+          )}
+        </div>
+      )}
 
-            {/* Route type badge */}
-            <div className="px-4 pt-3 pb-1">
-              <span className="badge" style={r.transfers === 0
-                ? { background: 'rgba(5,150,105,.15)', color: '#34d399', border: '1px solid rgba(5,150,105,.2)' }
-                : { background: 'rgba(217,119,6,.15)', color: '#fbbf24', border: '1px solid rgba(217,119,6,.2)' }}>
-                {r.transfers === 0 ? '✓ DIRECT' : `↻ ${r.transfers} CORRESPONDANCE`}
-              </span>
-            </div>
-
-            {/* Steps */}
-            <div className="px-4 pb-3 space-y-1.5 mt-2">
-              {r.steps.map((s, i) => (
-                <div key={i} className="flex items-center gap-3 py-2" style={{ borderTop: i > 0 ? '1px solid var(--c-border)' : 'none' }}>
-                  <div className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ background: s.type === 'transfer' ? '#334155' : s.color }} />
-                  <span className="text-xs flex-1" style={{ color: s.type === 'transfer' ? '#475569' : '#cbd5e1' }}>{s.label}</span>
-                  <span className="text-xs font-bold flex-shrink-0" style={{ color: s.type === 'transfer' ? '#334155' : 'white' }}>{s.time}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Bloc 1: Prochains départs + affluence */}
-            {departures.length > 0 && (
-              <div className="px-4 pb-3" style={{ borderTop: '1px solid var(--c-border)' }}>
-                <div className="flex items-center justify-between mb-2 pt-3">
-                  <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#334155' }}>Prochains départs</p>
-                  {affluence && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                      style={{ background: affluence.color + '20', color: affluence.color }}>
-                      {affluence.emoji} {affluence.level}
-                    </span>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  {departures.map((d, i) => (
-                    <DepartureItem key={i} waitMin={d.waitMin} first={i === 0} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Bloc 2: Action buttons */}
-            {!buying ? (
-              <div className="flex gap-2 px-4 pb-4" style={{ borderTop: '1px solid var(--c-border)', paddingTop: 12 }}>
-                {/* Start journey */}
-                <button onClick={handleStartJourney}
-                  className="flex-1 py-3 rounded-xl text-sm font-black text-white transition-all active:scale-95"
-                  style={{ background: 'linear-gradient(135deg,#059669,#10b981)', boxShadow: '0 6px 20px rgba(5,150,105,.35)' }}>
-                  🚀 Démarrer
-                </button>
-                {/* Buy ticket */}
-                <button onClick={() => setBuying(true)}
-                  className="flex-1 py-3 rounded-xl text-sm font-black text-white transition-all active:scale-95"
-                  style={{ background: 'linear-gradient(135deg,#1d4ed8,#2563eb)', boxShadow: '0 6px 20px rgba(37,99,235,.35)' }}>
-                  🎫 Acheter {r.fare} F
-                </button>
-              </div>
-            ) : (
-              <div className="px-4 pb-4" style={{ borderTop: '1px solid var(--c-border)', paddingTop: 12 }}>
-                <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: '#475569' }}>Payer {r.fare} FCFA via</p>
-                <div className="space-y-2">
-                  {[
-                    { l: 'Wave', e: '🌊', g: 'linear-gradient(135deg,#00c5e3,#0082a3)' },
-                    { l: 'Orange Money', e: '🟠', g: 'linear-gradient(135deg,#f97316,#c2410c)' },
-                    { l: 'Free Money', e: '🏦', g: 'linear-gradient(135deg,#7c3aed,#4c1d95)' },
-                  ].map(m => (
-                    <button key={m.l} onClick={() => handleQuickBuy(m.l)}
-                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-white font-bold transition-all active:scale-[.98] hover:scale-[1.01]"
-                      style={{ background: m.g }}>
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-xl">{m.e}</span>
-                        <span className="font-black">{m.l}</span>
-                      </div>
-                      <span className="font-black">{r.fare} F</span>
-                    </button>
-                  ))}
-                  <button onClick={() => setBuying(false)} className="w-full py-2 rounded-xl text-xs btn btn-ghost">Annuler</button>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })()}
-
-      {/* Nearby departures (before calculate) */}
-      {route.origin && !result && (
+      {/* Nearby departures (pre-calculate) */}
+      {route.origin && !options.length && !noRoute && departures.length > 0 && (
         <div>
-          <div className="flex items-center justify-between mb-2.5">
-            <h3 className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#334155' }}>
-              Prochains départs · {route.origin.name}
-            </h3>
-            {affluence && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                style={{ background: affluence.color + '20', color: affluence.color }}>
-                {affluence.emoji} {affluence.level}
-              </span>
-            )}
-          </div>
-          {departures.map((d, i) => (
+          <h3 className="text-[10px] font-black uppercase tracking-widest mb-2.5" style={{ color: '#334155' }}>
+            Prochains départs · {route.origin.name}
+          </h3>
+          {departures.slice(0, 5).map((d, i) => (
             <div key={i} className="flex items-center gap-3 py-2.5 px-3 rounded-xl transition-all"
-              style={{ borderBottom: i < departures.length - 1 ? '1px solid var(--c-border)' : '' }}
+              style={{ borderBottom: i < 4 ? '1px solid var(--c-border)' : '' }}
               onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.03)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
               <span className="text-[9px] font-black text-white px-2 py-1 rounded-lg flex-shrink-0"
@@ -367,7 +404,12 @@ export default function RoutePanel() {
               <span className="text-xs flex-1 truncate" style={{ color: '#64748b' }}>
                 {d.route.split('↔')[1]?.trim() || d.route}
               </span>
-              <DepartureItem waitMin={d.waitMin} first={i === 0} />
+              <div className="text-right flex-shrink-0">
+                <div className="text-sm font-black leading-none"
+                  style={{ color: d.waitMin<=3?'#34d399':d.waitMin<=10?'#fbbf24':'#475569' }}>
+                  <Countdown seconds={d.waitMin * 60} />
+                </div>
+              </div>
             </div>
           ))}
         </div>
