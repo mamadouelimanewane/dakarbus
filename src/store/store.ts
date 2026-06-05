@@ -166,6 +166,7 @@ const toastSlice = createSlice({
 interface FavState {
   stopIds: string[];
   lineIds: string[];
+  recentLines: string[];
   tripCount: number;
   totalFCFA: number;
   co2SavedKg: number;
@@ -177,6 +178,7 @@ const favSlice = createSlice({
   initialState: {
     stopIds: [],
     lineIds: [],
+    recentLines: [],
     tripCount: 0,
     totalFCFA: 0,
     co2SavedKg: 0,
@@ -192,6 +194,9 @@ const favSlice = createSlice({
       const idx = s.lineIds.indexOf(a.payload);
       if (idx >= 0) s.lineIds.splice(idx, 1);
       else s.lineIds.push(a.payload);
+    },
+    visitLine: (s, a: PayloadAction<string>) => {
+      s.recentLines = [a.payload, ...s.recentLines.filter(id => id !== a.payload)].slice(0, 6);
     },
     recordTrip: (s, a: PayloadAction<{ fare: number; operator: OperatorId }>) => {
       s.tripCount += 1;
@@ -271,6 +276,6 @@ export const {
 export const { loginPassenger, loginDriver, loginAdmin, logout } = authSlice.actions;
 export const { toggleDarkMode, setLang, toggleSidebar, setShowQR } = uiSlice.actions;
 export const { buyTicket, useTicket, addReport, upvoteReport, acknowledgeReport } = ticketSlice.actions;
-export const { toggleFavStop, toggleFavLine, recordTrip } = favSlice.actions;
+export const { toggleFavStop, toggleFavLine, recordTrip, visitLine } = favSlice.actions;
 export const { showToast, dismissToast } = toastSlice.actions;
 export const { startJourney, updateJourneyStatus, attachTicketToJourney, finishJourney, cancelJourney, dismissEndModal } = journeySlice.actions;

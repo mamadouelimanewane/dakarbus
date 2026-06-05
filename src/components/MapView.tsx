@@ -9,6 +9,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setSelectedStop, setMapCenter, setMapZoom, clearFocusedLine, setUserLocation } from '@/store/store';
 import { STOPS, LINES, OPERATORS } from '@/data/transportData';
 import { routeOnRoads, routeLine, lineRouteCache } from '@/utils/osrm';
+import { buildStopTimings, sampleArrowPoints } from '@/utils/lineUtils';
 import StopPopup from './StopPopup';
 import type { Stop, Line, BusPosition } from '@/types';
 import { MOCK_DRIVERS } from '@/services/simulation';
@@ -68,6 +69,112 @@ const makeRouteEndIcon = (color: string, label: string) => L.divIcon({
 
 const originIcon = makeRouteEndIcon('#059669', 'A');
 const destIcon   = makeRouteEndIcon('#dc2626', 'B');
+
+// ── Numbered stop icon for focused line ───────────────────────
+const makeNumberedStopIcon = (index: number, color: string, isTerminus: boolean) => L.divIcon({
+  className: '',
+  html: isTerminus
+    ? `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+        <div style="width:22px;height:22px;border-radius:50%;background:${color};border:2.5px solid white;
+          box-shadow:0 0 16px ${color}88,0 4px 12px rgba(0,0,0,.5);
+          display:flex;align-items:center;justify-content:center;
+          font-size:9px;font-weight:900;color:white;line-height:1">
+          ${index === 1 ? 'A' : 'Z'}
+        </div>
+        <div style="width:2px;height:8px;background:${color};border-radius:2px;opacity:.7"></div>
+      </div>`
+    : `<div style="width:18px;height:18px;border-radius:50%;background:${color}dd;
+        border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,.4);
+        display:flex;align-items:center;justify-content:center;
+        font-size:8px;font-weight:900;color:white;line-height:1">
+        ${index}
+      </div>`,
+  iconSize: isTerminus ? [22, 32] : [18, 18],
+  iconAnchor: isTerminus ? [11, 32] : [9, 9],
+  popupAnchor: [0, isTerminus ? -34 : -20],
+});
+
+// ── Direction arrow icon ──────────────────────────────────────
+const makeArrowIcon = (deg: number, color: string) => L.divIcon({
+  className: '',
+  html: `<div style="width:14px;height:14px;display:flex;align-items:center;justify-content:center;
+    transform:rotate(${deg}deg);filter:drop-shadow(0 1px 3px rgba(0,0,0,.6))">
+    <svg width="14" height="14" viewBox="0 0 14 14">
+      <polygon points="7,1 13,13 7,10 1,13" fill="${color}" opacity="0.9"/>
+    </svg>
+  </div>`,
+  iconSize: [14, 14],
+  iconAnchor: [7, 7],
+});
+
+// ── Focused line: numbered stops + arrows ─────────────────────
+function FocusedLineOverlay({ line }: { line: Line }) {
+  const dispatch = useAppDispatch();
+  const [coords, setCoords] = useState<[number, number][] | null>(null);
+  const timings = buildStopTimings(line);
+
+  useEffect(() => {
+    if (lineRouteCache[line.id]) { setCoords(lineRouteCache[line.id]); return; }
+    const stops = line.stops.map(id => STOPS.find(s => s.id === id)).filter(Boolean) as Stop[];
+    if (stops.length < 2) return;
+    routeLine(stops).then(result => {
+      const c = result || stops.map(s => [s.lat, s.lng] as [number, number]);
+      lineRouteCache[line.id] = c;
+      setCoords(c);
+    });
+  }, [line.id]);
+
+  if (!coords || coords.length < 2) return null;
+
+  const arrows = sampleArrowPoints(coords, 5);
+
+  return (
+    <>
+      {/* Shadow polyline */}
+      <Polyline positions={coords} color="rgba(0,0,0,.4)" weight={14} opacity={1} />
+      {/* Main line */}
+      <Polyline positions={coords} color={line.color} weight={8} opacity={1}
+        dashArray={line.operator === 'TER' ? '18 9' : undefined} />
+      {/* Bright inner line */}
+      <Polyline positions={coords} color="rgba(255,255,255,.25)" weight={3} opacity={1} />
+
+      {/* Direction arrows */}
+      {arrows.map((a, i) => (
+        <Marker key={`arrow-${i}`} position={[a.lat, a.lng]}
+          icon={makeArrowIcon(a.deg, line.color)} interactive={false} />
+      ))}
+
+      {/* Numbered stop markers */}
+      {timings.map(({ stop, index, isTerminus }) => (
+        <Marker key={stop.id} position={[stop.lat, stop.lng]}
+          icon={makeNumberedStopIcon(index, line.color, isTerminus)}
+          zIndexOffset={isTerminus ? 500 : 100}
+          eventHandlers={{ click: () => dispatch(setSelectedStop(stop.id)) }}>
+          <Popup maxWidth={240} minWidth={210}>
+            <div style={{ fontFamily: 'Inter, sans-serif', padding: 12, background: '#1e293b', borderRadius: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <div style={{ width: 22, height: 22, borderRadius: '50%', background: line.color,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 9, fontWeight: 900, color: 'white', flexShrink: 0 }}>
+                  {isTerminus ? (index === 1 ? 'A' : 'Z') : index}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 800, color: '#f1f5f9', fontSize: 13 }}>{stop.name}</div>
+                  <div style={{ fontSize: 10, color: '#64748b' }}>{stop.zone}</div>
+                </div>
+              </div>
+              {isTerminus && (
+                <div style={{ fontSize: 10, color: line.color, fontWeight: 700 }}>
+                  {index === 1 ? '🟢 Terminus départ' : '🏁 Terminus arrivée'}
+                </div>
+              )}
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+    </>
+  );
+}
 
 function MapController() {
   const map = useMap();
@@ -229,15 +336,38 @@ export default function MapView() {
       {!routeMode && focusedLine && (() => {
         const fl = LINES.find(l => l.id === focusedLine);
         if (!fl) return null;
+        const liveBuses = busPositions.filter((b: BusPosition) => b.lineId === focusedLine);
         return (
-          <div style={{ background: fl.color }}
-            className="absolute top-3 left-3 z-[900] text-white rounded-xl px-4 py-2 shadow-xl flex items-center gap-3 text-sm max-w-xs">
-            <span className="font-black">{fl.name}</span>
-            <span className="opacity-80 text-xs truncate">{fl.route}</span>
-            <button onClick={() => dispatch(clearFocusedLine())}
-              className="bg-white/25 hover:bg-white/40 rounded-lg px-2 py-0.5 text-xs font-bold transition-colors flex-shrink-0">
-              ✕
-            </button>
+          <div className="absolute top-3 left-3 z-[900] rounded-2xl shadow-2xl overflow-hidden max-w-xs"
+            style={{ background: 'rgba(10,15,30,.92)', backdropFilter: 'blur(16px)', border: `1px solid ${fl.color}40` }}>
+            <div className="h-1" style={{ background: fl.color }} />
+            <div className="px-4 py-2.5 flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-white text-sm">{fl.name}</span>
+                  {liveBuses.length > 0 && (
+                    <span className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                      style={{ background: 'rgba(74,222,128,.15)', color: '#4ade80' }}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400" style={{ animation: 'live-pulse 2s infinite' }} />
+                      {liveBuses.length} bus
+                    </span>
+                  )}
+                </div>
+                <p className="text-[10px] truncate" style={{ color: '#64748b' }}>{fl.route}</p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="text-[10px] font-bold px-2 py-1 rounded-lg" style={{ background: fl.color + '20', color: fl.color }}>
+                  {fl.freq}
+                </div>
+                <button onClick={() => dispatch(clearFocusedLine())}
+                  className="w-6 h-6 rounded-lg flex items-center justify-center text-xs transition-colors"
+                  style={{ background: 'rgba(255,255,255,.08)', color: '#64748b' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(220,38,38,.2)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,.08)')}>
+                  ✕
+                </button>
+              </div>
+            </div>
           </div>
         );
       })()}
@@ -257,24 +387,42 @@ export default function MapView() {
         />
         <MapController />
 
-        {!routeMode && visibleLines.map(line => (
-          <BusLine key={line.id} line={line}
-            isFocused={focusedLine === line.id}
-            hasFocus={!!focusedLine} />
-        ))}
-
-        {!routeMode && visibleStops.map(stop => {
-          const mainOp = stop.operators[0];
-          const color  = OPERATORS[mainOp]?.color || '#1a56db';
-          const isHub  = stop.lines.length > 2;
-          const icon   = isHub ? makeTerminusIcon(color) : makeStopIcon(color, stop.operators.length > 1 ? 13 : 10);
+        {/* When a line is focused: show full overlay with numbered stops + arrows */}
+        {!routeMode && focusedLine && (() => {
+          const fl = LINES.find(l => l.id === focusedLine);
+          if (!fl) return null;
           return (
-            <Marker key={stop.id} position={[stop.lat, stop.lng]} icon={icon}
-              eventHandlers={{ click: () => dispatch(setSelectedStop(stop.id)) }}>
-              <Popup maxWidth={240} minWidth={210}><StopPopup stop={stop} /></Popup>
-            </Marker>
+            <>
+              {/* Dim all other lines */}
+              {visibleLines.filter(l => l.id !== focusedLine).map(line => (
+                <BusLine key={line.id} line={line} isFocused={false} hasFocus={true} />
+              ))}
+              {/* Full focused overlay */}
+              <FocusedLineOverlay line={fl} />
+            </>
           );
-        })}
+        })()}
+
+        {/* Normal mode: all lines + simple stop markers */}
+        {!routeMode && !focusedLine && (
+          <>
+            {visibleLines.map(line => (
+              <BusLine key={line.id} line={line} isFocused={false} hasFocus={false} />
+            ))}
+            {visibleStops.map(stop => {
+              const mainOp = stop.operators[0];
+              const color  = OPERATORS[mainOp]?.color || '#1a56db';
+              const isHub  = stop.lines.length > 2;
+              const icon   = isHub ? makeTerminusIcon(color) : makeStopIcon(color, stop.operators.length > 1 ? 13 : 10);
+              return (
+                <Marker key={stop.id} position={[stop.lat, stop.lng]} icon={icon}
+                  eventHandlers={{ click: () => dispatch(setSelectedStop(stop.id)) }}>
+                  <Popup maxWidth={240} minWidth={210}><StopPopup stop={stop} /></Popup>
+                </Marker>
+              );
+            })}
+          </>
+        )}
 
         {routeMode && route?.origin && route?.destination && (
           <>
@@ -322,19 +470,42 @@ export default function MapView() {
           const line = LINES.find(l => l.id === bus.lineId);
           const color = line?.color || '#10b981';
           const driver = MOCK_DRIVERS[bus.busId] ?? Object.values(MOCK_DRIVERS).find(d => d.lineId === bus.lineId);
+          const isOnFocusedLine = focusedLine && bus.lineId === focusedLine;
+          // Hide buses not on focused line
+          if (focusedLine && !isOnFocusedLine) return null;
+
+          const busIcon = isOnFocusedLine
+            ? L.divIcon({
+                className: '',
+                html: `<div style="position:relative;width:34px;height:34px">
+                  <div style="position:absolute;inset:0;border-radius:50%;background:${color}30;animation:pr 2s ease-out infinite"></div>
+                  <div style="position:absolute;inset:4px;border-radius:50%;background:${color};border:3px solid white;
+                    box-shadow:0 0 20px ${color},0 4px 12px rgba(0,0,0,.6);
+                    display:flex;align-items:center;justify-content:center;font-size:12px">🚌</div>
+                </div>
+                <style>@keyframes pr{0%{transform:scale(.8);opacity:.8}100%{transform:scale(2.2);opacity:0}}</style>`,
+                iconSize: [34, 34], iconAnchor: [17, 17],
+              })
+            : makeBusMarkerIcon(color, bus.speed, bus.occupancy);
+
           return (
-            <Marker key={i} position={[bus.lat, bus.lng]} icon={makeBusMarkerIcon(color, bus.speed, bus.occupancy)}>
-              <Popup maxWidth={220}>
+            <Marker key={i} position={[bus.lat, bus.lng]} icon={busIcon}
+              zIndexOffset={isOnFocusedLine ? 1000 : 0}>
+              <Popup maxWidth={240}>
                 <div style={{ padding: 12, fontFamily: 'Inter', background: '#1e293b', borderRadius: 12 }}>
-                  <div style={{ fontWeight: 900, color, fontSize: 13, marginBottom: 6 }}>
-                    {line?.name ?? bus.lineId} — {line?.operator}
+                  <div style={{ fontWeight: 900, color, fontSize: 13, marginBottom: 8 }}>
+                    {line?.name ?? bus.lineId}
+                    <span style={{ fontWeight: 500, color: '#64748b', marginLeft: 6, fontSize: 11 }}>{line?.operator}</span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, fontSize: 11, color: '#94a3b8' }}>
-                    <span>🚌 {driver?.plate ?? 'N/A'}</span>
-                    <span style={{ color: '#34d399', fontWeight: 700 }}>{bus.speed} km/h</span>
-                    <span>👤 {driver?.name ?? '—'}</span>
-                    <span>👥 {bus.occupancy}% plein</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 11 }}>
+                    <div style={{ color: '#94a3b8' }}>🚌 {driver?.plate ?? 'N/A'}</div>
+                    <div style={{ color: '#34d399', fontWeight: 700 }}>{bus.speed} km/h</div>
+                    <div style={{ color: '#94a3b8' }}>👤 {driver?.name ?? '—'}</div>
+                    <div style={{ color: '#94a3b8' }}>👥 {bus.occupancy}% plein</div>
                   </div>
+                  {driver?.phone && (
+                    <div style={{ marginTop: 8, fontSize: 10, color: '#475569' }}>📞 {driver.phone}</div>
+                  )}
                 </div>
               </Popup>
             </Marker>

@@ -1,87 +1,492 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { setFocusedLine, clearFocusedLine, setActiveTab, toggleFavLine } from '@/store/store';
-import { LINES, OPERATORS } from '@/data/transportData';
+import {
+  setFocusedLine, clearFocusedLine, setActiveTab,
+  toggleFavLine, visitLine, setMapCenter, setMapZoom, setSelectedStop,
+  setRouteOrigin, setRouteDestination,
+} from '@/store/store';
+import { LINES, OPERATORS, getNextDepartures, getAffluence } from '@/data/transportData';
+import { buildStopTimings, searchLinesByStop } from '@/utils/lineUtils';
+import type { Line, BusPosition } from '@/types';
 
-export default function LinesPage() {
-  const dispatch = useAppDispatch();
-  const { selectedOperator, focusedLine, busPositions } = useAppSelector(s=>s.mobility);
-  const { lineIds: favIds } = useAppSelector(s=>s.favorites);
-  const [search, setSearch] = useState('');
-  const [favsOnly, setFavsOnly] = useState(false);
+// ── Search mode toggle ─────────────────────────────────────────
+type SearchMode = 'line' | 'stop';
 
-  let lines = selectedOperator==='all' ? LINES : LINES.filter(l=>l.operator===selectedOperator);
-  if (search) { const q=search.toLowerCase(); lines=lines.filter(l=>l.name.toLowerCase().includes(q)||l.route.toLowerCase().includes(q)); }
-  if (favsOnly) lines=lines.filter(l=>favIds.includes(l.id));
-
-  const groups = Array.from(new Set(lines.map(l=>l.operator)));
-
+// ── Compact line card (list view) ─────────────────────────────
+function LineCard({ line, busCount, isFav, isRecent, onSelect, onFav }: {
+  line: Line; busCount: number; isFav: boolean; isRecent: boolean;
+  onSelect: () => void; onFav: () => void;
+}) {
+  const op = OPERATORS[line.operator];
   return (
-    <div className="flex flex-col h-full">
-      <div className="px-4 pt-4 pb-2 flex-shrink-0 space-y-2">
-        <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style={{color:'#475569'}}>🔍</span>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher une ligne…"
-            className="input pl-9" />
-          {search&&<button onClick={()=>setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs w-5 h-5 rounded-full flex items-center justify-center" style={{background:'rgba(255,255,255,.1)',color:'#64748b'}}>✕</button>}
+    <div className="flex items-stretch rounded-2xl overflow-hidden card mb-2 transition-all hover:border-white/15 active:scale-[.98] cursor-pointer group"
+      onClick={onSelect}>
+      {/* Color bar */}
+      <div className="w-1 flex-shrink-0" style={{ background: line.color }} />
+      <div className="flex-1 flex items-center gap-3 px-3 py-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="font-black text-white text-sm group-hover:text-blue-300 transition-colors">{line.name}</span>
+            <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full text-white" style={{ background: op?.color }}>{line.operator}</span>
+            {isRecent && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(250,204,21,.15)', color: '#fbbf24' }}>Récent</span>}
+          </div>
+          <div className="text-xs truncate" style={{ color: '#475569' }}>{line.route}</div>
+          <div className="flex items-center gap-3 mt-1">
+            <span className="text-[10px] font-bold" style={{ color: '#334155' }}>{line.freq}</span>
+            <span className="text-[10px]" style={{ color: '#334155' }}>·</span>
+            <span className="text-[10px] font-bold" style={{ color: line.color }}>{line.tarif} FCFA</span>
+            {line.stops.length > 0 && <span className="text-[10px]" style={{ color: '#334155' }}>{line.stops.length} arrêts</span>}
+          </div>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold" style={{color:'#475569'}}>{lines.length} ligne{lines.length>1?'s':''}</span>
-          <button onClick={()=>setFavsOnly(!favsOnly)}
-            className="text-xs font-bold px-3 py-1 rounded-full transition-all"
-            style={favsOnly?{background:'rgba(239,68,68,.1)',color:'#f87171',border:'1px solid rgba(239,68,68,.2)'}:{color:'#475569'}}>
-            {favsOnly?'❤️':'🤍'} Favoris
+        <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+          {busCount > 0 && (
+            <div className="flex items-center gap-1 px-2 py-1 rounded-lg" style={{ background: 'rgba(74,222,128,.1)' }}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#4ade80', animation: 'live-pulse 2s infinite' }} />
+              <span className="text-[10px] font-black" style={{ color: '#4ade80' }}>{busCount} bus</span>
+            </div>
+          )}
+          <button onClick={e => { e.stopPropagation(); onFav(); }}
+            className="text-base transition-all hover:scale-125 active:scale-90"
+            style={{ color: isFav ? '#f87171' : '#1e293b' }}>
+            {isFav ? '❤️' : '🤍'}
           </button>
         </div>
       </div>
+      <div className="flex items-center px-3" style={{ color: '#334155' }}>→</div>
+    </div>
+  );
+}
 
-      <div className="flex-1 overflow-y-auto px-4 pb-20">
-        {lines.length===0 ? (
-          <div className="text-center py-16" style={{color:'#1e293b'}}>
-            <div className="text-4xl mb-3">🚌</div>
-            <p className="font-bold text-sm">{favsOnly?'Aucun favori':'Aucune ligne'}</p>
-          </div>
-        ) : groups.map(op => {
-          const opLines=lines.filter(l=>l.operator===op);
-          return (
-            <div key={op} className="mb-5">
-              <div className="flex items-center gap-2 mb-2 sticky top-0 py-1.5" style={{background:'var(--c-bg)'}}>
-                <span className="w-2.5 h-2.5 rounded-full" style={{background:OPERATORS[op]?.color}}/>
-                <span className="text-[10px] font-black uppercase tracking-widest" style={{color:OPERATORS[op]?.color}}>{OPERATORS[op]?.fullName||op}</span>
-                <span className="text-[9px]" style={{color:'#1e293b'}}>({opLines.length})</span>
+// ── Stop row inside line detail ────────────────────────────────
+function StopRow({ idx, stop, cumMin, isTerminus, distFromPrev, isNearUser, busOnStop, onTap }: {
+  idx: number; stop: any; cumMin: number; isTerminus: boolean;
+  distFromPrev: number; isNearUser: boolean; busOnStop: boolean; onTap: () => void;
+}) {
+  return (
+    <button onClick={onTap}
+      className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all active:scale-[.98] group"
+      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.04)')}
+      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+
+      {/* Index + connector */}
+      <div className="flex flex-col items-center flex-shrink-0" style={{ width: 28 }}>
+        {!isTerminus && idx > 1 && (
+          <div className="w-0.5 h-2 -mt-1 mb-1" style={{ background: 'rgba(255,255,255,.1)' }} />
+        )}
+        <div className={`flex items-center justify-center font-black text-xs rounded-full flex-shrink-0 ${isTerminus ? 'w-7 h-7 border-2' : 'w-5 h-5'}`}
+          style={isTerminus
+            ? { background: 'var(--c-bg)', borderColor: 'rgba(255,255,255,.3)', color: 'white' }
+            : { background: 'rgba(255,255,255,.08)', color: '#64748b' }}>
+          {isTerminus ? (idx === 1 ? 'A' : 'Z') : idx}
+        </div>
+        {!isTerminus && (
+          <div className="w-0.5 h-2 mt-1" style={{ background: 'rgba(255,255,255,.1)' }} />
+        )}
+      </div>
+
+      {/* Stop info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className={`text-sm ${isTerminus ? 'font-black text-white' : 'font-medium'} truncate group-hover:text-blue-300 transition-colors`}
+            style={!isTerminus ? { color: '#cbd5e1' } : {}}>
+            {stop.name}
+          </span>
+          {isNearUser && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold flex-shrink-0" style={{ background: 'rgba(37,99,235,.2)', color: '#60a5fa' }}>📍 Proche</span>}
+          {busOnStop && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#4ade80', boxShadow: '0 0 6px #4ade80', animation: 'live-pulse 2s infinite' }} />}
+        </div>
+        <div className="text-[10px] mt-0.5" style={{ color: '#334155' }}>
+          {stop.zone}{distFromPrev > 0 ? ` · ${distFromPrev < 1000 ? `${distFromPrev} m` : `${(distFromPrev / 1000).toFixed(1)} km`}` : ''}
+        </div>
+      </div>
+
+      {/* Time */}
+      <div className="text-right flex-shrink-0">
+        <div className="text-sm font-black" style={{ color: cumMin === 0 ? '#4ade80' : 'white' }}>
+          {cumMin === 0 ? 'Départ' : `+${cumMin} min`}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+// ── Line detail panel ─────────────────────────────────────────
+function LineDetail({ lineId, onBack }: { lineId: string; onBack: () => void }) {
+  const dispatch = useAppDispatch();
+  const { busPositions, userLocation } = useAppSelector(s => s.mobility);
+  const { lineIds: favIds } = useAppSelector(s => s.favorites);
+
+  const line = LINES.find(l => l.id === lineId);
+  if (!line) return null;
+
+  const op = OPERATORS[line.operator];
+  const timings = useMemo(() => buildStopTimings(line), [lineId]);
+  const liveBuses = busPositions.filter((b: BusPosition) => b.lineId === lineId);
+  const isFav = favIds.includes(lineId);
+  const afflu = getAffluence(lineId);
+
+  const focusStop = (stop: any) => {
+    dispatch(setSelectedStop(stop.id));
+    dispatch(setMapCenter([stop.lat, stop.lng]));
+    dispatch(setMapZoom(16));
+    dispatch(setActiveTab('plan'));
+  };
+
+  const planFromLine = () => {
+    const first = timings[0]?.stop;
+    const last  = timings[timings.length - 1]?.stop;
+    if (first && last) {
+      dispatch(setRouteOrigin(first));
+      dispatch(setRouteDestination(last));
+      dispatch(setActiveTab('plan'));
+    }
+  };
+
+  const isNearUser = (stop: any) => {
+    if (!userLocation) return false;
+    const d = Math.sqrt((stop.lat - userLocation[0]) ** 2 + (stop.lng - userLocation[1]) ** 2);
+    return d < 0.004; // ~400m
+  };
+
+  const busOnStop = (stopId: string) => liveBuses.some((b: BusPosition) => {
+    const closestStop = timings.reduce((a, t) =>
+      Math.abs(b.lat - t.stop.lat) + Math.abs(b.lng - t.stop.lng) <
+      Math.abs(b.lat - a.stop.lat) + Math.abs(b.lng - a.stop.lng) ? t : a
+    );
+    return closestStop.stop.id === stopId;
+  });
+
+  const totalMin = timings[timings.length - 1]?.cumMin ?? 0;
+
+  return (
+    <div className="flex flex-col h-full">
+
+      {/* Header */}
+      <div className="flex-shrink-0">
+        <button onClick={onBack}
+          className="flex items-center gap-2 px-4 py-3 text-xs font-bold w-full text-left transition-colors"
+          style={{ color: '#64748b', borderBottom: '1px solid var(--c-border)' }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'white')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#64748b')}>
+          ← Toutes les lignes
+        </button>
+
+        <div className="px-4 pt-4 pb-3" style={{ background: `linear-gradient(160deg, ${line.color}25 0%, transparent 100%)`, borderBottom: '1px solid var(--c-border)' }}>
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-3 h-3 rounded-full" style={{ background: line.color }} />
+                <h2 className="text-xl font-black text-white">{line.name}</h2>
+                {op && <span className="text-[10px] font-black px-2 py-0.5 rounded-full text-white" style={{ background: op.color }}>{line.operator}</span>}
               </div>
-              {opLines.map(line=>{
-                const active=focusedLine===line.id;
-                const isFav=favIds.includes(line.id);
-                const buses=busPositions.filter(b=>b.lineId===line.id).length;
-                return (
-                  <div key={line.id} className="flex items-center rounded-xl mb-1 transition-all"
-                    style={{background:active?'rgba(255,255,255,.06)':'transparent',border:`1px solid ${active?'rgba(255,255,255,.12)':'transparent'}`}}
-                    onMouseEnter={e=>{if(!active)(e.currentTarget.style.background='rgba(255,255,255,.04)');}}
-                    onMouseLeave={e=>{if(!active)(e.currentTarget.style.background='transparent');}}>
-                    <button onClick={()=>{if(active)dispatch(clearFocusedLine());else{dispatch(setFocusedLine(line.id));dispatch(setActiveTab('plan'));}}}
-                      className="flex-1 flex items-center gap-3 px-3 py-3 text-left min-w-0">
-                      <span className="w-1.5 h-8 rounded-full flex-shrink-0" style={{background:line.color}}/>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold text-white truncate">{line.name}</div>
-                        <div className="text-xs truncate" style={{color:'#475569'}}>{line.route}</div>
-                      </div>
-                      <div className="text-right flex-shrink-0 ml-2">
-                        {buses>0&&<div className="text-[10px] font-black px-1.5 py-0.5 rounded-md mb-0.5 text-center" style={{background:'rgba(74,222,128,.1)',color:'#4ade80'}}>{buses}</div>}
-                        <div className="text-[10px]" style={{color:'#334155'}}>{line.tarif} F</div>
-                      </div>
-                    </button>
-                    <button onClick={()=>dispatch(toggleFavLine(line.id))}
-                      className="pr-3 text-base transition-all hover:scale-125 active:scale-90"
-                      style={{color:isFav?'#f87171':'#1e293b'}}>
-                      {isFav?'❤️':'🤍'}
-                    </button>
-                  </div>
-                );
-              })}
+              <p className="text-sm" style={{ color: '#64748b' }}>{line.route}</p>
             </div>
-          );
-        })}
+            <button onClick={() => dispatch(toggleFavLine(lineId))}
+              className="text-2xl mt-1 transition-all hover:scale-125 active:scale-90 flex-shrink-0"
+              style={{ color: isFav ? '#f87171' : '#1e293b' }}>
+              {isFav ? '❤️' : '🤍'}
+            </button>
+          </div>
+
+          {/* KPIs */}
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { v: totalMin, u: 'min', l: 'Durée' },
+              { v: line.tarif, u: 'F', l: 'Tarif' },
+              { v: timings.length, u: '', l: 'Arrêts' },
+              { v: line.freq, u: '', l: 'Fréq.' },
+            ].map((s, i) => (
+              <div key={i} className="text-center py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,.05)' }}>
+                <div className="text-sm font-black text-white leading-none">{s.v}<span className="text-[9px] ml-0.5" style={{ color: '#475569' }}>{s.u}</span></div>
+                <div className="text-[9px] mt-0.5 font-medium" style={{ color: '#334155' }}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Live buses + affluence */}
+        {(liveBuses.length > 0 || afflu) && (
+          <div className="px-4 py-3 flex items-center justify-between flex-shrink-0" style={{ borderBottom: '1px solid var(--c-border)', background: 'rgba(255,255,255,.02)' }}>
+            {liveBuses.length > 0 ? (
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full" style={{ background: '#4ade80', animation: 'live-pulse 2s infinite' }} />
+                <span className="text-xs font-bold" style={{ color: '#4ade80' }}>{liveBuses.length} bus en circulation</span>
+                <span className="text-xs" style={{ color: '#334155' }}>· moy. {Math.round(liveBuses.reduce((a, b) => a + b.speed, 0) / liveBuses.length)} km/h</span>
+              </div>
+            ) : (
+              <span className="text-xs" style={{ color: '#334155' }}>Aucun bus actif</span>
+            )}
+            {afflu && (
+              <span className="badge" style={{ background: afflu.color + '20', color: afflu.color, border: `1px solid ${afflu.color}30`, fontSize: 10 }}>
+                {afflu.emoji} {afflu.level}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Live bus chips */}
+        {liveBuses.length > 0 && (
+          <div className="px-4 py-2 flex gap-2 overflow-x-auto scrollbar-hide flex-shrink-0" style={{ borderBottom: '1px solid var(--c-border)' }}>
+            {liveBuses.map((b: BusPosition, i: number) => (
+              <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl flex-shrink-0"
+                style={{ background: line.color + '18', border: `1px solid ${line.color}30` }}>
+                <span className="text-sm">🚌</span>
+                <div>
+                  <div className="text-[10px] font-black text-white">{b.speed} km/h</div>
+                  <div className="text-[9px]" style={{ color: '#64748b' }}>{b.occupancy}% plein</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Stop list */}
+      <div className="flex-1 overflow-y-auto py-2">
+        <div className="px-4 pb-2 pt-1">
+          <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#334155' }}>
+            Arrêts de la ligne ({timings.length})
+          </p>
+        </div>
+        {timings.map(({ stop, index, cumMin, isTerminus, distFromPrev }) => (
+          <StopRow
+            key={stop.id}
+            idx={index} stop={stop} cumMin={cumMin}
+            isTerminus={isTerminus} distFromPrev={distFromPrev}
+            isNearUser={isNearUser(stop)}
+            busOnStop={busOnStop(stop.id)}
+            onTap={() => focusStop(stop)}
+          />
+        ))}
+      </div>
+
+      {/* Actions */}
+      <div className="flex-shrink-0 p-4 flex gap-2" style={{ borderTop: '1px solid var(--c-border)' }}>
+        <button onClick={planFromLine}
+          className="flex-1 btn btn-primary">
+          🗺️ Planifier ce trajet
+        </button>
+        <button onClick={() => { dispatch(setFocusedLine(lineId)); dispatch(setActiveTab('plan')); }}
+          className="flex-1 btn btn-ghost">
+          📍 Voir sur carte
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Main LinesPage ─────────────────────────────────────────────
+export default function LinesPage() {
+  const dispatch = useAppDispatch();
+  const { selectedOperator, busPositions } = useAppSelector(s => s.mobility);
+  const { lineIds: favIds, recentLines } = useAppSelector(s => s.favorites);
+
+  const [search, setSearch]         = useState('');
+  const [searchMode, setSearchMode] = useState<SearchMode>('line');
+  const [favsOnly, setFavsOnly]     = useState(false);
+  const [selectedLine, setSelectedLine] = useState<string | null>(null);
+
+  // Direct line search
+  const directLines = useMemo(() => {
+    let lines = selectedOperator === 'all' ? LINES : LINES.filter(l => l.operator === selectedOperator);
+    if (search) {
+      const q = search.toLowerCase();
+      lines = lines.filter(l => l.name.toLowerCase().includes(q) || l.route.toLowerCase().includes(q));
+    }
+    if (favsOnly) lines = lines.filter(l => favIds.includes(l.id));
+    return lines;
+  }, [search, selectedOperator, favsOnly, favIds]);
+
+  // Inverse stop search
+  const stopSearchResults = useMemo(() =>
+    searchMode === 'stop' ? searchLinesByStop(search) : [],
+    [search, searchMode]
+  );
+
+  const busCount = (lineId: string) =>
+    busPositions.filter((b: BusPosition) => b.lineId === lineId).length;
+
+  const handleSelectLine = (lineId: string) => {
+    setSelectedLine(lineId);
+    dispatch(visitLine(lineId));
+    dispatch(setFocusedLine(lineId));
+  };
+
+  // ── Line detail view ───────────────────────────────────────
+  if (selectedLine) {
+    return (
+      <LineDetail
+        lineId={selectedLine}
+        onBack={() => { setSelectedLine(null); dispatch(clearFocusedLine()); }}
+      />
+    );
+  }
+
+  // ── List view ──────────────────────────────────────────────
+  const groups = Array.from(new Set(directLines.map(l => l.operator)));
+  const recentLineDatas = recentLines.map(id => LINES.find(l => l.id === id)).filter(Boolean) as Line[];
+
+  return (
+    <div className="flex flex-col h-full">
+
+      {/* Search bar + mode toggle */}
+      <div className="px-4 pt-4 pb-2 flex-shrink-0 space-y-2">
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style={{ color: '#475569' }}>
+            {searchMode === 'line' ? '🔍' : '📍'}
+          </span>
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder={searchMode === 'line' ? 'Rechercher une ligne…' : 'Arrêt, quartier… (ex: Liberté, Yoff)'}
+            className="input pl-9" />
+          {search && (
+            <button onClick={() => setSearch('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center text-xs"
+              style={{ background: 'rgba(255,255,255,.1)', color: '#64748b' }}>✕</button>
+          )}
+        </div>
+
+        {/* Mode + filters row */}
+        <div className="flex items-center gap-2">
+          {/* Search mode toggle */}
+          <div className="flex gap-0.5 p-0.5 rounded-xl flex-shrink-0" style={{ background: 'var(--c-surface)' }}>
+            <button onClick={() => setSearchMode('line')}
+              className="px-2.5 py-1 rounded-lg text-[10px] font-black transition-all"
+              style={searchMode === 'line'
+                ? { background: '#2563eb', color: 'white' }
+                : { color: '#475569' }}>
+              Par ligne
+            </button>
+            <button onClick={() => setSearchMode('stop')}
+              className="px-2.5 py-1 rounded-lg text-[10px] font-black transition-all"
+              style={searchMode === 'stop'
+                ? { background: '#059669', color: 'white' }
+                : { color: '#475569' }}>
+              Par arrêt
+            </button>
+          </div>
+
+          <div className="flex-1" />
+
+          <button onClick={() => setFavsOnly(!favsOnly)}
+            className="text-[10px] font-bold px-3 py-1.5 rounded-xl transition-all"
+            style={favsOnly
+              ? { background: 'rgba(239,68,68,.1)', color: '#f87171', border: '1px solid rgba(239,68,68,.2)' }
+              : { color: '#475569' }}>
+            {favsOnly ? '❤️' : '🤍'} Favoris
+          </button>
+        </div>
+
+        {/* Count */}
+        <p className="text-[10px] font-semibold" style={{ color: '#334155' }}>
+          {searchMode === 'stop' && search
+            ? `${stopSearchResults.length} ligne${stopSearchResults.length > 1 ? 's' : ''} via cet arrêt`
+            : `${directLines.length} ligne${directLines.length > 1 ? 's' : ''}`}
+        </p>
+      </div>
+
+      {/* List */}
+      <div className="flex-1 overflow-y-auto px-4 pb-20">
+
+        {/* Stop-based search results */}
+        {searchMode === 'stop' && search && (
+          <>
+            {stopSearchResults.length === 0 ? (
+              <div className="text-center py-12" style={{ color: '#1e293b' }}>
+                <div className="text-4xl mb-2">🚏</div>
+                <p className="font-bold text-sm">Aucune ligne pour cet arrêt</p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {/* Group by matched stop */}
+                {Array.from(new Set(stopSearchResults.map(r => r.matchedStop.id))).map(stopId => {
+                  const results = stopSearchResults.filter(r => r.matchedStop.id === stopId);
+                  const stop = results[0].matchedStop;
+                  return (
+                    <div key={stopId} className="mb-4">
+                      <div className="flex items-center gap-2 mb-2 px-1">
+                        <span className="text-sm">📍</span>
+                        <span className="text-xs font-black text-white">{stop.name}</span>
+                        <span className="text-[10px]" style={{ color: '#334155' }}>{stop.zone}</span>
+                      </div>
+                      {results.map(({ line }) => (
+                        <LineCard key={line.id} line={line}
+                          busCount={busCount(line.id)} isFav={favIds.includes(line.id)}
+                          isRecent={recentLines.includes(line.id)}
+                          onSelect={() => handleSelectLine(line.id)}
+                          onFav={() => dispatch(toggleFavLine(line.id))} />
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Direct search / normal list */}
+        {searchMode === 'line' && (
+          <>
+            {/* Recent lines */}
+            {!search && !favsOnly && recentLineDatas.length > 0 && (
+              <div className="mb-4">
+                <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: '#334155' }}>
+                  Récemment consultées
+                </p>
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                  {recentLineDatas.map(line => (
+                    <button key={line.id} onClick={() => handleSelectLine(line.id)}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl flex-shrink-0 transition-all active:scale-95"
+                      style={{ background: line.color + '20', border: `1px solid ${line.color}35` }}>
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: line.color }} />
+                      <span className="text-xs font-black text-white">{line.name}</span>
+                      {busCount(line.id) > 0 && <span className="text-[9px] font-bold" style={{ color: '#4ade80' }}>{busCount(line.id)} 🚌</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Favorite lines */}
+            {!search && !favsOnly && favIds.length > 0 && (
+              <div className="mb-4">
+                <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: '#334155' }}>Favoris</p>
+                {LINES.filter(l => favIds.includes(l.id)).map(line => (
+                  <LineCard key={line.id} line={line}
+                    busCount={busCount(line.id)} isFav={true} isRecent={recentLines.includes(line.id)}
+                    onSelect={() => handleSelectLine(line.id)}
+                    onFav={() => dispatch(toggleFavLine(line.id))} />
+                ))}
+              </div>
+            )}
+
+            {/* All / filtered lines grouped by operator */}
+            {directLines.length === 0 ? (
+              <div className="text-center py-12" style={{ color: '#1e293b' }}>
+                <div className="text-4xl mb-2">🚌</div>
+                <p className="font-bold text-sm">Aucune ligne</p>
+              </div>
+            ) : groups.map(op => {
+              const opLines = directLines.filter(l => l.operator === op);
+              return (
+                <div key={op} className="mb-4">
+                  <div className="flex items-center gap-2 mb-2 sticky top-0 py-1" style={{ background: 'var(--c-bg)' }}>
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: OPERATORS[op]?.color }} />
+                    <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: OPERATORS[op]?.color }}>
+                      {OPERATORS[op]?.fullName || op}
+                    </span>
+                    <span className="text-[9px]" style={{ color: '#1e293b' }}>({opLines.length})</span>
+                  </div>
+                  {opLines.map(line => (
+                    <LineCard key={line.id} line={line}
+                      busCount={busCount(line.id)} isFav={favIds.includes(line.id)}
+                      isRecent={recentLines.includes(line.id)}
+                      onSelect={() => handleSelectLine(line.id)}
+                      onFav={() => dispatch(toggleFavLine(line.id))} />
+                  ))}
+                </div>
+              );
+            })}
+          </>
+        )}
       </div>
     </div>
   );
