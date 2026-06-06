@@ -2,6 +2,8 @@ import React from 'react';
 import { useAppDispatch } from '@/store/hooks';
 import { setActiveTab } from '@/store/store';
 import RoutePanel from '@/components/RoutePanel';
+import RouteMap from '@/components/RouteMap';
+import { useAppSelector } from '@/store/hooks';
 
 const FARES = [
   { id:'DDD',  emoji:'🚌', label:'Bus Urbain',    price:'200', color:'#2563eb' },
@@ -13,7 +15,9 @@ const FARES = [
 export default function PlanPage() {
   const dispatch = useAppDispatch();
   return (
-    <div className="overflow-y-auto pb-6">
+    <div className="flex flex-col h-full">
+      <RouteMap show={hasRoute} onClose={() => dispatch(clearRoute())} />
+      <div className="flex-1 overflow-y-auto pb-6">
       <RoutePanel />
 
       {/* Tariffs */}
@@ -42,6 +46,7 @@ export default function PlanPage() {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }
