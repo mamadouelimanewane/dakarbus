@@ -179,32 +179,25 @@ export default function PlanPage() {
               </button>
             )}
 
-            {/* Tariffs + M-Ticket */}
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--c-muted)' }}>
-                Tarifs réseau
-              </p>
-              <div className="grid grid-cols-2 gap-2 rounded-2xl overflow-hidden p-3"
-                style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
-                {[
-                  { emoji:'🚌', label:'Bus Urbain',    price:'200', color:'#2563eb' },
-                  { emoji:'🚐', label:'Car Rapide',    price:'150', color:'#e11d48' },
-                  { emoji:'🚍', label:'BRT Climatisé', price:'300', color:'#7c3aed' },
-                  { emoji:'🚆', label:'TER Train',     price:'500', color:'#059669' },
-                ].map(f => (
-                  <div key={f.label} className="flex items-center gap-2 p-2.5 rounded-xl" style={{ background: f.color + '10' }}>
-                    <span className="text-lg">{f.emoji}</span>
-                    <div>
-                      <div className="text-[11px] font-bold truncate" style={{ color: 'var(--c-text)' }}>{f.label}</div>
-                      <div className="text-sm font-black leading-none mt-0.5" style={{ color: f.color }}>{f.price}<span className="text-[9px] opacity-70 ml-0.5">F</span></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            {/* Quick actions */}
+            <div className="grid grid-cols-2 gap-2">
               <button onClick={() => dispatch(setActiveTab('tickets'))}
-                className="w-full py-3 rounded-xl text-sm font-black text-white mt-2 transition-all active:scale-95"
-                style={{ background: 'linear-gradient(135deg,#1d4ed8,#7c3aed)', boxShadow: '0 6px 20px rgba(37,99,235,.3)' }}>
-                💳 Acheter un M-Ticket
+                className="flex items-center gap-2.5 p-3.5 rounded-2xl text-left transition-all active:scale-95"
+                style={{ background: 'linear-gradient(135deg,rgba(37,99,235,.18),rgba(37,99,235,.08))', border: '1px solid rgba(37,99,235,.25)' }}>
+                <span className="text-2xl">💳</span>
+                <div>
+                  <div className="text-xs font-black text-white">M-Ticket</div>
+                  <div className="text-[10px] mt-0.5" style={{ color: '#60a5fa' }}>Acheter un billet</div>
+                </div>
+              </button>
+              <button onClick={() => dispatch(setActiveTab('lines'))}
+                className="flex items-center gap-2.5 p-3.5 rounded-2xl text-left transition-all active:scale-95"
+                style={{ background: 'linear-gradient(135deg,rgba(124,58,237,.18),rgba(124,58,237,.08))', border: '1px solid rgba(124,58,237,.25)' }}>
+                <span className="text-2xl">🗺️</span>
+                <div>
+                  <div className="text-xs font-black text-white">Lignes</div>
+                  <div className="text-[10px] mt-0.5" style={{ color: '#a78bfa' }}>Voir le réseau</div>
+                </div>
               </button>
             </div>
 

@@ -304,12 +304,12 @@ export default function RoutePanel() {
   const [noRoute, setNoRoute]   = useState(false);
   const [nearestInfo, setNearestInfo] = useState<{ stop: Stop; meters: number } | null>(null);
 
+  // Détecte l'arrêt le plus proche mais NE pré-remplit PAS l'origine
   useEffect(() => {
-    if (!userLocation || route.origin) return;
+    if (!userLocation) return;
     const res = getNearestStop(userLocation[0], userLocation[1]);
     if (!res) return;
     setNearestInfo({ stop: res.stop, meters: res.distanceMeters });
-    dispatch(setRouteOrigin(res.stop));
   }, [userLocation]);
 
   const calculate = () => {
@@ -386,16 +386,23 @@ export default function RoutePanel() {
         Planifier un trajet
       </h2>
 
-      {nearestInfo && !options.length && (
-        <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs animate-fade-up"
+      {nearestInfo && !route.origin && !options.length && (
+        <button
+          onClick={() => { dispatch(setRouteOrigin(nearestInfo.stop)); setOptions([]); setSelected(null); setNoRoute(false); }}
+          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs animate-fade-up transition-all active:scale-[.98]"
           style={{ background: 'rgba(37,99,235,.08)', border: '1px solid rgba(37,99,235,.2)' }}>
           <span>📍</span>
-          <span className="font-bold text-white">Arrêt le plus proche :</span>
-          <span style={{ color: '#64748b' }}>{route.origin?.name}</span>
-          <span style={{ color: '#334155' }}>
-            {nearestInfo.meters < 1000 ? `${nearestInfo.meters} m` : `${(nearestInfo.meters / 1000).toFixed(1)} km`}
+          <div className="flex-1 text-left">
+            <span className="font-bold text-white">Arrêt le plus proche :</span>
+            <span className="ml-1.5" style={{ color: '#60a5fa' }}>{nearestInfo.stop.name}</span>
+            <span className="ml-1.5" style={{ color: '#334155' }}>
+              {nearestInfo.meters < 1000 ? `${nearestInfo.meters} m` : `${(nearestInfo.meters / 1000).toFixed(1)} km`}
+            </span>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md" style={{ background: 'rgba(37,99,235,.2)', color: '#60a5fa' }}>
+            Utiliser →
           </span>
-        </div>
+        </button>
       )}
 
       {/* Origin */}
