@@ -1,0 +1,16 @@
+{
+  "name": "SunuBus — Transport Dakar",
+  "short_name": "SunuBus",
+  "description": "Planifiez vos trajets DDD, AFTU, BRT et TER à Dakar en temps réel.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0f1e",
+  "theme_color": "#0a0f1e",
+  "orientation": "portrait-primary",
+  "lang": "fr",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "categories": ["travel", "utilities"],
+  "screenshots": []
+}

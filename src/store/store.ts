@@ -251,7 +251,9 @@ const journeySlice = createSlice({
       s.history.unshift({
         id: s.active.id,
         originName: s.active.originStop.name,
+        originId: s.active.originStop.id,
         destName: s.active.destinationStop.name,
+        destId: s.active.destinationStop.id,
         lineId: s.active.lineId,
         operator: s.active.operator,
         fare: s.active.fare,

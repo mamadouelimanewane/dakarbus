@@ -8,6 +8,13 @@ import 'leaflet/dist/leaflet.css';
 // Replaced react-content with react-dom/client
 import { createRoot } from 'react-dom/client';
 
+// Register PWA service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {/* non-critical */});
+  });
+}
+
 const root = document.getElementById('root');
 if (root) {
   // StrictMode disabled: react-leaflet hooks (useMap) are incompatible with double-mount

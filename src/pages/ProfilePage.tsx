@@ -1,127 +1,229 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { toggleFavStop, toggleFavLine, logout } from '@/store/store';
+import { toggleFavStop, toggleFavLine, logout, setRouteOrigin, setRouteDestination, setActiveTab } from '@/store/store';
 import { STOPS, LINES, OPERATORS } from '@/data/transportData';
 
 export default function ProfilePage() {
   const dispatch = useAppDispatch();
-  const { tripCount, totalFCFA, co2SavedKg, favOperator, stopIds, lineIds } = useAppSelector(s=>s.favorites);
-  const { myTickets } = useAppSelector(s=>s.tickets);
-  const { name } = useAppSelector(s=>s.auth);
+  const { tripCount, totalFCFA, co2SavedKg, favOperator, stopIds, lineIds } = useAppSelector(s => s.favorites);
+  const { myTickets } = useAppSelector(s => s.tickets);
+  const { name } = useAppSelector(s => s.auth);
+  const { history } = useAppSelector(s => s.journey);
+  const [tab, setTab] = useState<'stats' | 'history' | 'favs'>('stats');
 
-  const favStops  = STOPS.filter(s=>stopIds.includes(s.id));
-  const favLines  = LINES.filter(l=>lineIds.includes(l.id));
-  const valid     = myTickets.filter(t=>t.status==='valid').length;
-  const ecoLevel  = co2SavedKg>=10?'Or 🥇':co2SavedKg>=5?'Argent 🥈':co2SavedKg>0?'Bronze 🥉':'';
-  const ecoPct    = Math.min(100,(co2SavedKg/10)*100);
+  const favStops  = STOPS.filter(s => stopIds.includes(s.id));
+  const favLines  = LINES.filter(l => lineIds.includes(l.id));
+  const valid     = myTickets.filter(t => t.status === 'valid').length;
+  const ecoLevel  = co2SavedKg >= 10 ? 'Or 🥇' : co2SavedKg >= 5 ? 'Argent 🥈' : co2SavedKg > 0 ? 'Bronze 🥉' : '';
+  const ecoPct    = Math.min(100, (co2SavedKg / 10) * 100);
+
+  const handleRefaire = (rec: { originId?: string; destId?: string }) => {
+    const origin = STOPS.find(s => s.id === rec.originId);
+    const dest   = STOPS.find(s => s.id === rec.destId);
+    if (!origin || !dest) return;
+    dispatch(setRouteOrigin(origin));
+    dispatch(setRouteDestination(dest));
+    dispatch(setActiveTab('plan'));
+  };
 
   return (
     <div className="overflow-y-auto pb-20">
       {/* Hero */}
-      <div className="relative px-4 pt-8 pb-7 text-center overflow-hidden"
-        style={{background:'linear-gradient(160deg,rgba(29,78,216,.3) 0%,rgba(10,15,30,1) 100%)'}}>
+      <div className="relative px-4 pt-8 pb-6 text-center overflow-hidden"
+        style={{ background: 'linear-gradient(160deg,rgba(29,78,216,.3) 0%,rgba(10,15,30,1) 100%)' }}>
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {['🚌','🚐','🚍','🚆'].map((e,i)=>(
-            <div key={i} className="absolute text-5xl select-none" style={{opacity:.04,top:`${8+i*24}%`,left:`${i*27}%`,transform:`rotate(${i*14-16}deg)`}}>{e}</div>
+          {['🚌','🚐','🚍','🚆'].map((e, i) => (
+            <div key={i} className="absolute text-5xl select-none"
+              style={{ opacity: .04, top: `${8+i*24}%`, left: `${i*27}%`, transform: `rotate(${i*14-16}deg)` }}>{e}</div>
           ))}
         </div>
         <div className="relative">
           <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl"
-            style={{background:'linear-gradient(135deg,rgba(37,99,235,.3),rgba(124,58,237,.3))',border:'1.5px solid rgba(255,255,255,.1)'}}>
+            style={{ background: 'linear-gradient(135deg,rgba(37,99,235,.3),rgba(124,58,237,.3))', border: '1.5px solid rgba(255,255,255,.1)' }}>
             👤
           </div>
-          <h2 className="text-2xl font-black text-white">{name||'Voyageur'}</h2>
-          <p className="text-sm mt-1 font-medium" style={{color:'rgba(147,197,253,.6)'}}>
-            {favOperator ? `Fidèle ${OPERATORS[favOperator]?.fullName||favOperator}` : 'Voyageur SunuBus'}
+          <h2 className="text-2xl font-black text-white">{name || 'Voyageur'}</h2>
+          <p className="text-sm mt-1 font-medium" style={{ color: 'rgba(147,197,253,.6)' }}>
+            {favOperator ? `Fidèle ${OPERATORS[favOperator]?.fullName || favOperator}` : 'Voyageur SunuBus'}
           </p>
-          {ecoLevel&&<span className="inline-block mt-2 text-xs font-bold px-3 py-1 rounded-full" style={{background:'rgba(5,150,105,.15)',color:'#34d399',border:'1px solid rgba(5,150,105,.2)'}}>Médaille {ecoLevel}</span>}
+          {ecoLevel && (
+            <span className="inline-block mt-2 text-xs font-bold px-3 py-1 rounded-full"
+              style={{ background: 'rgba(5,150,105,.15)', color: '#34d399', border: '1px solid rgba(5,150,105,.2)' }}>
+              Médaille {ecoLevel}
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="px-4 space-y-5 mt-1">
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            {e:'🚌',l:'Voyages',    v:tripCount,                         u:'',      c:'#60a5fa'},
-            {e:'🎫',l:'Billets',    v:valid,                             u:'valides',c:'#a78bfa'},
-            {e:'💰',l:'Dépenses',   v:totalFCFA.toLocaleString('fr-FR'),  u:'FCFA',  c:'#fbbf24'},
-            {e:'🌿',l:'CO₂ évité', v:co2SavedKg.toFixed(1),              u:'kg',    c:'#34d399'},
-          ].map((s,i)=>(
-            <div key={i} className="card rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xl">{s.e}</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider" style={{color:'#334155'}}>{s.l}</span>
-              </div>
-              <div className="font-black text-white" style={{fontSize:22}}>
-                {s.v}<span className="text-xs font-semibold ml-1" style={{color:'#475569'}}>{s.u}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Tab nav */}
+      <div className="flex px-4 gap-2 mb-4">
+        {([['stats','📊 Stats'], ['history','🕐 Historique'], ['favs','⭐ Favoris']] as const).map(([id, label]) => (
+          <button key={id} onClick={() => setTab(id)}
+            className="flex-1 py-2 rounded-xl text-xs font-black transition-all"
+            style={tab === id
+              ? { background: 'rgba(37,99,235,.25)', color: '#60a5fa', border: '1px solid rgba(37,99,235,.4)' }
+              : { background: 'rgba(255,255,255,.04)', color: '#475569', border: '1px solid var(--c-border)' }}>
+            {label}
+          </button>
+        ))}
+      </div>
 
-        {/* Eco */}
-        <div className="rounded-2xl overflow-hidden" style={{background:'linear-gradient(135deg,rgba(5,79,44,.8),rgba(6,78,59,.8))',border:'1px solid rgba(5,150,105,.2)'}}>
-          <div className="p-4 flex items-start gap-4">
-            <div className="text-4xl">🌍</div>
-            <div className="flex-1">
-              <h4 className="font-black text-white">Impact Écologique</h4>
-              <p className="text-sm mt-0.5 font-medium" style={{color:'#6ee7b7'}}>
-                {co2SavedKg>0?`${co2SavedKg.toFixed(2)} kg CO₂ économisés`:'Faites votre premier voyage !'}
-              </p>
-              {tripCount>0&&<p className="text-xs mt-0.5" style={{color:'rgba(110,231,183,.5)'}}>≈ {(tripCount*3.2).toFixed(1)} km en voiture évités</p>}
+      <div className="px-4 space-y-5">
+
+        {/* ── STATS TAB ─────────────────────────────── */}
+        {tab === 'stats' && (
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { e:'🚌', l:'Voyages',    v: tripCount,                           u:'',      c:'#60a5fa' },
+                { e:'🎫', l:'Billets',    v: valid,                               u:'valides',c:'#a78bfa' },
+                { e:'💰', l:'Dépenses',   v: totalFCFA.toLocaleString('fr-FR'),    u:'FCFA',  c:'#fbbf24' },
+                { e:'🌿', l:'CO₂ évité', v: co2SavedKg.toFixed(1),               u:'kg',    c:'#34d399' },
+              ].map((s, i) => (
+                <div key={i} className="card rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xl">{s.e}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#334155' }}>{s.l}</span>
+                  </div>
+                  <div className="font-black text-white" style={{ fontSize: 22 }}>
+                    {s.v}<span className="text-xs font-semibold ml-1" style={{ color: '#475569' }}>{s.u}</span>
+                  </div>
+                </div>
+              ))}
             </div>
+
+            {/* Eco card */}
+            <div className="rounded-2xl overflow-hidden"
+              style={{ background: 'linear-gradient(135deg,rgba(5,79,44,.8),rgba(6,78,59,.8))', border: '1px solid rgba(5,150,105,.2)' }}>
+              <div className="p-4 flex items-start gap-4">
+                <div className="text-4xl">🌍</div>
+                <div className="flex-1">
+                  <h4 className="font-black text-white">Impact Écologique</h4>
+                  <p className="text-sm mt-0.5 font-medium" style={{ color: '#6ee7b7' }}>
+                    {co2SavedKg > 0 ? `${co2SavedKg.toFixed(2)} kg CO₂ économisés` : 'Faites votre premier voyage !'}
+                  </p>
+                  {tripCount > 0 && (
+                    <p className="text-xs mt-0.5" style={{ color: 'rgba(110,231,183,.5)' }}>
+                      ≈ {(tripCount * 3.2).toFixed(1)} km en voiture évités
+                    </p>
+                  )}
+                </div>
+              </div>
+              {co2SavedKg > 0 && (
+                <div className="px-4 pb-4">
+                  <div className="flex justify-between text-[10px] mb-1.5" style={{ color: 'rgba(110,231,183,.5)' }}>
+                    <span>Progression vers l'Or</span><span>{ecoPct.toFixed(0)}%</span>
+                  </div>
+                  <div className="rounded-full overflow-hidden" style={{ height: 5, background: 'rgba(255,255,255,.08)' }}>
+                    <div className="h-full rounded-full transition-all duration-1000"
+                      style={{ background: 'linear-gradient(90deg,#059669,#34d399)', width: `${ecoPct}%` }} />
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ── HISTORY TAB ───────────────────────────── */}
+        {tab === 'history' && (
+          <div>
+            {history.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-4xl mb-3">🗺️</div>
+                <p className="font-bold text-sm text-white">Aucun trajet effectué</p>
+                <p className="text-xs mt-1" style={{ color: '#475569' }}>Vos trajets apparaîtront ici.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {history.map(rec => {
+                  const canRefaire = !!(rec.originId && rec.destId);
+                  const dateStr = new Date(rec.date).toLocaleDateString('fr-FR', {
+                    weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+                  });
+                  return (
+                    <div key={rec.id} className="card rounded-2xl p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                          style={{ background: 'rgba(37,99,235,.12)' }}>🚌</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-white text-sm truncate">{rec.originName} → {rec.destName}</p>
+                          <p className="text-[10px] mt-0.5" style={{ color: '#475569' }}>{dateStr}</p>
+                          <div className="flex items-center gap-3 mt-2 flex-wrap">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md"
+                              style={{ background: 'rgba(37,99,235,.15)', color: '#60a5fa' }}>
+                              ⏱ {rec.duration} min
+                            </span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md"
+                              style={{ background: 'rgba(251,191,36,.1)', color: '#fbbf24' }}>
+                              💰 {rec.fare} FCFA
+                            </span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md"
+                              style={{ background: 'rgba(52,211,153,.1)', color: '#34d399' }}>
+                              🌿 {rec.co2} kg CO₂
+                            </span>
+                          </div>
+                        </div>
+                        {canRefaire && (
+                          <button onClick={() => handleRefaire(rec)}
+                            className="flex-shrink-0 text-xs font-black px-2.5 py-1.5 rounded-xl transition-all active:scale-95"
+                            style={{ background: 'rgba(37,99,235,.2)', color: '#60a5fa', border: '1px solid rgba(37,99,235,.3)' }}>
+                            Refaire
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-          {co2SavedKg>0&&(
-            <div className="px-4 pb-4">
-              <div className="flex justify-between text-[10px] mb-1.5" style={{color:'rgba(110,231,183,.5)'}}>
-                <span>Progression vers l'Or</span><span>{ecoPct.toFixed(0)}%</span>
-              </div>
-              <div className="rounded-full overflow-hidden" style={{height:5,background:'rgba(255,255,255,.08)'}}>
-                <div className="h-full rounded-full transition-all duration-1000" style={{background:'linear-gradient(90deg,#059669,#34d399)',width:`${ecoPct}%`}}/>
-              </div>
-            </div>
-          )}
-        </div>
+        )}
 
-        {/* Fav stops */}
-        <div>
-          <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2" style={{color:'var(--c-muted)'}}>
-            ⭐ Arrêts favoris <span style={{color:'#1e293b'}}>({favStops.length})</span>
-          </h3>
-          {favStops.length===0 ? (
-            <div className="card rounded-xl p-4 text-center text-xs" style={{color:'#334155'}}>Appuyez sur ☆ dans Arrêts pour ajouter vos favoris</div>
-          ) : favStops.map(s=>(
-            <div key={s.id} className="card rounded-xl p-3 mb-1.5 flex items-center justify-between">
-              <div>
-                <div className="font-bold text-white text-sm">{s.name}</div>
-                <div className="text-xs" style={{color:'#475569'}}>{s.zone} · {s.operators.join(', ')}</div>
-              </div>
-              <button onClick={()=>dispatch(toggleFavStop(s.id))} className="text-lg hover:scale-125 transition-transform">⭐</button>
+        {/* ── FAVS TAB ──────────────────────────────── */}
+        {tab === 'favs' && (
+          <>
+            <div>
+              <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: 'var(--c-muted)' }}>
+                ⭐ Arrêts favoris ({favStops.length})
+              </h3>
+              {favStops.length === 0 ? (
+                <div className="card rounded-xl p-4 text-center text-xs" style={{ color: '#334155' }}>
+                  Appuyez sur ⭐ dans Arrêts pour ajouter vos favoris
+                </div>
+              ) : favStops.map(s => (
+                <div key={s.id} className="card rounded-xl p-3 mb-1.5 flex items-center justify-between">
+                  <div>
+                    <div className="font-bold text-white text-sm">{s.name}</div>
+                    <div className="text-xs" style={{ color: '#475569' }}>{s.zone} · {s.operators.join(', ')}</div>
+                  </div>
+                  <button onClick={() => dispatch(toggleFavStop(s.id))} className="text-lg hover:scale-125 transition-transform">⭐</button>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* Fav lines */}
-        <div>
-          <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2" style={{color:'var(--c-muted)'}}>
-            ❤️ Lignes favorites <span style={{color:'#1e293b'}}>({favLines.length})</span>
-          </h3>
-          {favLines.length===0 ? (
-            <div className="card rounded-xl p-4 text-center text-xs" style={{color:'#334155'}}>Appuyez sur 🤍 dans Lignes pour sauvegarder vos lignes</div>
-          ) : favLines.map(l=>(
-            <div key={l.id} className="card rounded-xl p-3 mb-1.5 flex items-center gap-3">
-              <div className="w-2 h-10 rounded-full" style={{background:l.color}}/>
-              <div className="flex-1 min-w-0">
-                <div className="font-bold text-white text-sm">{l.name}</div>
-                <div className="text-xs truncate" style={{color:'#475569'}}>{l.route}</div>
-              </div>
-              <button onClick={()=>dispatch(toggleFavLine(l.id))} className="text-lg hover:scale-125 transition-transform">❤️</button>
+            <div>
+              <h3 className="text-[10px] font-black uppercase tracking-widest mb-3 flex items-center gap-2" style={{ color: 'var(--c-muted)' }}>
+                ❤️ Lignes favorites ({favLines.length})
+              </h3>
+              {favLines.length === 0 ? (
+                <div className="card rounded-xl p-4 text-center text-xs" style={{ color: '#334155' }}>
+                  Appuyez sur 🤍 dans Lignes pour sauvegarder vos lignes
+                </div>
+              ) : favLines.map(l => (
+                <div key={l.id} className="card rounded-xl p-3 mb-1.5 flex items-center gap-3">
+                  <div className="w-2 h-10 rounded-full" style={{ background: l.color }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-white text-sm">{l.name}</div>
+                    <div className="text-xs truncate" style={{ color: '#475569' }}>{l.route}</div>
+                  </div>
+                  <button onClick={() => dispatch(toggleFavLine(l.id))} className="text-lg hover:scale-125 transition-transform">❤️</button>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
 
-        {/* Logout */}
-        <button onClick={()=>dispatch(logout())} className="btn btn-danger w-full py-3.5 rounded-2xl">
+        <button onClick={() => dispatch(logout())} className="btn btn-danger w-full py-3.5 rounded-2xl">
           Déconnexion ↩
         </button>
       </div>

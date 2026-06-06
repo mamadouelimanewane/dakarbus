@@ -160,7 +160,7 @@ export interface ActiveJourney {
   id: string;
   originStop: Stop;
   destinationStop: Stop;
-  walkingStop: Stop;        // stop to walk to (= originStop for direct)
+  walkingStop: Stop;
   walkingMeters: number;
   lineId: string;
   lineName: string;
@@ -168,20 +168,23 @@ export interface ActiveJourney {
   operator: OperatorId;
   fare: number;
   transfers: number;
-  startedAt: number;        // timestamp ms
-  estimatedDuration: number; // total minutes
+  startedAt: number;
+  estimatedDuration: number;
   status: JourneyStatus;
   ticketId: string | null;
+  steps?: import('@/utils/routeFinder').RouteStep[];
 }
 
 export interface JourneyRecord {
   id: string;
   originName: string;
+  originId?: string;
   destName: string;
+  destId?: string;
   lineId: string;
   operator: OperatorId;
   fare: number;
-  duration: number;  // minutes
-  co2: number;       // kg
-  date: number;      // timestamp
+  duration: number;
+  co2: number;
+  date: number;
 }

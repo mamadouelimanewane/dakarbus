@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAppSelector, useAppDispatch } from './store/hooks';
-import { loginPassenger, loginDriver, loginAdmin } from './store/store';
+import { loginPassenger, loginDriver, loginAdmin, setRouteOrigin, setRouteDestination } from './store/store';
+import { STOPS } from './data/transportData';
+import { parseRouteFromURL } from './utils/share';
 import PassengerApp from './views/passenger/PassengerApp';
 import DriverApp from './views/driver/DriverApp';
 import AdminApp from './views/admin/AdminApp';
@@ -205,8 +207,18 @@ function RoleSelection() {
 
 /* ── App Root ─────────────────────────────────────────────── */
 export default function App() {
+  const dispatch = useAppDispatch();
   const { role, isAuthenticated } = useAppSelector(s => s.auth);
-  useEffect(() => { initSimulation(); }, []);
+  useEffect(() => {
+    initSimulation();
+    // Handle deep-link share ?from=xxx&to=yyy
+    const { from, to } = parseRouteFromURL();
+    if (from || to) {
+      if (from) { const s = STOPS.find(x => x.id === from); if (s) dispatch(setRouteOrigin(s)); }
+      if (to)   { const s = STOPS.find(x => x.id === to);   if (s) dispatch(setRouteDestination(s)); }
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   if (!isAuthenticated) return <RoleSelection />;
   if (role === 'driver')  return <DriverApp />;
