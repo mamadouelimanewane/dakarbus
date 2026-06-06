@@ -301,7 +301,7 @@
    LEAFLET OVERRIDES
 ═══════════════════════════════════════════════════════════════ */
 .leaflet-container {
-  background: #0d1117 !important;
+  background: #e8eaf0 !important;
   font-family: 'Inter', sans-serif !important;
 }
 .leaflet-popup-content-wrapper {
