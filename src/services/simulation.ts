@@ -61,7 +61,9 @@ async function buildSimRoute(lineId: string): Promise<[number, number][]> {
 
 export async function initSimulation() {
   if (simInterval) return;
-  const linesToSimulate = ['L1A', 'L8', 'BRT-L1', 'TER-01', 'A3'];
+  // TER-01 exclu : c'est un train qui ne suit pas les routes OSRM
+  // → le fallback "ligne droite" traverserait la baie de Hann
+  const linesToSimulate = ['L1A', 'L8', 'BRT-L1', 'A3', 'L6'];
   for (const lineId of linesToSimulate) {
     const route = await buildSimRoute(lineId);
     if (route.length > 0) {

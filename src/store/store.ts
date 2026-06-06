@@ -104,13 +104,13 @@ interface UIState {
 
 function getAutoTheme(): boolean {
   const h = new Date().getHours();
-  return h < 6 || h >= 19;
+  return h < 6 || h >= 19; // sombre avant 6h et après 19h
 }
 
 const uiSlice = createSlice({
   name: 'ui',
   initialState: {
-    darkMode: window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true,
+    darkMode: getAutoTheme(), // calculé dès le départ selon l'heure, pas la préférence système
     autoTheme: true,
     lang: 'fr' as Lang,
     sidebarCollapsed: false,
