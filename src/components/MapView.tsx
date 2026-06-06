@@ -534,12 +534,14 @@ export default function MapView() {
       </button>
 
       <MapContainer center={[14.7167, -17.4677]} zoom={12}
-        style={{ width: '100%', height: '100%', background: '#f0f4f8' }} zoomControl={true}>
+        style={{ width: '100%', height: '100%', background: '#0a0f1e' }} zoomControl={true}>
         <TileLayer
+          key={darkMode ? 'dark' : 'light'}
           url={darkMode
             ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"}
+            : "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"}
           attribution=""
+          keepBuffer={4}
         />
         <MapController />
         <RouteOverlay />

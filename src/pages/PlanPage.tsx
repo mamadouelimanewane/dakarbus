@@ -4,6 +4,47 @@ import { setActiveTab, clearRoute, setRouteOrigin, setRouteDestination } from '@
 import RoutePanel from '@/components/RoutePanel';
 import RouteMap from '@/components/RouteMap';
 import { STOPS, getNextDepartures } from '@/data/transportData';
+import type { AppDispatch } from '@/store/store';
+
+// ── Quick navigation shortcuts ────────────────────────────────
+function QuickNav({ dispatch }: { dispatch: AppDispatch }) {
+  const { reports } = useAppSelector(s => s.tickets);
+  const { myTickets } = useAppSelector(s => s.tickets);
+  const alertCount   = reports.filter(r => Date.now() - r.timestamp < 1800000).length;
+  const ticketCount  = myTickets.filter(t => t.status === 'valid').length;
+
+  const tabs = [
+    { id: 'lines'   as const, icon: '🚌', label: 'Lignes',  color: '#2563eb' },
+    { id: 'stops'   as const, icon: '📍', label: 'Arrêts',  color: '#059669' },
+    { id: 'alerts'  as const, icon: '⚠️', label: 'Alertes', color: '#dc2626', badge: alertCount  },
+    { id: 'tickets' as const, icon: '🎫', label: 'Billets', color: '#7c3aed', badge: ticketCount },
+    { id: 'profile' as const, icon: '👤', label: 'Profil',  color: '#64748b' },
+  ];
+
+  return (
+    <div>
+      <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--c-muted)' }}>
+        Navigation rapide
+      </p>
+      <div className="grid grid-cols-5 gap-2">
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => dispatch(setActiveTab(t.id))}
+            className="relative flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all active:scale-90"
+            style={{ background: t.color + '12', border: `1px solid ${t.color}25` }}>
+            <span className="text-2xl leading-none">{t.icon}</span>
+            <span className="text-[10px] font-bold" style={{ color: t.color }}>{t.label}</span>
+            {t.badge && t.badge > 0 ? (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-[9px] font-black flex items-center justify-center"
+                style={{ background: t.color, boxShadow: `0 2px 8px ${t.color}60` }}>
+                {t.badge > 9 ? '9+' : t.badge}
+              </span>
+            ) : null}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ── Greeting by time of day ───────────────────────────────────
 function greeting(): string {
@@ -179,27 +220,8 @@ export default function PlanPage() {
               </button>
             )}
 
-            {/* Quick actions */}
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => dispatch(setActiveTab('tickets'))}
-                className="flex items-center gap-2.5 p-3.5 rounded-2xl text-left transition-all active:scale-95"
-                style={{ background: 'linear-gradient(135deg,rgba(37,99,235,.18),rgba(37,99,235,.08))', border: '1px solid rgba(37,99,235,.25)' }}>
-                <span className="text-2xl">💳</span>
-                <div>
-                  <div className="text-xs font-black text-white">M-Ticket</div>
-                  <div className="text-[10px] mt-0.5" style={{ color: '#60a5fa' }}>Acheter un billet</div>
-                </div>
-              </button>
-              <button onClick={() => dispatch(setActiveTab('lines'))}
-                className="flex items-center gap-2.5 p-3.5 rounded-2xl text-left transition-all active:scale-95"
-                style={{ background: 'linear-gradient(135deg,rgba(124,58,237,.18),rgba(124,58,237,.08))', border: '1px solid rgba(124,58,237,.25)' }}>
-                <span className="text-2xl">🗺️</span>
-                <div>
-                  <div className="text-xs font-black text-white">Lignes</div>
-                  <div className="text-[10px] mt-0.5" style={{ color: '#a78bfa' }}>Voir le réseau</div>
-                </div>
-              </button>
-            </div>
+            {/* Nav shortcuts */}
+            <QuickNav dispatch={dispatch} />
 
           </div>
         )}
