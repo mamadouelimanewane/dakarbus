@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+
+// Calculer le prix selon la distance (150-500 FCFA)
+function calculatePrice(distance: number): number {
+  if (distance < 2) return 150;
+  if (distance < 5) return 200;
+  if (distance < 10) return 300;
+  return 500;
+}
+
 import {
   setRouteOrigin, setRouteDestination, clearRoute, recordTrip,
   setActiveTab, showToast, buyTicket, startJourney, setFocusedLine,
@@ -49,6 +58,10 @@ function OptionCard({
           <span className="text-[10px] font-black px-2 py-0.5 rounded-full"
             style={{ background: option.labelColor + '22', color: option.labelColor, border: `1px solid ${option.labelColor}33` }}>
             {option.label}
+          </span>
+          <span className="text-xs font-black px-2 py-1 rounded-md text-white"
+            style={{ background: option.primaryLineColor }}>
+            LIGNE {option.primaryLineName}
           </span>
           <div className="flex items-center gap-3 text-right">
             <div>
