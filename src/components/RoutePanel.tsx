@@ -11,8 +11,9 @@ function calculatePrice(distance: number): number {
 
 import {
   setRouteOrigin, setRouteDestination, clearRoute, recordTrip,
-  setActiveTab, showToast, buyTicket, startJourney, setFocusedLine,
+  setActiveTab, showToast, buyTicket, startJourney, setFocusedLine, setRouteDisplay,
 } from '@/store/store';
+import type { RouteDisplay } from '@/store/store';
 import { STOPS, LINES, getNextDepartures, getAffluence } from '@/data/transportData';
 import { getNearestStop, walkingMinutes } from '@/utils/nearest';
 import { findRoutes, type RouteOption } from '@/utils/routeFinder';
@@ -229,6 +230,24 @@ function OptionDetail({
   );
 }
 
+function buildRouteDisplay(opt: RouteOption, userLoc: [number, number] | null): RouteDisplay {
+  const busSteps = opt.steps.filter(s => s.type === 'bus' && s.lineId && s.fromStopId && s.toStopId);
+  const segments = busSteps.map(s => {
+    const line = LINES.find(l => l.id === s.lineId);
+    return { lineId: s.lineId!, lineName: line?.name || s.lineId!, color: s.color, fromStopId: s.fromStopId!, toStopId: s.toStopId! };
+  });
+  const transferStopIds = opt.steps
+    .filter(s => s.type === 'transfer' && s.fromStopId)
+    .map(s => s.fromStopId!);
+  return {
+    segments,
+    originStopId: opt.walkingStop.id,
+    destStopId: (() => { const bs = opt.steps.filter(s => s.type === 'bus'); return bs[bs.length - 1]?.toStopId || ''; })(),
+    transferStopIds,
+    walkFrom: opt.walkMin > 0 && userLoc ? userLoc : null,
+  };
+}
+
 // ── Main RoutePanel ───────────────────────────────────────────
 export default function RoutePanel() {
   const dispatch = useAppDispatch();
@@ -254,10 +273,14 @@ export default function RoutePanel() {
       route.origin, route.destination,
       userLocation?.[0], userLocation?.[1]
     );
-    if (results.length === 0) { setNoRoute(true); return; }
+    if (results.length === 0) { setNoRoute(true); dispatch(setRouteDisplay(null)); return; }
     setOptions(results);
     setSelected(results[0]);
-    if (results[0]) dispatch(recordTrip({ fare: results[0].fare, operator: results[0].operator }));
+    if (results[0]) {
+      dispatch(recordTrip({ fare: results[0].fare, operator: results[0].operator }));
+      dispatch(setRouteDisplay(buildRouteDisplay(results[0], userLocation)));
+      dispatch(setFocusedLine(results[0].primaryLineId));
+    }
   };
 
   const handleStartJourney = () => {
@@ -294,6 +317,7 @@ export default function RoutePanel() {
     setSelected(opt);
     dispatch(setFocusedLine(opt.primaryLineId));
     dispatch(recordTrip({ fare: opt.fare, operator: opt.operator }));
+    dispatch(setRouteDisplay(buildRouteDisplay(opt, userLocation)));
   };
 
   const departures = route.origin ? getNextDepartures(route.origin.id) : [];
@@ -354,7 +378,7 @@ export default function RoutePanel() {
           Calculer l'itinéraire
         </button>
         {(route.origin || route.destination) && (
-          <button onClick={() => { dispatch(clearRoute()); setOptions([]); setSelected(null); setNoRoute(false); setNearestInfo(null); }}
+          <button onClick={() => { dispatch(clearRoute()); dispatch(setRouteDisplay(null)); setOptions([]); setSelected(null); setNoRoute(false); setNearestInfo(null); }}
             className="w-11 rounded-xl flex items-center justify-center text-sm transition-all active:scale-90"
             style={{ background: 'rgba(255,255,255,.05)', border: '1px solid var(--c-border)', color: '#64748b' }}>✕</button>
         )}

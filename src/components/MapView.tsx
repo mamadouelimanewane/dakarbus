@@ -7,6 +7,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setSelectedStop, setMapCenter, setMapZoom, clearFocusedLine, setUserLocation } from '@/store/store';
+import type { RouteDisplay } from '@/store/store';
 import { STOPS, LINES, OPERATORS } from '@/data/transportData';
 import { routeOnRoads, routeLine, lineRouteCache } from '@/utils/osrm';
 import { buildStopTimings, sampleArrowPoints } from '@/utils/lineUtils';
@@ -266,14 +267,167 @@ function TripRoute({ origin, destination, onCoordsReady }: {
   );
 }
 
+// ── Route overlay icons ────────────────────────────────────────
+const makeLetterIcon = (letter: string, color: string) => L.divIcon({
+  className: '',
+  iconSize: [34, 42],
+  iconAnchor: [17, 42],
+  html: `<div style="position:relative;width:34px;height:42px">
+    <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid ${color}"></div>
+    <div style="width:34px;height:34px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 4px 12px ${color}80;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:white">${letter}</div>
+  </div>`,
+});
+
+const makeTransferIcon = (lineNames: string) => L.divIcon({
+  className: '',
+  iconSize: [30, 30],
+  iconAnchor: [15, 15],
+  html: `<div style="width:30px;height:30px;border-radius:50%;background:#d97706;border:3px solid white;box-shadow:0 3px 10px #d9770660;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:white" title="${lineNames}">↻</div>`,
+});
+
+// ── RouteOverlay ───────────────────────────────────────────────
+function RouteOverlay() {
+  const map = useMap();
+  const { routeDisplay, userLocation } = useAppSelector(s => s.mobility);
+  const { active: journey } = useAppSelector(s => s.journey);
+  const [busCoords, setBusCoords] = useState<Record<string, [number, number][]>>({});
+
+  useEffect(() => {
+    if (!routeDisplay) { setBusCoords({}); return; }
+    let cancelled = false;
+
+    async function fetchSegments() {
+      for (const seg of routeDisplay!.segments) {
+        const line = LINES.find(l => l.id === seg.lineId);
+        if (!line) continue;
+        const fromIdx = line.stops.indexOf(seg.fromStopId);
+        const toIdx   = line.stops.indexOf(seg.toStopId);
+        if (fromIdx < 0 || toIdx < 0) continue;
+        const [lo, hi] = fromIdx < toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
+        const waypoints = line.stops.slice(lo, hi + 1)
+          .map(id => STOPS.find(s => s.id === id))
+          .filter(Boolean)
+          .map(s => ({ lat: s!.lat, lng: s!.lng }));
+        const key = `${seg.lineId}:${seg.fromStopId}:${seg.toStopId}`;
+        const coords = await routeOnRoads(waypoints);
+        if (!cancelled) {
+          const fallback = waypoints.map(w => [w.lat, w.lng] as [number, number]);
+          setBusCoords(prev => ({ ...prev, [key]: coords ?? fallback }));
+        }
+      }
+    }
+
+    fetchSegments();
+    return () => { cancelled = true; };
+  }, [routeDisplay]);
+
+  // Fit map bounds to show the whole route
+  useEffect(() => {
+    if (!routeDisplay) return;
+    const pts: [number, number][] = [];
+    if (routeDisplay.walkFrom) pts.push(routeDisplay.walkFrom);
+    const origin = STOPS.find(s => s.id === routeDisplay.originStopId);
+    const dest   = STOPS.find(s => s.id === routeDisplay.destStopId);
+    if (origin) pts.push([origin.lat, origin.lng]);
+    if (dest)   pts.push([dest.lat, dest.lng]);
+    routeDisplay.transferStopIds.forEach(id => {
+      const s = STOPS.find(x => x.id === id);
+      if (s) pts.push([s.lat, s.lng]);
+    });
+    if (pts.length >= 2) map.fitBounds(pts, { padding: [50, 50], maxZoom: 15 });
+  }, [routeDisplay]);
+
+  // Walking-only mode during active journey
+  if (!routeDisplay) {
+    if (journey?.status === 'walking' && userLocation && journey.walkingStop) {
+      return (
+        <Polyline
+          positions={[userLocation, [journey.walkingStop.lat, journey.walkingStop.lng]]}
+          pathOptions={{ color: '#059669', weight: 4, dashArray: '10 8', opacity: 0.9 }}
+        />
+      );
+    }
+    return null;
+  }
+
+  const origin  = STOPS.find(s => s.id === routeDisplay.originStopId);
+  const dest    = STOPS.find(s => s.id === routeDisplay.destStopId);
+  const transfers = routeDisplay.transferStopIds
+    .map(id => STOPS.find(s => s.id === id))
+    .filter(Boolean) as typeof STOPS;
+
+  return (
+    <>
+      {/* Walking segment: dashed green */}
+      {routeDisplay.walkFrom && origin && (
+        <Polyline
+          positions={[routeDisplay.walkFrom, [origin.lat, origin.lng]]}
+          pathOptions={{ color: '#059669', weight: 3, dashArray: '8 7', opacity: 0.85 }}
+        />
+      )}
+
+      {/* Bus segments */}
+      {routeDisplay.segments.map((seg, i) => {
+        const key = `${seg.lineId}:${seg.fromStopId}:${seg.toStopId}`;
+        const coords = busCoords[key];
+        if (!coords) return null;
+        return (
+          <React.Fragment key={i}>
+            {/* Outer glow */}
+            <Polyline positions={coords} pathOptions={{ color: '#fff', weight: 10, opacity: 0.25, lineCap: 'round' }} />
+            {/* Main line */}
+            <Polyline positions={coords} pathOptions={{ color: seg.color, weight: 6, opacity: 1, lineCap: 'round', lineJoin: 'round' }} />
+          </React.Fragment>
+        );
+      })}
+
+      {/* Origin marker A */}
+      {origin && (
+        <Marker position={[origin.lat, origin.lng]} icon={makeLetterIcon('A', '#059669')} zIndexOffset={1000}>
+          <Popup>
+            <div style={{ fontWeight: 700 }}>{origin.name}</div>
+            <div style={{ fontSize: 11, color: '#64748b' }}>Départ</div>
+          </Popup>
+        </Marker>
+      )}
+
+      {/* Destination marker B */}
+      {dest && (
+        <Marker position={[dest.lat, dest.lng]} icon={makeLetterIcon('B', '#dc2626')} zIndexOffset={1000}>
+          <Popup>
+            <div style={{ fontWeight: 700 }}>{dest.name}</div>
+            <div style={{ fontSize: 11, color: '#64748b' }}>Arrivée</div>
+          </Popup>
+        </Marker>
+      )}
+
+      {/* Transfer stop markers */}
+      {transfers.map((stop, i) => {
+        const lineNames = routeDisplay.segments.map(s => s.lineName).join(' → ');
+        return (
+          <Marker key={i} position={[stop.lat, stop.lng]} icon={makeTransferIcon(lineNames)} zIndexOffset={900}>
+            <Popup>
+              <div style={{ fontWeight: 700 }}>{stop.name}</div>
+              <div style={{ fontSize: 11, color: '#d97706' }}>Correspondance</div>
+              <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>{lineNames}</div>
+            </Popup>
+          </Marker>
+        );
+      })}
+    </>
+  );
+}
+
 export default function MapView() {
   const dispatch = useAppDispatch();
-  const { selectedOperator, userLocation, route, focusedLine, busPositions } = useAppSelector(s => s.mobility);
+  const { selectedOperator, userLocation, route, focusedLine, busPositions, routeDisplay } = useAppSelector(s => s.mobility);
+  const darkMode = useAppSelector(s => s.ui.darkMode);
   const [loadingCount, setLoadingCount] = useState(0);
   const [routeCoords, setRouteCoords]   = useState<[number, number][] | null>(null);
   const [locLoading, setLocLoading]     = useState(false);
 
-  const routeMode = !!(route?.origin && route?.destination);
+  // routeMode = using old direct-road TripRoute (only when no bus routeDisplay)
+  const routeMode = !!(route?.origin && route?.destination && !routeDisplay);
 
   const visibleLines = routeMode ? [] : (
     focusedLine
@@ -382,10 +536,13 @@ export default function MapView() {
       <MapContainer center={[14.7167, -17.4677]} zoom={12}
         style={{ width: '100%', height: '100%', background: '#f0f4f8' }} zoomControl={true}>
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url={darkMode
+            ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"}
           attribution=""
         />
         <MapController />
+        <RouteOverlay />
 
         {/* When a line is focused: show full overlay with numbered stops + arrows */}
         {!routeMode && focusedLine && (() => {

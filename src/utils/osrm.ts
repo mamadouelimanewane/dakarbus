@@ -1,12 +1,20 @@
 import type { LatLng } from '@/types';
 
-const OSRM = 'https://router.project-osrm.org/route/v1/driving';
+// LocationIQ key via env — falls back to public OSRM if not set
+const LIQ_KEY = import.meta.env.VITE_LOCATIONIQ_KEY as string | undefined;
 
-export async function routeOnRoads(points: LatLng[]): Promise<[number, number][] | null> {
+function buildUrl(profile: 'driving' | 'walking', coordStr: string): string {
+  if (LIQ_KEY) {
+    return `https://us1.locationiq.com/v1/directions/${profile}/${coordStr}?key=${LIQ_KEY}&overview=full&geometries=geojson&steps=false`;
+  }
+  return `https://router.project-osrm.org/route/v1/${profile}/${coordStr}?overview=full&geometries=geojson&continue_straight=true`;
+}
+
+async function fetchRoute(profile: 'driving' | 'walking', points: LatLng[]): Promise<[number, number][] | null> {
   if (points.length < 2) return null;
-  const coords = points.map(p => `${p.lng},${p.lat}`).join(';');
+  const coordStr = points.map(p => `${p.lng},${p.lat}`).join(';');
   try {
-    const res = await fetch(`${OSRM}/${coords}?overview=full&geometries=geojson&continue_straight=true`);
+    const res = await fetch(buildUrl(profile, coordStr));
     if (!res.ok) return null;
     const data = await res.json();
     if (data.code !== 'Ok' || !data.routes?.[0]) return null;
@@ -14,6 +22,17 @@ export async function routeOnRoads(points: LatLng[]): Promise<[number, number][]
   } catch { return null; }
 }
 
+/** Driving route along roads */
+export async function routeOnRoads(points: LatLng[]): Promise<[number, number][] | null> {
+  return fetchRoute('driving', points);
+}
+
+/** Walking route — used for the segment from user position to nearest stop */
+export async function routeOnFoot(points: LatLng[]): Promise<[number, number][] | null> {
+  return fetchRoute('walking', points);
+}
+
+/** Chunked driving route for long lines (>20 waypoints) */
 export async function routeLine(stops: LatLng[]): Promise<[number, number][] | null> {
   if (stops.length < 2) return null;
   const all: [number, number][] = [];

@@ -7,7 +7,13 @@ import type { Stop, Line, OperatorId } from '@/types';
 
 const WALK_MPM     = 72;   // m/min walking (~4.3 km/h)
 const BUS_MPM      = 330;  // m/min bus (~20 km/h urban Dakar)
+const BRT_MPM      = 500;  // m/min BRT (~30 km/h voie dédiée)
+const TER_MPM      = 1667; // m/min TER (~100 km/h)
 const TRANSFER_PEN = 5;    // minutes wait at transfer stop
+
+const OPERATOR_MPM: Record<string, number> = {
+  DDD: BUS_MPM, AFTU: BUS_MPM, BRT: BRT_MPM, TER: TER_MPM,
+};
 
 function hav(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371000;
@@ -29,7 +35,8 @@ function rideMinutes(line: Line, fromId: string, toId: string): number {
   for (let i = lo; i < hi; i++) {
     dist += hav(stops[i].lat, stops[i].lng, stops[i + 1].lat, stops[i + 1].lng);
   }
-  return Math.max(2, Math.ceil(dist / BUS_MPM));
+  const mpm = OPERATOR_MPM[line.operator] ?? BUS_MPM;
+  return Math.max(2, Math.ceil(dist / mpm));
 }
 
 export interface RouteStep {
@@ -39,6 +46,8 @@ export interface RouteStep {
   durationMin: number;
   lineId?: string;
   lineColor?: string;
+  fromStopId?: string;
+  toStopId?: string;
 }
 
 export interface RouteOption {
@@ -86,7 +95,7 @@ export function findRoutes(
 
     const steps: RouteStep[] = [];
     if (walkMin > 0) steps.push({ type: 'walk', label: `${walkMin} min à pied → ${origin.name}`, color: '#059669', durationMin: walkMin });
-    steps.push({ type: 'bus', label: `${line.name}  ·  ${origin.name} → ${dest.name}`, color: line.color, durationMin: ride, lineId: line.id, lineColor: line.color });
+    steps.push({ type: 'bus', label: `${line.name}  ·  ${origin.name} → ${dest.name}`, color: line.color, durationMin: ride, lineId: line.id, lineColor: line.color, fromStopId: origin.id, toStopId: dest.id });
 
     options.push({
       id: `d-${lineId}`,
@@ -124,7 +133,7 @@ export function findRoutes(
 
         const seg1 = rideMinutes(oLine, origin.id, midStopId);
         const seg2 = rideMinutes(dLine, midStopId, dest.id);
-        if (seg1 >= 60 || seg2 >= 60) continue;
+        if (seg1 >= 120 || seg2 >= 120) continue;
 
         const key = `${oId}|${midStopId}|${dId}`;
         if (seen.has(key)) continue;
@@ -132,9 +141,9 @@ export function findRoutes(
 
         const steps: RouteStep[] = [];
         if (walkMin > 0) steps.push({ type: 'walk', label: `${walkMin} min à pied → ${origin.name}`, color: '#059669', durationMin: walkMin });
-        steps.push({ type: 'bus',      label: `${oLine.name}  ·  → ${mid.name}`,  color: oLine.color, durationMin: seg1, lineId: oLine.id, lineColor: oLine.color });
-        steps.push({ type: 'transfer', label: `Correspondance à ${mid.name}`,       color: '#475569',   durationMin: TRANSFER_PEN });
-        steps.push({ type: 'bus',      label: `${dLine.name}  ·  → ${dest.name}`, color: dLine.color, durationMin: seg2, lineId: dLine.id, lineColor: dLine.color });
+        steps.push({ type: 'bus',      label: `${oLine.name}  ·  → ${mid.name}`,  color: oLine.color, durationMin: seg1, lineId: oLine.id, lineColor: oLine.color, fromStopId: origin.id, toStopId: midStopId });
+        steps.push({ type: 'transfer', label: `Correspondance à ${mid.name}`,       color: '#475569',   durationMin: TRANSFER_PEN, fromStopId: midStopId, toStopId: midStopId });
+        steps.push({ type: 'bus',      label: `${dLine.name}  ·  → ${dest.name}`, color: dLine.color, durationMin: seg2, lineId: dLine.id, lineColor: dLine.color, fromStopId: midStopId, toStopId: dest.id });
 
         options.push({
           id: key,

@@ -163,6 +163,7 @@ export default function AdminApp() {
   const { busPositions }          = useAppSelector(s => s.mobility);
   const { adminRevenue, reports } = useAppSelector(s => s.tickets);
   const { name }                  = useAppSelector(s => s.auth);
+  const darkMode                  = useAppSelector(s => s.ui.darkMode);
 
   const [activeTab, setActiveTab] = useState<'map'|'fleet'|'routes'|'alerts'|'finance'>('map');
   const [selectedLine, setSelectedLine] = useState<string|null>(null);
@@ -311,7 +312,7 @@ export default function AdminApp() {
             </aside>
             <div className="flex-1">
               <MapContainer center={[14.7167,-17.4677]} zoom={12} style={{width:'100%',height:'100%'}}>
-                <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution="" />
+                <TileLayer url={darkMode ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"} attribution="" />
                 {busPositions.map((bus:BusPosition,i:number)=>{
                   const line=LINES.find(l=>l.id===bus.lineId);
                   const color=line?.color||'#10b981';

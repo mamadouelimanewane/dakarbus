@@ -2,6 +2,21 @@ import { configureStore, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { OperatorId, Stop, BusPosition, Lang, Ticket, CrowdsourceReport, Toast, ActiveJourney, JourneyRecord, JourneyStatus } from '@/types';
 
 // ── Mobility Slice ─────────────────────────────────────────────
+export interface RouteSegmentDisplay {
+  lineId: string;
+  lineName: string;
+  color: string;
+  fromStopId: string;
+  toStopId: string;
+}
+export interface RouteDisplay {
+  segments: RouteSegmentDisplay[];
+  originStopId: string;
+  destStopId: string;
+  transferStopIds: string[];
+  walkFrom: [number, number] | null;
+}
+
 interface MobilityState {
   activeTab: 'plan' | 'lines' | 'stops' | 'alerts' | 'tickets' | 'profile';
   selectedOperator: OperatorId;
@@ -12,6 +27,7 @@ interface MobilityState {
   mapZoom: number;
   route: { origin: Stop | null; destination: Stop | null };
   busPositions: BusPosition[];
+  routeDisplay: RouteDisplay | null;
 }
 
 const mobilitySlice = createSlice({
@@ -26,6 +42,7 @@ const mobilitySlice = createSlice({
     mapZoom: 12,
     route: { origin: null, destination: null },
     busPositions: [],
+    routeDisplay: null,
   } as MobilityState,
   reducers: {
     setActiveTab: (s, a: PayloadAction<MobilityState['activeTab']>) => { s.activeTab = a.payload; },
@@ -40,6 +57,7 @@ const mobilitySlice = createSlice({
     setRouteDestination: (s, a: PayloadAction<Stop | null>) => { s.route.destination = a.payload; },
     clearRoute: (s) => { s.route = { origin: null, destination: null }; },
     setBusPositions: (s, a: PayloadAction<BusPosition[]>) => { s.busPositions = a.payload; },
+    setRouteDisplay: (s, a: PayloadAction<RouteDisplay | null>) => { s.routeDisplay = a.payload; },
   },
 });
 
@@ -85,7 +103,7 @@ interface UIState {
 const uiSlice = createSlice({
   name: 'ui',
   initialState: {
-    darkMode: window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true,
+    darkMode: window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false,
     lang: 'fr' as Lang,
     sidebarCollapsed: false,
     showQR: false,
@@ -270,7 +288,7 @@ export const {
   setActiveTab, setSelectedOperator, setSelectedStop,
   setFocusedLine, clearFocusedLine, setUserLocation,
   setMapCenter, setMapZoom, setRouteOrigin, setRouteDestination,
-  clearRoute, setBusPositions,
+  clearRoute, setBusPositions, setRouteDisplay,
 } = mobilitySlice.actions;
 
 export const { loginPassenger, loginDriver, loginAdmin, logout } = authSlice.actions;
