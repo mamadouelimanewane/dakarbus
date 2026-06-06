@@ -1,6 +1,6 @@
 import React from 'react';
-import { useAppDispatch } from '@/store/hooks';
-import { setActiveTab } from '@/store/store';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { setActiveTab, clearRoute } from '@/store/store';
 import RoutePanel from '@/components/RoutePanel';
 import RouteMap from '@/components/RouteMap';
 import { useAppSelector } from '@/store/hooks';
@@ -14,6 +14,8 @@ const FARES = [
 
 export default function PlanPage() {
   const dispatch = useAppDispatch();
+  const { route } = useAppSelector(s => s.mobility);
+  const hasRoute = !!(route.origin && route.destination);
   return (
     <div className="flex flex-col h-full">
       <RouteMap show={hasRoute} onClose={() => dispatch(clearRoute())} />
