@@ -3,7 +3,6 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setActiveTab, clearRoute } from '@/store/store';
 import RoutePanel from '@/components/RoutePanel';
 import RouteMap from '@/components/RouteMap';
-import { useAppSelector } from '@/store/hooks';
 
 const FARES = [
   { id:'DDD',  emoji:'🚌', label:'Bus Urbain',    price:'200', color:'#2563eb' },
