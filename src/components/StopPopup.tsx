@@ -1,6 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Stop } from '@/types';
 import { getNextDepartures, OPERATORS } from '@/data/transportData';
+
+// Live countdown timer (updates every second)
+function LiveCountdown({ waitMin }: { waitMin: number }) {
+  const [secs, setSecs] = useState(waitMin * 60);
+  useEffect(() => {
+    const t = setInterval(() => setSecs(s => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(t);
+  }, []);
+  if (secs <= 0) return <span style={{ color: '#4ade80', fontWeight: 900, fontSize: 14 }}>Maint.</span>;
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  const color = secs <= 180 ? '#4ade80' : secs <= 600 ? '#fbbf24' : '#94a3b8';
+  return (
+    <span style={{ color, fontWeight: 900, fontSize: 14 }}>
+      {m > 0 ? `${m}m${String(s).padStart(2,'0')}s` : `${s}s`}
+    </span>
+  );
+}
 
 export default function StopPopup({ stop }: { stop: Stop }) {
   const deps = getNextDepartures(stop.id).slice(0, 4);
@@ -48,24 +66,20 @@ export default function StopPopup({ stop }: { stop: Stop }) {
         {deps.length === 0 ? (
           <div style={{ fontSize: 11, color: '#475569', textAlign: 'center', padding: '8px 0' }}>Aucun départ disponible</div>
         ) : (
-          deps.map((d, i) => {
-            const waitColor = d.waitMin <= 3 ? '#34d399' : d.waitMin <= 10 ? '#fbbf24' : '#94a3b8';
-            return (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: i < deps.length - 1 ? 7 : 0 }}>
-                <div style={{
-                  background: d.color, color: 'white', fontSize: 9, fontWeight: 800,
-                  padding: '3px 7px', borderRadius: 6, flexShrink: 0, minWidth: 52, textAlign: 'center',
-                }}>{d.lineName}</div>
-                <span style={{ fontSize: 11, color: '#64748b', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                  {d.route.split('↔')[1]?.trim() || d.route}
-                </span>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: waitColor }}>{d.waitMin}</span>
-                  <span style={{ fontSize: 9, color: '#475569', marginLeft: 1 }}>m</span>
-                </div>
+          deps.map((d, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: i < deps.length - 1 ? 8 : 0 }}>
+              <div style={{
+                background: d.color, color: 'white', fontSize: 9, fontWeight: 800,
+                padding: '3px 7px', borderRadius: 6, flexShrink: 0, minWidth: 52, textAlign: 'center',
+              }}>{d.lineName}</div>
+              <span style={{ fontSize: 11, color: '#64748b', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                {d.route.split('↔')[1]?.trim() || d.route}
+              </span>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <LiveCountdown waitMin={d.waitMin} />
               </div>
-            );
-          })
+            </div>
+          ))
         )}
       </div>
     </div>

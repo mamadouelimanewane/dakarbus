@@ -1,7 +1,19 @@
 import React, { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { toggleFavStop, toggleFavLine, logout, setRouteOrigin, setRouteDestination, setActiveTab } from '@/store/store';
+import { toggleFavStop, toggleFavLine, logout, setRouteOrigin, setRouteDestination, setActiveTab, toggleDarkMode, setAutoTheme, setNotifEnabled } from '@/store/store';
 import { STOPS, LINES, OPERATORS } from '@/data/transportData';
+
+// ── Toggle switch ──────────────────────────────────────────────
+function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button onClick={() => onChange(!value)}
+      className="relative w-11 h-6 rounded-full transition-all"
+      style={{ background: value ? '#2563eb' : 'rgba(255,255,255,.12)' }}>
+      <div className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all"
+        style={{ left: value ? 'calc(100% - 22px)' : 2 }} />
+    </button>
+  );
+}
 
 export default function ProfilePage() {
   const dispatch = useAppDispatch();
@@ -9,7 +21,18 @@ export default function ProfilePage() {
   const { myTickets } = useAppSelector(s => s.tickets);
   const { name } = useAppSelector(s => s.auth);
   const { history } = useAppSelector(s => s.journey);
-  const [tab, setTab] = useState<'stats' | 'history' | 'favs'>('stats');
+  const { darkMode, autoTheme, notifEnabled } = useAppSelector(s => s.ui);
+  const [tab, setTab] = useState<'stats' | 'history' | 'favs' | 'settings'>('stats');
+
+  const handleNotifToggle = async (v: boolean) => {
+    if (v) {
+      if (!('Notification' in window)) { alert('Notifications non supportées'); return; }
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') { alert('Permission refusée'); return; }
+      new Notification('SunuBus', { body: '🔔 Alertes activées ! Vous serez notifié des perturbations.', icon: '/icon-192.png' });
+    }
+    dispatch(setNotifEnabled(v));
+  };
 
   const favStops  = STOPS.filter(s => stopIds.includes(s.id));
   const favLines  = LINES.filter(l => lineIds.includes(l.id));
@@ -56,8 +79,8 @@ export default function ProfilePage() {
       </div>
 
       {/* Tab nav */}
-      <div className="flex px-4 gap-2 mb-4">
-        {([['stats','📊 Stats'], ['history','🕐 Historique'], ['favs','⭐ Favoris']] as const).map(([id, label]) => (
+      <div className="flex px-4 gap-1.5 mb-4 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+        {([['stats','📊 Stats'], ['history','🕐 Historique'], ['favs','⭐ Favoris'], ['settings','⚙️ Réglages']] as const).map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)}
             className="flex-1 py-2 rounded-xl text-xs font-black transition-all"
             style={tab === id
@@ -221,6 +244,69 @@ export default function ProfilePage() {
               ))}
             </div>
           </>
+        )}
+
+        {/* ── SETTINGS TAB ─────────────────────────── */}
+        {tab === 'settings' && (
+          <div className="space-y-3">
+
+            {/* Appearance */}
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+              <div className="px-4 pt-3 pb-1">
+                <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Apparence</p>
+              </div>
+              <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--c-border)' }}>
+                <div>
+                  <div className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>Thème sombre</div>
+                  <div className="text-[10px]" style={{ color: 'var(--c-muted)' }}>Mode nuit activé</div>
+                </div>
+                <Toggle value={darkMode} onChange={() => dispatch(toggleDarkMode())} />
+              </div>
+              <div className="px-4 py-3 flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>Thème automatique</div>
+                  <div className="text-[10px]" style={{ color: 'var(--c-muted)' }}>Clair 6h-19h · Sombre sinon</div>
+                </div>
+                <Toggle value={autoTheme} onChange={v => dispatch(setAutoTheme(v))} />
+              </div>
+            </div>
+
+            {/* Notifications */}
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+              <div className="px-4 pt-3 pb-1">
+                <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Notifications</p>
+              </div>
+              <div className="px-4 py-3 flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>Alertes réseau</div>
+                  <div className="text-[10px]" style={{ color: 'var(--c-muted)' }}>Incidents & perturbations</div>
+                </div>
+                <Toggle value={notifEnabled} onChange={handleNotifToggle} />
+              </div>
+            </div>
+
+            {/* Language */}
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+              <div className="px-4 pt-3 pb-1">
+                <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Langue</p>
+              </div>
+              {[['fr','🇫🇷 Français'], ['wo','🇸🇳 Wolof'], ['en','🇬🇧 English']].map(([id, label]) => (
+                <div key={id} className="px-4 py-3 flex items-center justify-between"
+                  style={{ borderTop: '1px solid var(--c-border)' }}>
+                  <span className="text-sm font-semibold" style={{ color: 'var(--c-text)' }}>{label}</span>
+                  <div className="w-4 h-4 rounded-full border-2"
+                    style={{ borderColor: '#2563eb', background: id === 'fr' ? '#2563eb' : 'transparent' }} />
+                </div>
+              ))}
+            </div>
+
+            {/* About */}
+            <div className="rounded-2xl px-4 py-4 text-center" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+              <div className="text-2xl mb-1">🚌</div>
+              <div className="text-xs font-black text-white">SunuBus v5.2</div>
+              <div className="text-[10px] mt-0.5" style={{ color: 'var(--c-muted)' }}>DakarBus · Simulation locale · © 2026</div>
+            </div>
+          </div>
         )}
 
         <button onClick={() => dispatch(logout())} className="btn btn-danger w-full py-3.5 rounded-2xl">

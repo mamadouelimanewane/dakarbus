@@ -13,6 +13,7 @@ import TicketsPage from '@/pages/TicketsPage';
 import ProfilePage from '@/pages/ProfilePage';
 import ActiveJourneyPage from '@/pages/ActiveJourneyPage';
 import OperatorFilter from '@/components/OperatorFilter';
+import ChatBot from '@/components/ChatBot';
 
 type Tab = 'plan' | 'lines' | 'stops' | 'alerts' | 'tickets' | 'profile';
 
@@ -95,6 +96,8 @@ export default function PassengerApp() {
       {!geoReady && <GeolocGate onDone={() => setGeoReady(true)} />}
       <ToastContainer />
       <JourneyEndModal />
+
+      <ChatBot />
 
       <div className={`flex-1 flex flex-col overflow-hidden ${!geoReady ? 'opacity-0 pointer-events-none' : ''}`}
         style={{ transition: 'opacity .3s' }}>

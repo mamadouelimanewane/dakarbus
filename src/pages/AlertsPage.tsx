@@ -1,6 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addReport, upvoteReport, acknowledgeReport, showToast } from '@/store/store';
+
+function fireNotif(type: string, desc: string) {
+  if (Notification.permission !== 'granted') return;
+  const t = type === 'delay' ? '🐌 Retard signalé' : type === 'accident' ? '💥 Accident signalé' : type === 'crowd' ? '👥 Forte affluence' : '⚠️ Incident';
+  new Notification(`SunuBus — ${t}`, { body: desc.slice(0, 100), icon: '/icon-192.png' });
+}
 import { LINES, STOPS } from '@/data/transportData';
 import type { CrowdsourceReport } from '@/types';
 
@@ -81,6 +87,7 @@ export default function AlertsPage() {
       location: userLocation ?? [14.7167, -17.4677],
       timestamp: Date.now(), upvotes: 0,
     }));
+    fireNotif(type, t);
     dispatch(showToast({ type: 'success', message: 'Signalement envoyé, merci !' }));
     setShowForm(false); setDesc('');
   };

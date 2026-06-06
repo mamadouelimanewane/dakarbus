@@ -95,24 +95,38 @@ const authSlice = createSlice({
 // ── UI Slice ──────────────────────────────────────────────────
 interface UIState {
   darkMode: boolean;
+  autoTheme: boolean;
   lang: Lang;
   sidebarCollapsed: boolean;
   showQR: boolean;
+  notifEnabled: boolean;
+}
+
+function getAutoTheme(): boolean {
+  const h = new Date().getHours();
+  return h < 6 || h >= 19;
 }
 
 const uiSlice = createSlice({
   name: 'ui',
   initialState: {
-    darkMode: window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false,
+    darkMode: window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true,
+    autoTheme: true,
     lang: 'fr' as Lang,
     sidebarCollapsed: false,
     showQR: false,
+    notifEnabled: false,
   } as UIState,
   reducers: {
-    toggleDarkMode: (s) => { s.darkMode = !s.darkMode; },
+    toggleDarkMode: (s) => { s.darkMode = !s.darkMode; s.autoTheme = false; },
+    setAutoTheme: (s, a: PayloadAction<boolean>) => {
+      s.autoTheme = a.payload;
+      if (a.payload) s.darkMode = getAutoTheme();
+    },
     setLang: (s, a: PayloadAction<Lang>) => { s.lang = a.payload; },
     toggleSidebar: (s) => { s.sidebarCollapsed = !s.sidebarCollapsed; },
     setShowQR: (s, a: PayloadAction<boolean>) => { s.showQR = a.payload; },
+    setNotifEnabled: (s, a: PayloadAction<boolean>) => { s.notifEnabled = a.payload; },
   },
 });
 
@@ -294,7 +308,7 @@ export const {
 } = mobilitySlice.actions;
 
 export const { loginPassenger, loginDriver, loginAdmin, logout } = authSlice.actions;
-export const { toggleDarkMode, setLang, toggleSidebar, setShowQR } = uiSlice.actions;
+export const { toggleDarkMode, setAutoTheme, setLang, toggleSidebar, setShowQR, setNotifEnabled } = uiSlice.actions;
 export const { buyTicket, useTicket, addReport, upvoteReport, acknowledgeReport } = ticketSlice.actions;
 export const { toggleFavStop, toggleFavLine, recordTrip, visitLine } = favSlice.actions;
 export const { showToast, dismissToast } = toastSlice.actions;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAppSelector, useAppDispatch } from './store/hooks';
-import { loginPassenger, loginDriver, loginAdmin, setRouteOrigin, setRouteDestination } from './store/store';
+import { loginPassenger, loginDriver, loginAdmin, setRouteOrigin, setRouteDestination, setAutoTheme } from './store/store';
 import { STOPS } from './data/transportData';
 import { parseRouteFromURL } from './utils/share';
 import PassengerApp from './views/passenger/PassengerApp';
@@ -209,6 +209,25 @@ function RoleSelection() {
 export default function App() {
   const dispatch = useAppDispatch();
   const { role, isAuthenticated } = useAppSelector(s => s.auth);
+  const { darkMode, autoTheme } = useAppSelector(s => s.ui);
+
+  // Apply theme to <html>
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
+
+  // Auto-theme: refresh every minute to catch hour change
+  useEffect(() => {
+    if (!autoTheme) return;
+    const tick = () => {
+      const h = new Date().getHours();
+      const shouldBeDark = h < 6 || h >= 19;
+      dispatch(setAutoTheme(true)); // re-evaluates in reducer
+    };
+    const id = setInterval(tick, 60000);
+    return () => clearInterval(id);
+  }, [autoTheme]);
+
   useEffect(() => {
     initSimulation();
     // Handle deep-link share ?from=xxx&to=yyy

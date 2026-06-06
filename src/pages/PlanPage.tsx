@@ -1,53 +1,216 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { setActiveTab, clearRoute } from '@/store/store';
+import { setActiveTab, clearRoute, setRouteOrigin, setRouteDestination } from '@/store/store';
 import RoutePanel from '@/components/RoutePanel';
 import RouteMap from '@/components/RouteMap';
+import { STOPS, getNextDepartures } from '@/data/transportData';
 
-const FARES = [
-  { id:'DDD',  emoji:'🚌', label:'Bus Urbain',    price:'200', color:'#2563eb' },
-  { id:'AFTU', emoji:'🚐', label:'Car Rapide',    price:'150', color:'#e11d48' },
-  { id:'BRT',  emoji:'🚍', label:'BRT Climatisé', price:'300', color:'#7c3aed' },
-  { id:'TER',  emoji:'🚆', label:'TER Train',     price:'500', color:'#059669' },
-];
+// ── Greeting by time of day ───────────────────────────────────
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 6)  return 'Bonne nuit 🌙';
+  if (h < 12) return 'Bonjour ☀️';
+  if (h < 18) return 'Bon après-midi 🌤️';
+  return 'Bonsoir 🌆';
+}
+
+// ── Live countdown ─────────────────────────────────────────────
+function Countdown({ seconds }: { seconds: number }) {
+  const [s, setS] = useState(seconds);
+  useEffect(() => {
+    const t = setInterval(() => setS(p => Math.max(0, p - 1)), 1000);
+    return () => clearInterval(t);
+  }, []);
+  if (s <= 0) return <span style={{ color: '#4ade80', fontWeight: 900 }}>Maint.</span>;
+  const m = Math.floor(s / 60);
+  const ss = s % 60;
+  return <span>{m > 0 ? `${m}m${String(ss).padStart(2,'0')}` : `${ss}s`}</span>;
+}
+
+// ── Favorite stop departures widget ──────────────────────────
+function FavStopWidget({ stopId, onSelect }: { stopId: string; onSelect: () => void }) {
+  const stop = STOPS.find(s => s.id === stopId);
+  if (!stop) return null;
+  const deps = getNextDepartures(stopId).slice(0, 3);
+  return (
+    <button onClick={onSelect}
+      className="w-full text-left p-3.5 rounded-2xl transition-all active:scale-[.98]"
+      style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}
+      onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(37,99,235,.35)')}
+      onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--c-border)')}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-base">📍</span>
+          <span className="text-sm font-black" style={{ color: 'var(--c-text)' }}>{stop.name}</span>
+        </div>
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+          style={{ background: 'rgba(37,99,235,.15)', color: '#60a5fa' }}>{stop.zone}</span>
+      </div>
+      <div className="flex gap-2">
+        {deps.length === 0
+          ? <span className="text-xs" style={{ color: 'var(--c-muted)' }}>Aucun départ</span>
+          : deps.map((d, i) => (
+            <div key={i} className="flex-1 text-center py-1.5 rounded-xl"
+              style={{ background: d.color + '18', border: `1px solid ${d.color}30` }}>
+              <div className="text-[10px] font-black" style={{ color: d.color }}>{d.lineName}</div>
+              <div className="text-[11px] font-black text-white mt-0.5">
+                <Countdown seconds={d.waitMin * 60} />
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </button>
+  );
+}
+
+// ── Transport status widget ────────────────────────────────────
+function TransportStatus() {
+  const h = new Date().getHours();
+  const level = h >= 7 && h <= 9 ? { label: 'Heure de pointe', color: '#dc2626', emoji: '🔴', tip: 'Affluence élevée, prévoyez +15 min' }
+    : h >= 17 && h <= 19 ? { label: 'Heure de pointe', color: '#dc2626', emoji: '🔴', tip: 'Trafic dense ce soir' }
+    : h >= 22 || h < 5   ? { label: 'Service réduit', color: '#d97706', emoji: '🟡', tip: 'Fréquences réduites la nuit' }
+    : { label: 'Service normal', color: '#059669', emoji: '🟢', tip: 'Réseau opérationnel' };
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+      style={{ background: level.color + '12', border: `1px solid ${level.color}25` }}>
+      <span className="text-lg">{level.emoji}</span>
+      <div>
+        <div className="text-xs font-black" style={{ color: level.color }}>{level.label}</div>
+        <div className="text-[10px] mt-0.5" style={{ color: 'var(--c-muted)' }}>{level.tip}</div>
+      </div>
+    </div>
+  );
+}
 
 export default function PlanPage() {
   const dispatch = useAppDispatch();
   const { route } = useAppSelector(s => s.mobility);
+  const { stopIds: favStopIds } = useAppSelector(s => s.favorites);
+  const { reports } = useAppSelector(s => s.tickets);
+  const { history } = useAppSelector(s => s.journey);
+
   const hasRoute = !!(route.origin && route.destination);
+  const recentAlerts = reports.filter(r => Date.now() - r.timestamp < 1000 * 60 * 30).length;
+  const lastTrip = history[0];
+
   return (
     <div className="flex flex-col h-full">
       <RouteMap show={hasRoute} onClose={() => dispatch(clearRoute())} />
       <div className="flex-1 overflow-y-auto pb-6">
-      <RoutePanel />
+        <RoutePanel />
 
-      {/* Tariffs */}
-      <div className="px-4 mt-1">
-        <div className="rounded-2xl overflow-hidden" style={{background:'var(--c-surface)',border:'1px solid var(--c-border)'}}>
-          <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-            <h3 className="text-[10px] font-black uppercase tracking-widest" style={{color:'var(--c-muted)'}}>Tarifs réseau</h3>
-          </div>
-          <div className="grid grid-cols-2 gap-2 px-4 pb-3">
-            {FARES.map(f=>(
-              <div key={f.id} className="flex items-center gap-2.5 p-3 rounded-xl" style={{background:f.color+'10'}}>
-                <span className="text-xl">{f.emoji}</span>
-                <div>
-                  <div className="text-xs font-bold text-white truncate">{f.label}</div>
-                  <div className="text-sm font-black" style={{color:f.color}}>{f.price} <span className="text-[10px] opacity-70">FCFA</span></div>
+        {/* Dynamic home content — shown only when no route */}
+        {!hasRoute && (
+          <div className="px-4 space-y-4 mt-2">
+
+            {/* Greeting */}
+            <div className="pt-1">
+              <h2 className="text-lg font-black" style={{ color: 'var(--c-text)' }}>{greeting()}</h2>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--c-muted)' }}>Où allez-vous aujourd'hui ?</p>
+            </div>
+
+            {/* Transport status */}
+            <TransportStatus />
+
+            {/* Quick re-do last trip */}
+            {lastTrip?.originId && lastTrip?.destId && (
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--c-muted)' }}>
+                  Trajet récent
+                </p>
+                <button
+                  onClick={() => {
+                    const o = STOPS.find(s => s.id === lastTrip.originId);
+                    const d = STOPS.find(s => s.id === lastTrip.destId);
+                    if (o) dispatch(setRouteOrigin(o));
+                    if (d) dispatch(setRouteDestination(d));
+                  }}
+                  className="w-full flex items-center gap-3 p-3.5 rounded-2xl text-left transition-all active:scale-[.98]"
+                  style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(37,99,235,.35)')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--c-border)')}>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                    style={{ background: 'rgba(37,99,235,.15)' }}>🔄</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-black" style={{ color: 'var(--c-text)' }}>Refaire</div>
+                    <div className="text-[11px] truncate mt-0.5" style={{ color: 'var(--c-muted)' }}>
+                      {lastTrip.originName} → {lastTrip.destName}
+                    </div>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0"
+                    style={{ background: 'rgba(37,99,235,.15)', color: '#60a5fa' }}>{lastTrip.fare} F</span>
+                </button>
+              </div>
+            )}
+
+            {/* Favorite stops with live departures */}
+            {favStopIds.length > 0 && (
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--c-muted)' }}>
+                  Mes arrêts favoris · Prochains départs
+                </p>
+                <div className="space-y-2">
+                  {favStopIds.slice(0, 3).map(id => (
+                    <FavStopWidget key={id} stopId={id} onSelect={() => {
+                      const s = STOPS.find(x => x.id === id);
+                      if (s) dispatch(setRouteOrigin(s));
+                    }} />
+                  ))}
                 </div>
               </div>
-            ))}
+            )}
+
+            {/* Active alerts banner */}
+            {recentAlerts > 0 && (
+              <button
+                onClick={() => dispatch(setActiveTab('alerts'))}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all active:scale-[.98]"
+                style={{ background: 'rgba(220,38,38,.1)', border: '1px solid rgba(220,38,38,.25)' }}>
+                <span className="text-xl">⚠️</span>
+                <div className="flex-1 text-left">
+                  <div className="text-xs font-black" style={{ color: '#f87171' }}>
+                    {recentAlerts} alerte{recentAlerts > 1 ? 's' : ''} active{recentAlerts > 1 ? 's' : ''}
+                  </div>
+                  <div className="text-[10px] mt-0.5" style={{ color: '#64748b' }}>Incidents signalés ces 30 dernières minutes</div>
+                </div>
+                <span className="text-[10px] font-bold" style={{ color: '#f87171' }}>Voir →</span>
+              </button>
+            )}
+
+            {/* Tariffs + M-Ticket */}
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--c-muted)' }}>
+                Tarifs réseau
+              </p>
+              <div className="grid grid-cols-2 gap-2 rounded-2xl overflow-hidden p-3"
+                style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+                {[
+                  { emoji:'🚌', label:'Bus Urbain',    price:'200', color:'#2563eb' },
+                  { emoji:'🚐', label:'Car Rapide',    price:'150', color:'#e11d48' },
+                  { emoji:'🚍', label:'BRT Climatisé', price:'300', color:'#7c3aed' },
+                  { emoji:'🚆', label:'TER Train',     price:'500', color:'#059669' },
+                ].map(f => (
+                  <div key={f.label} className="flex items-center gap-2 p-2.5 rounded-xl" style={{ background: f.color + '10' }}>
+                    <span className="text-lg">{f.emoji}</span>
+                    <div>
+                      <div className="text-[11px] font-bold truncate" style={{ color: 'var(--c-text)' }}>{f.label}</div>
+                      <div className="text-sm font-black leading-none mt-0.5" style={{ color: f.color }}>{f.price}<span className="text-[9px] opacity-70 ml-0.5">F</span></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => dispatch(setActiveTab('tickets'))}
+                className="w-full py-3 rounded-xl text-sm font-black text-white mt-2 transition-all active:scale-95"
+                style={{ background: 'linear-gradient(135deg,#1d4ed8,#7c3aed)', boxShadow: '0 6px 20px rgba(37,99,235,.3)' }}>
+                💳 Acheter un M-Ticket
+              </button>
+            </div>
+
           </div>
-          <div className="px-4 pb-4">
-            <button onClick={()=>dispatch(setActiveTab('tickets'))}
-              className="w-full py-3 rounded-xl text-sm font-black text-white transition-all active:scale-95"
-              style={{background:'linear-gradient(135deg,#1d4ed8,#7c3aed)',boxShadow:'0 6px 20px rgba(37,99,235,.3)'}}>
-              💳 Acheter un M-Ticket
-            </button>
-          </div>
-        </div>
+        )}
       </div>
-    </div>
     </div>
   );
 }
