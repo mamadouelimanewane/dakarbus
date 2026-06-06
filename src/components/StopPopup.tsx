@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import type { Stop } from '@/types';
 import { getNextDepartures, OPERATORS } from '@/data/transportData';
+import { useAppDispatch } from '@/store/hooks';
+import { setRouteOrigin, setRouteDestination, setActiveTab } from '@/store/store';
 
 // Live countdown timer (updates every second)
 function LiveCountdown({ waitMin }: { waitMin: number }) {
@@ -21,6 +23,7 @@ function LiveCountdown({ waitMin }: { waitMin: number }) {
 }
 
 export default function StopPopup({ stop }: { stop: Stop }) {
+  const dispatch = useAppDispatch();
   const deps = getNextDepartures(stop.id).slice(0, 4);
   const mainOp = stop.operators[0];
   const accentColor = OPERATORS[mainOp]?.color || '#2563eb';
@@ -56,6 +59,40 @@ export default function StopPopup({ stop }: { stop: Stop }) {
             </span>
           )}
         </div>
+      </div>
+
+      {/* Action buttons: set as departure or destination */}
+      <div style={{ display: 'flex', gap: 6, padding: '8px 14px', borderBottom: '1px solid rgba(255,255,255,.06)' }}>
+        <button
+          onClick={() => {
+            dispatch(setRouteOrigin(stop));
+            dispatch(setActiveTab('plan'));
+          }}
+          style={{
+            flex: 1, padding: '7px 4px', borderRadius: 10, border: 'none', cursor: 'pointer',
+            background: 'rgba(5,150,105,.18)', color: '#34d399',
+            fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', gap: 4, transition: 'all .15s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(5,150,105,.32)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(5,150,105,.18)')}>
+          🟢 Départ
+        </button>
+        <button
+          onClick={() => {
+            dispatch(setRouteDestination(stop));
+            dispatch(setActiveTab('plan'));
+          }}
+          style={{
+            flex: 1, padding: '7px 4px', borderRadius: 10, border: 'none', cursor: 'pointer',
+            background: 'rgba(220,38,38,.18)', color: '#f87171',
+            fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', gap: 4, transition: 'all .15s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(220,38,38,.32)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(220,38,38,.18)')}>
+          🔴 Arrivée
+        </button>
       </div>
 
       {/* Departures */}

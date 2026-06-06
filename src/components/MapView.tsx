@@ -439,9 +439,24 @@ export default function MapView() {
     ? [route.origin?.id, route.destination?.id].filter(Boolean) as string[]
     : focusedLine ? (LINES.find(l => l.id === focusedLine)?.stops || []) : null;
 
-  const visibleStops = routeMode ? [] : routeStopIds
+  const allVisibleStops = routeMode ? [] : routeStopIds
     ? STOPS.filter(s => routeStopIds.includes(s.id))
     : (selectedOperator === 'all' ? STOPS : STOPS.filter(s => s.operators.includes(selectedOperator as any)));
+
+  // Dédoublonnage par position géographique : si deux arrêts sont à moins de 20m,
+  // on garde celui qui a le plus d'opérateurs (hubs BRT/DDD colocalisés → un seul marqueur)
+  const visibleStops = allVisibleStops.filter((stop, idx) => {
+    if (selectedOperator !== 'all') return true; // pas de dédup quand on filtre par opérateur
+    return !allVisibleStops.some((other, oidx) => {
+      if (oidx >= idx) return false;
+      const dlat = Math.abs(stop.lat - other.lat);
+      const dlng = Math.abs(stop.lng - other.lng);
+      // ~20m threshold
+      if (dlat > 0.0002 || dlng > 0.0002) return false;
+      // garde l'arrêt avec le plus d'opérateurs/lignes
+      return other.lines.length >= stop.lines.length;
+    });
+  });
 
   useEffect(() => {
     if (routeMode) { setLoadingCount(0); return; }
