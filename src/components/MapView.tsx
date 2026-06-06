@@ -151,7 +151,7 @@ function FocusedLineOverlay({ line }: { line: Line }) {
           zIndexOffset={isTerminus ? 500 : 100}
           eventHandlers={{ click: () => dispatch(setSelectedStop(stop.id)) }}>
           <Popup maxWidth={240} minWidth={210}>
-            <div style={{ fontFamily: 'Inter, sans-serif', padding: 12, background: '#1e293b', borderRadius: 12 }}>
+            <div style={{ fontFamily: 'Inter, sans-serif', padding: 12, background: '#ffffff', borderRadius: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <div style={{ width: 22, height: 22, borderRadius: '50%', background: line.color,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -159,7 +159,7 @@ function FocusedLineOverlay({ line }: { line: Line }) {
                   {isTerminus ? (index === 1 ? 'A' : 'Z') : index}
                 </div>
                 <div>
-                  <div style={{ fontWeight: 800, color: '#f1f5f9', fontSize: 13 }}>{stop.name}</div>
+                  <div style={{ fontWeight: 800, color: '#1e293b', fontSize: 13 }}>{stop.name}</div>
                   <div style={{ fontSize: 10, color: '#64748b' }}>{stop.zone}</div>
                 </div>
               </div>
@@ -380,7 +380,7 @@ export default function MapView() {
       </button>
 
       <MapContainer center={[14.7167, -17.4677]} zoom={12}
-        style={{ width: '100%', height: '100%' }} zoomControl={true}>
+        style={{ width: '100%', height: '100%', background: '#f0f4f8' }} zoomControl={true}>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution=""
@@ -435,9 +435,9 @@ export default function MapView() {
         {routeMode && route?.origin && (
           <Marker position={[route.origin.lat, route.origin.lng]} icon={originIcon} zIndexOffset={1000}>
             <Popup>
-              <div style={{ padding: 12, fontFamily: 'Inter', background: '#1e293b', borderRadius: 12 }}>
-                <div style={{ fontWeight: 900, color: '#34d399' }}>🟢 Départ</div>
-                <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>{route.origin.name}</div>
+              <div style={{ padding: 12, fontFamily: 'Inter', background: '#ffffff', borderRadius: 12 }}>
+                <div style={{ fontWeight: 900, color: '#059669' }}>🟢 Départ</div>
+                <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{route.origin.name}</div>
               </div>
             </Popup>
           </Marker>
@@ -445,9 +445,9 @@ export default function MapView() {
         {routeMode && route?.destination && (
           <Marker position={[route.destination.lat, route.destination.lng]} icon={destIcon} zIndexOffset={1000}>
             <Popup>
-              <div style={{ padding: 12, fontFamily: 'Inter', background: '#1e293b', borderRadius: 12 }}>
-                <div style={{ fontWeight: 900, color: '#f87171' }}>🔴 Arrivée</div>
-                <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>{route.destination.name}</div>
+              <div style={{ padding: 12, fontFamily: 'Inter', background: '#ffffff', borderRadius: 12 }}>
+                <div style={{ fontWeight: 900, color: '#dc2626' }}>🔴 Arrivée</div>
+                <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{route.destination.name}</div>
               </div>
             </Popup>
           </Marker>
@@ -457,7 +457,7 @@ export default function MapView() {
           <>
             <Marker position={userLocation} icon={userIcon}>
               <Popup>
-                <div style={{ padding: 12, fontFamily: 'Inter', background: '#1e293b', borderRadius: 12, fontWeight: 700, fontSize: 13 }}>
+                <div style={{ padding: 12, fontFamily: 'Inter', background: '#ffffff', borderRadius: 12, fontWeight: 700, fontSize: 13 }}>
                   📍 Ma position
                 </div>
               </Popup>
@@ -492,16 +492,16 @@ export default function MapView() {
             <Marker key={i} position={[bus.lat, bus.lng]} icon={busIcon}
               zIndexOffset={isOnFocusedLine ? 1000 : 0}>
               <Popup maxWidth={240}>
-                <div style={{ padding: 12, fontFamily: 'Inter', background: '#1e293b', borderRadius: 12 }}>
+                <div style={{ padding: 12, fontFamily: 'Inter', background: '#ffffff', borderRadius: 12 }}>
                   <div style={{ fontWeight: 900, color, fontSize: 13, marginBottom: 8 }}>
                     {line?.name ?? bus.lineId}
                     <span style={{ fontWeight: 500, color: '#64748b', marginLeft: 6, fontSize: 11 }}>{line?.operator}</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 11 }}>
-                    <div style={{ color: '#94a3b8' }}>🚌 {driver?.plate ?? 'N/A'}</div>
-                    <div style={{ color: '#34d399', fontWeight: 700 }}>{bus.speed} km/h</div>
-                    <div style={{ color: '#94a3b8' }}>👤 {driver?.name ?? '—'}</div>
-                    <div style={{ color: '#94a3b8' }}>👥 {bus.occupancy}% plein</div>
+                    <div style={{ color: '#64748b' }}>🚌 {driver?.plate ?? 'N/A'}</div>
+                    <div style={{ color: '#059669', fontWeight: 700 }}>{bus.speed} km/h</div>
+                    <div style={{ color: '#64748b' }}>👤 {driver?.name ?? '—'}</div>
+                    <div style={{ color: '#64748b' }}>👥 {bus.occupancy}% plein</div>
                   </div>
                   {driver?.phone && (
                     <div style={{ marginTop: 8, fontSize: 10, color: '#475569' }}>📞 {driver.phone}</div>
