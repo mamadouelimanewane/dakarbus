@@ -1,4 +1,4 @@
-const CACHE = 'sunubus-v1';
+const CACHE = 'sunubus-v6';
 const PRECACHE = [
   '/',
   '/index.html',

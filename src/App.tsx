@@ -216,15 +216,12 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
 
-  // Auto-theme: refresh every minute to catch hour change
+  // Auto-theme: force immédiatement au montage + recalcul toutes les minutes
   useEffect(() => {
     if (!autoTheme) return;
-    const tick = () => {
-      const h = new Date().getHours();
-      const shouldBeDark = h < 6 || h >= 19;
-      dispatch(setAutoTheme(true)); // re-evaluates in reducer
-    };
-    const id = setInterval(tick, 60000);
+    // Recalcul immédiat dès le chargement (corrige le cache Service Worker)
+    dispatch(setAutoTheme(true));
+    const id = setInterval(() => dispatch(setAutoTheme(true)), 60000);
     return () => clearInterval(id);
   }, [autoTheme]);
 
