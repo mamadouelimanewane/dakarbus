@@ -310,6 +310,7 @@ const makeTransferIcon = (lineNames: string) => L.divIcon({
 // ── RouteOverlay ───────────────────────────────────────────────
 function RouteOverlay() {
   const map = useMap();
+  const dispatch = useAppDispatch();
   const { routeDisplay, userLocation } = useAppSelector(s => s.mobility);
   const { active: journey } = useAppSelector(s => s.journey);
   const [busCoords, setBusCoords] = useState<Record<string, [number, number][]>>({});
@@ -388,22 +389,41 @@ function RouteOverlay() {
         />
       )}
 
-      {/* Bus segments + étiquette numéro de ligne au milieu du tracé */}
+      {/* Bus segments : tracé propre + arrêts intermédiaires + étiquette ligne */}
       {routeDisplay.segments.map((seg, i) => {
         const key = `${seg.lineId}:${seg.fromStopId}:${seg.toStopId}`;
         const coords = busCoords[key];
         if (!coords) return null;
-        // Point au 1/3 du tracé (évite le chevauchement avec les marqueurs A/B)
-        const labelIdx = Math.floor(coords.length * 0.4);
+
+        // Arrêts intermédiaires du segment (entre fromStop et toStop)
+        const line = LINES.find(l => l.id === seg.lineId);
+        const fromIdx = line ? line.stops.indexOf(seg.fromStopId) : -1;
+        const toIdx   = line ? line.stops.indexOf(seg.toStopId)   : -1;
+        const segStopIds = (line && fromIdx >= 0 && toIdx >= 0)
+          ? line.stops.slice(Math.min(fromIdx, toIdx), Math.max(fromIdx, toIdx) + 1)
+          : [seg.fromStopId, seg.toStopId];
+        const segStops = segStopIds.map(id => STOPS.find(s => s.id === id)).filter(Boolean) as typeof STOPS;
+
+        // Label au milieu du tracé
+        const labelIdx = Math.floor(coords.length * 0.45);
         const labelPos = coords[labelIdx] ?? coords[Math.floor(coords.length / 2)];
+
         return (
           <React.Fragment key={i}>
             {/* Halo blanc */}
-            <Polyline positions={coords} pathOptions={{ color: '#fff', weight: 12, opacity: 0.3, lineCap: 'round' }} />
+            <Polyline positions={coords} pathOptions={{ color: '#fff', weight: 14, opacity: 0.35, lineCap: 'round' }} />
             {/* Tracé principal */}
             <Polyline positions={coords} pathOptions={{ color: seg.color, weight: 7, opacity: 1, lineCap: 'round', lineJoin: 'round' }} />
-            {/* Numéro de ligne centré sur le tracé */}
+            {/* Étiquette numéro de ligne */}
             <Marker position={labelPos} icon={makeLineLabelIcon(seg.lineName, seg.color)} interactive={false} zIndexOffset={800} />
+            {/* Arrêts intermédiaires (petits ronds cliquables avec popup) */}
+            {segStops.map(stop => (
+              <Marker key={stop.id} position={[stop.lat, stop.lng]}
+                icon={makeStopIcon(seg.color, 9)} zIndexOffset={200}
+                eventHandlers={{ click: () => dispatch(setSelectedStop(stop.id)) }}>
+                <Popup maxWidth={240} minWidth={210}><StopPopup stop={stop} /></Popup>
+              </Marker>
+            ))}
           </React.Fragment>
         );
       })}
@@ -602,8 +622,8 @@ export default function MapView() {
           );
         })()}
 
-        {/* Normal mode: all lines + simple stop markers */}
-        {!routeMode && !focusedLine && (
+        {/* Normal mode: all lines + simple stop markers — masqué quand un itinéraire est actif */}
+        {!routeMode && !focusedLine && !routeDisplay && (
           <>
             {visibleLines.map(line => (
               <BusLine key={line.id} line={line} isFocused={false} hasFocus={false} />
