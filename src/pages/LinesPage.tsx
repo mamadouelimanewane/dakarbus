@@ -477,33 +477,101 @@ export default function LinesPage() {
               </div>
             )}
 
-            {/* All / filtered lines grouped by operator */}
+            {/* All / filtered lines — grille colonnes par opérateur */}
             {directLines.length === 0 ? (
               <div className="text-center py-12" style={{ color: '#1e293b' }}>
                 <div className="text-4xl mb-2">🚌</div>
                 <p className="font-bold text-sm">Aucune ligne</p>
               </div>
-            ) : groups.map(op => {
-              const opLines = directLines.filter(l => l.operator === op);
-              return (
-                <div key={op} className="mb-4">
-                  <div className="flex items-center gap-2 mb-2 sticky top-0 py-1" style={{ background: 'var(--c-bg)' }}>
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: OPERATORS[op]?.color }} />
-                    <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: OPERATORS[op]?.color }}>
-                      {OPERATORS[op]?.fullName || op}
-                    </span>
-                    <span className="text-[9px]" style={{ color: '#1e293b' }}>({opLines.length})</span>
-                  </div>
-                  {opLines.map(line => (
-                    <LineCard key={line.id} line={line}
-                      busCount={busCount(line.id)} isFav={favIds.includes(line.id)}
-                      isRecent={recentLines.includes(line.id)}
-                      onSelect={() => handleSelectLine(line.id)}
-                      onFav={() => dispatch(toggleFavLine(line.id))} />
-                  ))}
-                </div>
-              );
-            })}
+            ) : (
+              /* Colonnes : DDD | AFTU | BRT+TER */
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, alignItems: 'start' }}>
+                {/* Colonne DDD */}
+                {(() => {
+                  const opLines = directLines.filter(l => l.operator === 'DDD');
+                  if (!opLines.length) return null;
+                  const op = OPERATORS['DDD'];
+                  return (
+                    <div key="DDD">
+                      <div className="flex items-center gap-2 mb-3 pb-1.5" style={{ borderBottom: `2px solid ${op?.color}40` }}>
+                        <span className="w-3 h-3 rounded-full" style={{ background: op?.color }} />
+                        <span className="text-xs font-black uppercase tracking-wider" style={{ color: op?.color }}>{op?.fullName || 'DDD'}</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: op?.color + '20', color: op?.color }}>{opLines.length}</span>
+                      </div>
+                      {opLines.map(line => (
+                        <LineCard key={line.id} line={line} busCount={busCount(line.id)}
+                          isFav={favIds.includes(line.id)} isRecent={recentLines.includes(line.id)}
+                          onSelect={() => handleSelectLine(line.id)}
+                          onFav={() => dispatch(toggleFavLine(line.id))} />
+                      ))}
+                    </div>
+                  );
+                })()}
+
+                {/* Colonne AFTU */}
+                {(() => {
+                  const opLines = directLines.filter(l => l.operator === 'AFTU');
+                  if (!opLines.length) return null;
+                  const op = OPERATORS['AFTU'];
+                  return (
+                    <div key="AFTU">
+                      <div className="flex items-center gap-2 mb-3 pb-1.5" style={{ borderBottom: `2px solid ${op?.color}40` }}>
+                        <span className="w-3 h-3 rounded-full" style={{ background: op?.color }} />
+                        <span className="text-xs font-black uppercase tracking-wider" style={{ color: op?.color }}>{op?.fullName || 'AFTU'}</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: op?.color + '20', color: op?.color }}>{opLines.length}</span>
+                      </div>
+                      {opLines.map(line => (
+                        <LineCard key={line.id} line={line} busCount={busCount(line.id)}
+                          isFav={favIds.includes(line.id)} isRecent={recentLines.includes(line.id)}
+                          onSelect={() => handleSelectLine(line.id)}
+                          onFav={() => dispatch(toggleFavLine(line.id))} />
+                      ))}
+                    </div>
+                  );
+                })()}
+
+                {/* Colonne BRT + TER */}
+                {(() => {
+                  const brtLines  = directLines.filter(l => l.operator === 'BRT');
+                  const terLines  = directLines.filter(l => l.operator === 'TER');
+                  if (!brtLines.length && !terLines.length) return null;
+                  return (
+                    <div key="BRT-TER">
+                      {brtLines.length > 0 && (
+                        <>
+                          <div className="flex items-center gap-2 mb-3 pb-1.5" style={{ borderBottom: `2px solid ${OPERATORS['BRT']?.color}40` }}>
+                            <span className="w-3 h-3 rounded-full" style={{ background: OPERATORS['BRT']?.color }} />
+                            <span className="text-xs font-black uppercase tracking-wider" style={{ color: OPERATORS['BRT']?.color }}>BRT</span>
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: OPERATORS['BRT']?.color + '20', color: OPERATORS['BRT']?.color }}>{brtLines.length}</span>
+                          </div>
+                          {brtLines.map(line => (
+                            <LineCard key={line.id} line={line} busCount={busCount(line.id)}
+                              isFav={favIds.includes(line.id)} isRecent={recentLines.includes(line.id)}
+                              onSelect={() => handleSelectLine(line.id)}
+                              onFav={() => dispatch(toggleFavLine(line.id))} />
+                          ))}
+                        </>
+                      )}
+                      {terLines.length > 0 && (
+                        <>
+                          <div className="flex items-center gap-2 mb-3 mt-4 pb-1.5" style={{ borderBottom: `2px solid ${OPERATORS['TER']?.color}40` }}>
+                            <span className="w-3 h-3 rounded-full" style={{ background: OPERATORS['TER']?.color }} />
+                            <span className="text-xs font-black uppercase tracking-wider" style={{ color: OPERATORS['TER']?.color }}>TER</span>
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: OPERATORS['TER']?.color + '20', color: OPERATORS['TER']?.color }}>{terLines.length}</span>
+                          </div>
+                          {terLines.map(line => (
+                            <LineCard key={line.id} line={line} busCount={busCount(line.id)}
+                              isFav={favIds.includes(line.id)} isRecent={recentLines.includes(line.id)}
+                              onSelect={() => handleSelectLine(line.id)}
+                              onFav={() => dispatch(toggleFavLine(line.id))} />
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </>
         )}
       </div>
