@@ -395,18 +395,13 @@ function RouteOverlay() {
         const coords = busCoords[key];
         if (!coords) return null;
 
-        // Label au milieu du tracé
-        const labelIdx = Math.floor(coords.length * 0.45);
-        const labelPos = coords[labelIdx] ?? coords[Math.floor(coords.length / 2)];
-
         return (
           <React.Fragment key={i}>
             {/* Halo blanc */}
             <Polyline positions={coords} pathOptions={{ color: '#fff', weight: 14, opacity: 0.35, lineCap: 'round' }} />
             {/* Tracé principal */}
             <Polyline positions={coords} pathOptions={{ color: seg.color, weight: 7, opacity: 1, lineCap: 'round', lineJoin: 'round' }} />
-            {/* Étiquette numéro de ligne */}
-            <Marker position={labelPos} icon={makeLineLabelIcon(seg.lineName, seg.color)} interactive={false} zIndexOffset={800} />
+            {/* Étiquette retirée — info disponible dans la timeline flottante */}
           </React.Fragment>
         );
       })}
@@ -602,6 +597,113 @@ export default function MapView() {
             </div>
           </div>
         ) : null;
+      })()}
+
+      {/* ── Timeline flottante sur la carte (côté chatbot) ────── */}
+      {routeDisplay && (() => {
+        const origin = STOPS.find(s => s.id === routeDisplay.originStopId);
+        const dest   = STOPS.find(s => s.id === routeDisplay.destStopId);
+        if (!origin || !dest) return null;
+
+        // Construire les nœuds depuis routeDisplay.segments
+        type TNode =
+          | { t: 'stop';    name: string; color: string; label: 'A' | 'B' | '↻' }
+          | { t: 'segment'; lineName: string; color: string; from: string; to: string };
+
+        const nodes: TNode[] = [];
+        nodes.push({ t: 'stop', name: origin.name, color: '#059669', label: 'A' });
+
+        routeDisplay.segments.forEach((seg, i) => {
+          const fromStop = STOPS.find(s => s.id === seg.fromStopId);
+          const toStop   = STOPS.find(s => s.id === seg.toStopId);
+          nodes.push({
+            t: 'segment',
+            lineName: seg.lineName,
+            color: seg.color,
+            from: fromStop?.name ?? '',
+            to:   toStop?.name  ?? '',
+          });
+          // Nœud de correspondance (sauf après le dernier segment)
+          if (i < routeDisplay.segments.length - 1 && toStop) {
+            nodes.push({ t: 'stop', name: toStop.name, color: '#d97706', label: '↻' });
+          }
+        });
+
+        nodes.push({ t: 'stop', name: dest.name, color: '#dc2626', label: 'B' });
+
+        return (
+          <div className="absolute bottom-20 right-4 z-[900] animate-fade-up"
+            style={{
+              background: 'rgba(10,15,30,.93)',
+              backdropFilter: 'blur(18px)',
+              border: '1px solid rgba(255,255,255,.12)',
+              borderRadius: 16,
+              boxShadow: '0 8px 32px rgba(0,0,0,.45)',
+              minWidth: 180,
+              maxWidth: 230,
+            }}>
+            {/* En-tête */}
+            <div className="px-3 pt-2.5 pb-1.5" style={{ borderBottom: '1px solid rgba(255,255,255,.07)' }}>
+              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#475569' }}>
+                Itinéraire
+              </span>
+            </div>
+
+            {/* Nœuds */}
+            <div className="px-3 py-2">
+              {nodes.map((node, idx) => (
+                <div key={idx} className="flex gap-2 items-stretch">
+                  {/* Colonne icône + trait */}
+                  <div className="flex flex-col items-center" style={{ width: 20, flexShrink: 0 }}>
+                    {node.t === 'stop' ? (
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white flex-shrink-0"
+                        style={{ background: node.color, border: '1.5px solid rgba(255,255,255,.25)' }}>
+                        {node.label}
+                      </div>
+                    ) : (
+                      <div className="w-5 h-5 rounded-lg flex items-center justify-center text-[10px] flex-shrink-0"
+                        style={{ background: node.color + 'cc' }}>
+                        🚌
+                      </div>
+                    )}
+                    {idx < nodes.length - 1 && (
+                      <div className="flex-1 w-px my-0.5"
+                        style={{
+                          background: node.t === 'segment'
+                            ? node.color + '80'
+                            : ((nodes[idx + 1] as any)?.color ?? '#ffffff') + '60',
+                          minHeight: 10,
+                        }} />
+                    )}
+                  </div>
+
+                  {/* Texte */}
+                  <div className="flex-1 pb-1.5 pt-0.5 min-w-0">
+                    {node.t === 'stop' && (
+                      <span className="text-[11px] font-black leading-tight block truncate"
+                        style={{ color: node.color }}>
+                        {node.name}
+                      </span>
+                    )}
+                    {node.t === 'segment' && (
+                      <div>
+                        <span className="text-[11px] font-black px-1.5 py-0.5 rounded-md text-white inline-block"
+                          style={{ background: node.color }}>
+                          {node.lineName}
+                        </span>
+                        {node.from && node.to && (
+                          <p className="text-[9px] mt-0.5 truncate" style={{ color: '#475569' }}>
+                            {node.from} → {node.to}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
       })()}
 
       {/* Geolocate button */}
