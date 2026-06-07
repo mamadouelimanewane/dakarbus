@@ -1,12 +1,16 @@
 /**
- * VoyagerWizard — Workflow guidé "Je veux voyager"
- * Étapes : GPS → Destination → Proposition → Confirmation → Navigation + arrivée bus
+ * VoyagerWizard — Workflow guidé "Voyager"
+ * Étapes :
+ *  1. Départ    — position GPS pré-remplie, modifiable
+ *  2. Opérateur — DDD | AFTU | TER | BRT
+ *  3. Destination — saisie texte avec suggestions
+ *  4. Résultat  — tracé sur carte + validation
  */
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   setUserLocation, setRouteOrigin, setRouteDestination,
-  setRouteDisplay, setMapCenter, setMapZoom, setActiveTab, showToast,
+  setRouteDisplay, setMapCenter, setMapZoom, setActiveTab,
 } from '@/store/store';
 import { searchLocal } from '@/utils/placeSearch';
 import { getNearestStop, walkingMinutes } from '@/utils/nearest';
@@ -16,172 +20,221 @@ import type { Stop } from '@/types';
 import type { RouteOption } from '@/utils/routeFinder';
 
 // ── Types ──────────────────────────────────────────────────────
-type Step = 'geolocate' | 'destination' | 'propose' | 'navigate';
-
-interface Proposal {
-  option: RouteOption;
-  nearestStop: Stop;
-  walkMeters: number;
-  walkMin: number;
-  destStop: Stop;
-  operator: string;
-  operatorColor: string;
-  busArrivalMin: number; // minutes avant arrivée du bus simulée
-}
-
-// ── Countdown formaté ──────────────────────────────────────────
-function Countdown({ totalSec, onDone }: { totalSec: number; onDone: () => void }) {
-  const [sec, setSec] = useState(totalSec);
-  useEffect(() => {
-    if (sec <= 0) { onDone(); return; }
-    const t = setTimeout(() => setSec(s => s - 1), 1000);
-    return () => clearTimeout(t);
-  }, [sec]);
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return <span>{m}:{String(s).padStart(2, '0')}</span>;
-}
+type Step = 'depart' | 'operateur' | 'destination' | 'resultat';
+type OperatorId = 'DDD' | 'AFTU' | 'TER' | 'BRT';
 
 // ── Barre de progression ───────────────────────────────────────
-function StepDots({ step }: { step: Step }) {
-  const steps: Step[] = ['geolocate', 'destination', 'propose', 'navigate'];
-  const idx = steps.indexOf(step);
+const STEP_LABELS: Record<Step, string> = {
+  depart: 'Départ',
+  operateur: 'Opérateur',
+  destination: 'Destination',
+  resultat: 'Résultat',
+};
+const STEPS: Step[] = ['depart', 'operateur', 'destination', 'resultat'];
+
+function StepBar({ step }: { step: Step }) {
+  const idx = STEPS.indexOf(step);
   return (
-    <div className="flex items-center justify-center gap-2 mb-6">
-      {steps.map((s, i) => (
-        <div key={s} className="rounded-full transition-all duration-300"
-          style={{
-            width: i === idx ? 24 : 8, height: 8,
-            background: i <= idx ? '#2563eb' : 'rgba(255,255,255,.15)',
-          }} />
+    <div className="flex items-center justify-center gap-1 mb-5 px-2">
+      {STEPS.map((s, i) => (
+        <React.Fragment key={s}>
+          <div className="flex flex-col items-center gap-1">
+            <div className="rounded-full transition-all duration-300 flex items-center justify-center"
+              style={{
+                width: i <= idx ? 28 : 22, height: i <= idx ? 28 : 22,
+                background: i < idx ? '#2563eb' : i === idx ? 'linear-gradient(135deg,#2563eb,#7c3aed)' : 'rgba(255,255,255,.08)',
+                boxShadow: i === idx ? '0 0 12px rgba(124,58,237,.6)' : 'none',
+                fontSize: 11, fontWeight: 900, color: i <= idx ? 'white' : '#475569',
+              }}>
+              {i < idx ? '✓' : i + 1}
+            </div>
+            <span className="text-[8px] font-bold" style={{ color: i === idx ? '#818cf8' : '#334155' }}>
+              {STEP_LABELS[s]}
+            </span>
+          </div>
+          {i < STEPS.length - 1 && (
+            <div className="flex-1 h-0.5 mb-4 rounded-full"
+              style={{ background: i < idx ? '#2563eb' : 'rgba(255,255,255,.06)', maxWidth: 40 }} />
+          )}
+        </React.Fragment>
       ))}
     </div>
   );
 }
+
+// ── SearchInput réutilisable ───────────────────────────────────
+function SearchInput({
+  value, onChange, onSelect, placeholder, userPos, autoFocus,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onSelect: (stop: Stop) => void;
+  placeholder: string;
+  userPos?: [number, number];
+  autoFocus?: boolean;
+}) {
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const ref = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (autoFocus) setTimeout(() => ref.current?.focus(), 250);
+  }, [autoFocus]);
+
+  useEffect(() => {
+    if (!value.trim()) { setSuggestions([]); return; }
+    setSuggestions(searchLocal(value, userPos?.[0], userPos?.[1], 6));
+  }, [value]);
+
+  return (
+    <div className="relative">
+      <input ref={ref} value={value} onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-2xl px-4 py-3 text-sm outline-none"
+        style={{ background: 'rgba(255,255,255,.07)', border: '1.5px solid rgba(255,255,255,.12)', color: 'white' }} />
+      {value && (
+        <button onClick={() => { onChange(''); setSuggestions([]); }}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">✕</button>
+      )}
+      {suggestions.length > 0 && (
+        <div className="mt-1.5 rounded-2xl overflow-hidden"
+          style={{ border: '1px solid rgba(255,255,255,.08)', background: 'rgba(10,15,30,.95)' }}>
+          {suggestions.slice(0, 5).map((r, i) => {
+            const stop: Stop | null = r.type === 'stop' ? r.stop : r.nearestStop;
+            if (!stop) return null;
+            return (
+              <button key={i} onClick={() => { onSelect(stop); onChange(stop.name); setSuggestions([]); }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all hover:bg-blue-900/30"
+                style={{ borderBottom: i < suggestions.length - 1 ? '1px solid rgba(255,255,255,.05)' : 'none' }}>
+                <span>{r.type === 'stop' ? '🚏' : '📍'}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-bold text-white truncate">{r.label || stop.name}</div>
+                  {r.type !== 'stop' && r.nearestStop && (
+                    <div className="text-[10px] truncate" style={{ color: '#475569' }}>→ {stop.name}</div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Opérateurs config ──────────────────────────────────────────
+const OP_CONFIG: { id: OperatorId; emoji: string; color: string; desc: string }[] = [
+  { id: 'DDD',  emoji: '🚌', color: '#1a56db', desc: 'Dakar Dem Dikk' },
+  { id: 'AFTU', emoji: '🚐', color: '#e11d48', desc: 'Car Rapide' },
+  { id: 'BRT',  emoji: '🚍', color: '#7c3aed', desc: 'Bus Rapide' },
+  { id: 'TER',  emoji: '🚆', color: '#059669', desc: 'Train Express' },
+];
 
 // ── Composant principal ────────────────────────────────────────
 export default function VoyagerWizard({ onClose }: { onClose: () => void }) {
   const dispatch = useAppDispatch();
   const { userLocation } = useAppSelector(s => s.mobility);
 
-  const [step, setStep] = useState<Step>('geolocate');
+  const [step, setStep] = useState<Step>('depart');
+
+  // Étape 1 — Départ
+  const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState('');
   const [myPos, setMyPos] = useState<[number, number] | null>(userLocation);
-  const [destInput, setDestInput] = useState('');
-  const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [destStop, setDestStop] = useState<Stop | null>(null);
-  const [proposal, setProposal] = useState<Proposal | null>(null);
-  const [busArrived, setBusArrived] = useState(false);
-  const [busProgress, setBusProgress] = useState(0); // 0→1
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [departInput, setDepartInput] = useState('');
+  const [departStop, setDepartStop] = useState<Stop | null>(null);
 
-  // ── Étape 1 : Géolocalisation ──────────────────────────────
+  // Étape 2 — Opérateur
+  const [selectedOp, setSelectedOp] = useState<OperatorId | null>(null);
+
+  // Étape 3 — Destination
+  const [destInput, setDestInput] = useState('');
+  const [destStop, setDestStop] = useState<Stop | null>(null);
+
+  // Étape 4 — Résultat
+  const [route, setRoute] = useState<RouteOption | null>(null);
+  const [routeError, setRouteError] = useState('');
+
+  // ── Init GPS au montage ────────────────────────────────────
   useEffect(() => {
-    if (step !== 'geolocate') return;
-    if (myPos) { setStep('destination'); return; }
+    if (myPos) {
+      prefillNearest(myPos);
+      return;
+    }
+    setGeoLoading(true);
     navigator.geolocation?.getCurrentPosition(
       pos => {
         const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
         setMyPos(loc);
         dispatch(setUserLocation(loc));
-        setStep('destination');
+        setGeoLoading(false);
+        prefillNearest(loc);
       },
-      () => setGeoError('Géolocalisation refusée. Activez le GPS puis réessayez.'),
-      { timeout: 10000 }
+      () => { setGeoLoading(false); setGeoError('GPS indisponible'); },
+      { timeout: 8000 }
     );
-  }, [step]);
+  }, []);
 
-  // Focus input quand on passe à destination
-  useEffect(() => {
-    if (step === 'destination') setTimeout(() => inputRef.current?.focus(), 300);
-  }, [step]);
-
-  // ── Recherche de destination ───────────────────────────────
-  useEffect(() => {
-    if (!destInput.trim()) { setSuggestions([]); return; }
-    const results = searchLocal(destInput, myPos?.[0], myPos?.[1], 6);
-    setSuggestions(results);
-  }, [destInput]);
-
-  // ── Sélection destination + calcul proposition ─────────────
-  const selectDest = useCallback((result: any) => {
-    const stop: Stop | null = result.type === 'stop' ? result.stop : result.nearestStop;
-    if (!stop) return;
-    setDestStop(stop);
-    setDestInput(result.label || stop.name);
-    setSuggestions([]);
-    buildProposal(stop);
-  }, [myPos]);
-
-  const buildProposal = (dest: Stop) => {
-    if (!myPos) return;
-    const nearest = getNearestStop(myPos[0], myPos[1]);
-    if (!nearest) return;
-    const options = findRoutes(nearest.stop, dest);
-    if (!options.length) {
-      dispatch(showToast({ type: 'error', message: 'Aucun trajet trouvé vers cette destination.' }));
-      return;
+  function prefillNearest(pos: [number, number]) {
+    const res = getNearestStop(pos[0], pos[1]);
+    if (res) {
+      setDepartStop(res.stop);
+      setDepartInput(res.stop.name);
     }
-    const best = options[0];
-    const op = OPERATORS[best.operator as keyof typeof OPERATORS];
-    setProposal({
-      option: best,
-      nearestStop: nearest.stop,
-      walkMeters: nearest.distanceMeters,
-      walkMin: walkingMinutes(nearest.distanceMeters),
-      destStop: dest,
-      operator: best.operator,
-      operatorColor: op?.color || '#2563eb',
-      busArrivalMin: 6,
-    });
-    setStep('propose');
+  }
+
+  // ── Navigation entre étapes ────────────────────────────────
+  const goNext = () => {
+    const idx = STEPS.indexOf(step);
+    if (idx < STEPS.length - 1) setStep(STEPS[idx + 1]);
+  };
+  const goBack = () => {
+    const idx = STEPS.indexOf(step);
+    if (idx > 0) setStep(STEPS[idx - 1]);
   };
 
-  // ── Validation → démarrer navigation ──────────────────────
-  const startJourney = () => {
-    if (!proposal || !myPos) return;
-    const { option, nearestStop, destStop } = proposal;
+  // ── Calcul itinéraire (étape 4) ────────────────────────────
+  useEffect(() => {
+    if (step !== 'resultat') return;
+    if (!departStop || !destStop) { setRouteError('Départ ou destination manquant'); return; }
+    setRoute(null); setRouteError('');
 
-    // Dispatche l'origine/destination
-    dispatch(setRouteOrigin(nearestStop));
+    // Filtrer par opérateur si sélectionné
+    const options = findRoutes(departStop, destStop, myPos?.[0], myPos?.[1]);
+    const filtered = selectedOp
+      ? options.filter(o => o.operator === selectedOp)
+      : options;
+    const best = filtered[0] || options[0];
+
+    if (!best) { setRouteError('Aucun trajet trouvé'); return; }
+    setRoute(best);
+
+    // Dispatcher sur la carte
+    dispatch(setRouteOrigin(departStop));
     dispatch(setRouteDestination(destStop));
-    dispatch(setActiveTab('plan'));
-
-    // Construit routeDisplay (même logique que RoutePanel)
-    const busSteps = option.steps.filter((s: any) => s.type === 'bus' && s.lineId && s.fromStopId && s.toStopId);
+    const busSteps = best.steps.filter((s: any) => s.type === 'bus' && s.lineId && s.fromStopId && s.toStopId);
     const segments = busSteps.map((s: any) => {
       const line = LINES.find(l => l.id === s.lineId);
       return { lineId: s.lineId!, lineName: line?.name || s.lineId!, color: s.color, fromStopId: s.fromStopId!, toStopId: s.toStopId! };
     });
-    const transferStopIds = option.steps
-      .filter((s: any) => s.type === 'transfer' && s.fromStopId)
-      .map((s: any) => s.fromStopId!);
-    const allBus = option.steps.filter((s: any) => s.type === 'bus');
+    const transferStopIds = best.steps.filter((s: any) => s.type === 'transfer' && s.fromStopId).map((s: any) => s.fromStopId!);
+    const allBus = best.steps.filter((s: any) => s.type === 'bus');
     dispatch(setRouteDisplay({
       segments,
-      originStopId: nearestStop.id,
+      originStopId: departStop.id,
       destStopId: allBus[allBus.length - 1]?.toStopId || destStop.id,
       transferStopIds,
-      walkFrom: option.walkMin > 0 && myPos ? myPos : null,
-      fare: option.fare,
+      walkFrom: best.walkMin > 0 && myPos ? myPos : null,
+      fare: best.fare,
     }));
+    dispatch(setMapCenter([departStop.lat, departStop.lng]));
+    dispatch(setMapZoom(14));
+    dispatch(setActiveTab('plan'));
+  }, [step]);
 
-    dispatch(setMapCenter([nearestStop.lat, nearestStop.lng]));
-    dispatch(setMapZoom(15));
-    setStep('navigate');
-    setBusProgress(0);
-    setBusArrived(false);
-  };
-
-  // ── Bus progress animation ─────────────────────────────────
-  useEffect(() => {
-    if (step !== 'navigate' || busArrived) return;
-    const totalSec = (proposal?.busArrivalMin || 6) * 60;
-    const interval = setInterval(() => {
-      setBusProgress(p => Math.min(1, p + 1 / totalSec));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [step, busArrived]);
+  const opConfig = OP_CONFIG.find(o => o.id === route?.operator);
+  const nearestMeters = myPos && departStop
+    ? Math.round(Math.sqrt(Math.pow((myPos[0] - departStop.lat) * 111000, 2) + Math.pow((myPos[1] - departStop.lng) * 85000, 2)))
+    : null;
 
   // ── Render ─────────────────────────────────────────────────
   return (
@@ -189,14 +242,12 @@ export default function VoyagerWizard({ onClose }: { onClose: () => void }) {
       style={{ background: 'rgba(0,0,0,.75)', backdropFilter: 'blur(14px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
 
-      <div className="w-full max-w-sm rounded-3xl overflow-hidden animate-slide-up"
+      <div className="w-full max-w-sm rounded-3xl overflow-hidden"
         style={{
-          background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 100%)',
+          background: 'linear-gradient(160deg,#0f172a 0%,#1e293b 100%)',
           border: '1px solid rgba(255,255,255,.1)',
           boxShadow: '0 32px 80px rgba(0,0,0,.7)',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column',
+          maxHeight: '90vh', display: 'flex', flexDirection: 'column',
         }}>
 
         {/* Header */}
@@ -204,274 +255,226 @@ export default function VoyagerWizard({ onClose }: { onClose: () => void }) {
           style={{ borderBottom: '1px solid rgba(255,255,255,.07)' }}>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl"
-              style={{ background: 'linear-gradient(135deg, #2563eb, #7c3aed)' }}>🚀</div>
+              style={{ background: 'linear-gradient(135deg,#2563eb,#7c3aed)' }}>🚀</div>
             <div>
               <div className="text-sm font-black text-white">Voyager</div>
-              <div className="text-[10px]" style={{ color: '#475569' }}>Trajet guidé depuis ma position</div>
+              <div className="text-[10px]" style={{ color: '#475569' }}>Trajet guidé pas à pas</div>
             </div>
           </div>
           <button onClick={onClose}
-            className="w-8 h-8 rounded-xl flex items-center justify-center text-sm transition-all hover:scale-110"
+            className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-110"
             style={{ background: 'rgba(255,255,255,.07)', color: '#64748b' }}>✕</button>
         </div>
 
-        {/* Body scrollable */}
-        <div className="flex-1 overflow-y-auto px-5 py-5" style={{ scrollbarWidth: 'none' }}>
-          <StepDots step={step} />
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-5 py-4" style={{ scrollbarWidth: 'none' }}>
+          <StepBar step={step} />
 
-          {/* ── Étape 1 : GPS ── */}
-          {step === 'geolocate' && (
-            <div className="text-center py-8">
-              {geoError ? (
-                <>
-                  <div className="text-4xl mb-3">📍</div>
-                  <p className="text-sm font-bold text-red-400 mb-4">{geoError}</p>
-                  <button onClick={() => { setGeoError(''); setStep('geolocate'); }}
-                    className="px-4 py-2 rounded-xl text-sm font-bold text-white"
-                    style={{ background: '#2563eb' }}>Réessayer</button>
-                </>
-              ) : (
-                <>
-                  <div className="text-5xl mb-4" style={{ animation: 'spin 2s linear infinite' }}>🌐</div>
-                  <p className="text-sm font-bold text-white mb-1">Localisation en cours…</p>
-                  <p className="text-xs" style={{ color: '#475569' }}>Veuillez autoriser l'accès au GPS</p>
-                  <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* ── Étape 2 : Destination ── */}
-          {step === 'destination' && (
+          {/* ══ ÉTAPE 1 : DÉPART ══════════════════════════════ */}
+          {step === 'depart' && (
             <div>
-              <p className="text-lg font-black text-white mb-1">Où voulez-vous aller ?</p>
+              <p className="text-base font-black text-white mb-1">D'où partez-vous ?</p>
               <p className="text-xs mb-4" style={{ color: '#475569' }}>
-                📍 Position détectée — entrez votre destination
+                {geoLoading ? '📡 Localisation GPS en cours…'
+                  : geoError ? `⚠️ ${geoError}`
+                  : myPos ? '📍 Position GPS détectée'
+                  : '📍 Entrez votre point de départ'}
               </p>
-              <div className="relative">
-                <input
-                  ref={inputRef}
-                  value={destInput}
-                  onChange={e => setDestInput(e.target.value)}
-                  placeholder="Ex: Sandaga, UCAD, Liberté 6…"
-                  className="w-full rounded-2xl px-4 py-3 text-sm outline-none"
-                  style={{
-                    background: 'rgba(255,255,255,.07)',
-                    border: '1.5px solid rgba(255,255,255,.12)',
-                    color: 'white',
-                  }}
-                />
-                {destInput && (
-                  <button onClick={() => { setDestInput(''); setSuggestions([]); }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">✕</button>
-                )}
-              </div>
 
-              {/* Suggestions */}
-              {suggestions.length > 0 && (
-                <div className="mt-2 rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,.08)' }}>
-                  {suggestions.slice(0, 5).map((r, i) => (
-                    <button key={i} onClick={() => selectDest(r)}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-left transition-all"
-                      style={{ background: i % 2 === 0 ? 'rgba(255,255,255,.04)' : 'rgba(255,255,255,.02)', borderBottom: i < 4 ? '1px solid rgba(255,255,255,.05)' : 'none' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(37,99,235,.15)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? 'rgba(255,255,255,.04)' : 'rgba(255,255,255,.02)')}>
-                      <span className="text-base flex-shrink-0">{r.type === 'stop' ? '🚏' : '📍'}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold text-white truncate">{r.label}</div>
-                        {r.nearestStop && r.type !== 'stop' && (
-                          <div className="text-[10px] truncate" style={{ color: '#475569' }}>
-                            Arrêt proche : {r.nearestStop.name}
-                          </div>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
+              {/* Badge position GPS */}
+              {myPos && departStop && (
+                <button
+                  onClick={() => { setDepartInput(departStop.name); }}
+                  className="w-full flex items-center gap-3 p-3 rounded-2xl mb-3 transition-all hover:scale-[1.01]"
+                  style={{ background: 'rgba(37,99,235,.12)', border: '1.5px solid rgba(37,99,235,.3)' }}>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'rgba(37,99,235,.2)' }}>📍</div>
+                  <div className="flex-1 text-left">
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#60a5fa' }}>Ma position · arrêt le plus proche</div>
+                    <div className="text-sm font-black text-white">{departStop.name}</div>
+                    {nearestMeters && <div className="text-[10px]" style={{ color: '#475569' }}>{nearestMeters} m de vous</div>}
+                  </div>
+                  <span style={{ color: '#60a5fa', fontWeight: 900 }}>✓</span>
+                </button>
               )}
 
-              {destInput.length > 2 && suggestions.length === 0 && (
-                <p className="text-xs text-center mt-3" style={{ color: '#475569' }}>Aucun résultat pour "{destInput}"</p>
-              )}
+              <SearchInput value={departInput} onChange={setDepartInput}
+                onSelect={s => { setDepartStop(s); setDepartInput(s.name); }}
+                placeholder="Chercher un arrêt de départ…"
+                userPos={myPos ?? undefined} autoFocus={!myPos} />
             </div>
           )}
 
-          {/* ── Étape 3 : Proposition ── */}
-          {step === 'propose' && proposal && (
+          {/* ══ ÉTAPE 2 : OPÉRATEUR ═══════════════════════════ */}
+          {step === 'operateur' && (
             <div>
-              <p className="text-xs font-black uppercase tracking-widest mb-3" style={{ color: '#475569' }}>
-                Trajet proposé
-              </p>
-
-              {/* Destination */}
-              <div className="flex items-center gap-2 mb-4 p-3 rounded-2xl"
-                style={{ background: 'rgba(37,99,235,.1)', border: '1px solid rgba(37,99,235,.2)' }}>
-                <span>🎯</span>
-                <div>
-                  <div className="text-xs" style={{ color: '#475569' }}>Destination</div>
-                  <div className="text-sm font-black text-white">{proposal.destStop.name}</div>
-                </div>
-              </div>
-
-              {/* Opérateur recommandé */}
-              <div className="flex items-center gap-3 p-4 rounded-2xl mb-3"
-                style={{ background: proposal.operatorColor + '18', border: `1px solid ${proposal.operatorColor}30` }}>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-                  style={{ background: proposal.operatorColor + '25' }}>🚌</div>
-                <div className="flex-1">
-                  <div className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: proposal.operatorColor }}>
-                    Opérateur recommandé
-                  </div>
-                  <div className="text-base font-black text-white">
-                    {OPERATORS[proposal.operator as keyof typeof OPERATORS]?.fullName || proposal.operator}
-                  </div>
-                  <div className="text-xs font-bold mt-0.5" style={{ color: proposal.operatorColor }}>
-                    {proposal.option.primaryLineName}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xl font-black" style={{ color: proposal.operatorColor }}>{proposal.option.fare}</div>
-                  <div className="text-[10px]" style={{ color: '#475569' }}>FCFA</div>
-                </div>
-              </div>
-
-              {/* Infos clés */}
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                {[
-                  { icon: '🚶', label: 'À pied', value: `${proposal.walkMeters}m`, sub: `${proposal.walkMin} min` },
-                  { icon: '🕐', label: 'Bus dans', value: `${proposal.busArrivalMin} min`, sub: 'simulé' },
-                  { icon: '⏱️', label: 'Trajet', value: `${proposal.option.totalMin} min`, sub: 'total' },
-                ].map((item, i) => (
-                  <div key={i} className="p-3 rounded-2xl text-center"
-                    style={{ background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.07)' }}>
-                    <div className="text-lg mb-0.5">{item.icon}</div>
-                    <div className="text-[10px] font-bold" style={{ color: '#475569' }}>{item.label}</div>
-                    <div className="text-sm font-black text-white">{item.value}</div>
-                    <div className="text-[9px]" style={{ color: '#334155' }}>{item.sub}</div>
-                  </div>
+              <p className="text-base font-black text-white mb-1">Quel opérateur ?</p>
+              <p className="text-xs mb-4" style={{ color: '#475569' }}>Choisissez ou passez à la suite</p>
+              <div className="grid grid-cols-2 gap-3">
+                {OP_CONFIG.map(op => (
+                  <button key={op.id} onClick={() => setSelectedOp(op.id === selectedOp ? null : op.id)}
+                    className="flex flex-col items-center gap-2 p-4 rounded-2xl transition-all hover:scale-105 active:scale-95"
+                    style={{
+                      background: selectedOp === op.id ? op.color + '28' : 'rgba(255,255,255,.05)',
+                      border: `2px solid ${selectedOp === op.id ? op.color : 'rgba(255,255,255,.08)'}`,
+                      boxShadow: selectedOp === op.id ? `0 4px 20px ${op.color}40` : 'none',
+                    }}>
+                    <span className="text-3xl">{op.emoji}</span>
+                    <div className="text-center">
+                      <div className="text-sm font-black text-white">{op.id}</div>
+                      <div className="text-[10px]" style={{ color: selectedOp === op.id ? op.color : '#475569' }}>{op.desc}</div>
+                    </div>
+                    {selectedOp === op.id && (
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-black text-white"
+                        style={{ background: op.color }}>✓</div>
+                    )}
+                  </button>
                 ))}
               </div>
-
-              {/* Arrêt de départ */}
-              <div className="flex items-center gap-3 p-3 rounded-2xl mb-4"
-                style={{ background: 'rgba(5,150,105,.1)', border: '1px solid rgba(5,150,105,.25)' }}>
-                <span className="text-xl">🟢</span>
-                <div>
-                  <div className="text-[10px] font-bold" style={{ color: '#34d399' }}>Arrêt de départ le plus proche</div>
-                  <div className="text-sm font-black text-white">{proposal.nearestStop.name}</div>
-                  <div className="text-[10px]" style={{ color: '#475569' }}>
-                    {proposal.walkMeters} m de votre position · {proposal.walkMin} min à pied
-                  </div>
-                </div>
-              </div>
-
-              <button onClick={startJourney}
-                className="w-full py-4 rounded-2xl text-white font-black text-base transition-all hover:scale-[1.02] active:scale-98"
-                style={{ background: 'linear-gradient(135deg, #2563eb, #7c3aed)', boxShadow: '0 8px 32px rgba(37,99,235,.4)' }}>
-                ✅ Valider et démarrer la navigation
-              </button>
-
-              <button onClick={() => { setStep('destination'); setDestInput(''); setProposal(null); }}
-                className="w-full py-3 mt-2 text-sm font-bold transition-colors"
-                style={{ color: '#475569' }}>
-                ← Changer de destination
-              </button>
+              <p className="text-[10px] text-center mt-3" style={{ color: '#334155' }}>
+                Sans sélection → meilleur itinéraire toutes lignes
+              </p>
             </div>
           )}
 
-          {/* ── Étape 4 : Navigation ── */}
-          {step === 'navigate' && proposal && (
+          {/* ══ ÉTAPE 3 : DESTINATION ═════════════════════════ */}
+          {step === 'destination' && (
             <div>
-              {!busArrived ? (
-                <>
-                  <p className="text-xs font-black uppercase tracking-widest mb-4" style={{ color: '#475569' }}>
-                    Navigation en cours
-                  </p>
+              <p className="text-base font-black text-white mb-1">Où allez-vous ?</p>
+              <p className="text-xs mb-4" style={{ color: '#475569' }}>Tapez un quartier, arrêt ou lieu</p>
+              <SearchInput value={destInput} onChange={setDestInput}
+                onSelect={s => { setDestStop(s); setDestInput(s.name); }}
+                placeholder="Ex: Sandaga, UCAD, Liberté 6…"
+                userPos={myPos ?? undefined} autoFocus />
 
-                  {/* Marche vers l'arrêt */}
-                  <div className="p-4 rounded-2xl mb-4"
-                    style={{ background: 'rgba(5,150,105,.1)', border: '1px solid rgba(5,150,105,.3)' }}>
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="text-2xl">🚶</span>
-                      <div>
-                        <div className="text-sm font-black text-white">Marchez vers l'arrêt</div>
-                        <div className="font-black" style={{ color: '#34d399' }}>{proposal.nearestStop.name}</div>
-                        <div className="text-xs" style={{ color: '#475569' }}>{proposal.walkMeters} m · {proposal.walkMin} min</div>
-                      </div>
-                    </div>
-                    {/* Barre de progression marche */}
-                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,.1)' }}>
-                      <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, busProgress * 100 * 0.3)}%`, background: '#34d399' }} />
-                    </div>
+              {destStop && (
+                <div className="mt-3 flex items-center gap-2 p-3 rounded-2xl"
+                  style={{ background: 'rgba(5,150,105,.1)', border: '1px solid rgba(5,150,105,.25)' }}>
+                  <span>🎯</span>
+                  <div className="flex-1">
+                    <div className="text-[10px]" style={{ color: '#34d399' }}>Destination sélectionnée</div>
+                    <div className="text-sm font-black text-white">{destStop.name}</div>
                   </div>
-
-                  {/* Arrivée bus countdown */}
-                  <div className="p-4 rounded-2xl mb-4"
-                    style={{ background: 'rgba(37,99,235,.1)', border: '1px solid rgba(37,99,235,.3)' }}>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl">🚌</span>
-                        <div>
-                          <div className="text-sm font-black text-white">{proposal.option.primaryLineName}</div>
-                          <div className="text-xs" style={{ color: '#475569' }}>approche de l'arrêt…</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-black" style={{ color: '#60a5fa' }}>
-                          <Countdown totalSec={proposal.busArrivalMin * 60} onDone={() => setBusArrived(true)} />
-                        </div>
-                        <div className="text-[10px]" style={{ color: '#475569' }}>avant arrivée</div>
-                      </div>
-                    </div>
-
-                    {/* Barre bus qui approche */}
-                    <div className="relative h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,.1)' }}>
-                      <div className="absolute h-full rounded-full transition-all"
-                        style={{ width: `${busProgress * 100}%`, background: 'linear-gradient(90deg, #2563eb, #7c3aed)' }} />
-                      <div className="absolute top-1/2 -translate-y-1/2 text-sm transition-all"
-                        style={{ left: `${Math.max(0, busProgress * 100 - 4)}%` }}>🚌</div>
-                    </div>
-                    <div className="flex justify-between text-[9px] mt-1" style={{ color: '#334155' }}>
-                      <span>Terminus</span>
-                      <span>{proposal.nearestStop.name}</span>
-                    </div>
-                  </div>
-
-                  {/* Infos trajet */}
-                  <div className="flex items-center gap-2 p-3 rounded-2xl"
-                    style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)' }}>
-                    <span>🎯</span>
-                    <div className="flex-1 text-xs" style={{ color: '#94a3b8' }}>
-                      Destination : <span className="text-white font-bold">{proposal.destStop.name}</span>
-                    </div>
-                    <span className="text-sm font-black" style={{ color: '#fbbf24' }}>{proposal.option.fare} F</span>
-                  </div>
-                </>
-              ) : (
-                /* Bus arrivé ! */
-                <div className="text-center py-6">
-                  <div className="text-6xl mb-4" style={{ animation: 'bounce 1s infinite' }}>🚌</div>
-                  <h2 className="text-xl font-black text-white mb-2">Le bus est arrivé !</h2>
-                  <p className="text-sm mb-1" style={{ color: '#34d399' }}>
-                    {proposal.option.primaryLineName} — {proposal.nearestStop.name}
-                  </p>
-                  <p className="text-xs mb-6" style={{ color: '#475569' }}>
-                    Montez à bord · Destination : {proposal.destStop.name}
-                  </p>
-                  <div className="p-3 rounded-2xl mb-4"
-                    style={{ background: 'rgba(250,204,21,.1)', border: '1px solid rgba(250,204,21,.25)' }}>
-                    <div className="text-2xl font-black" style={{ color: '#fbbf24' }}>{proposal.option.fare} FCFA</div>
-                    <div className="text-xs mt-0.5" style={{ color: '#475569' }}>Tarif à payer au chauffeur</div>
-                  </div>
-                  <button onClick={onClose}
-                    className="w-full py-3 rounded-2xl text-white font-black"
-                    style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}>
-                    Bon voyage ! 🎉
-                  </button>
-                  <style>{`@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}`}</style>
+                  <span style={{ color: '#34d399', fontWeight: 900 }}>✓</span>
                 </div>
               )}
             </div>
+          )}
+
+          {/* ══ ÉTAPE 4 : RÉSULTAT ════════════════════════════ */}
+          {step === 'resultat' && (
+            <div>
+              {!route && !routeError && (
+                <div className="text-center py-8">
+                  <div className="text-3xl mb-3" style={{ animation: 'spin 1.5s linear infinite' }}>⚙️</div>
+                  <p className="text-sm font-bold text-white">Calcul en cours…</p>
+                  <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+                </div>
+              )}
+              {routeError && (
+                <div className="text-center py-6">
+                  <div className="text-3xl mb-2">🗺️</div>
+                  <p className="text-sm font-bold text-yellow-400">{routeError}</p>
+                  <button onClick={goBack} className="mt-4 text-xs text-blue-400 underline">← Modifier la destination</button>
+                </div>
+              )}
+              {route && (
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#475569' }}>Itinéraire trouvé</p>
+
+                  {/* Opérateur + ligne */}
+                  <div className="flex items-center gap-3 p-3.5 rounded-2xl"
+                    style={{ background: (opConfig?.color || '#2563eb') + '18', border: `1px solid ${opConfig?.color || '#2563eb'}30` }}>
+                    <span className="text-2xl">{opConfig?.emoji || '🚌'}</span>
+                    <div className="flex-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: opConfig?.color || '#60a5fa' }}>
+                        {OPERATORS[route.operator as keyof typeof OPERATORS]?.fullName || route.operator}
+                      </div>
+                      <div className="text-sm font-black text-white">{route.primaryLineName}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xl font-black" style={{ color: opConfig?.color || '#60a5fa' }}>{route.fare}</div>
+                      <div className="text-[9px]" style={{ color: '#475569' }}>FCFA</div>
+                    </div>
+                  </div>
+
+                  {/* 3 métriques */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { icon: '🚶', label: 'À pied', val: `${route.walkMeters}m`, sub: `${walkingMinutes(route.walkMeters)} min` },
+                      { icon: '🚌', label: 'En bus', val: `${route.totalMin - route.walkMin} min`, sub: '' },
+                      { icon: '⏱️', label: 'Total', val: `${route.totalMin} min`, sub: '' },
+                    ].map((m, i) => (
+                      <div key={i} className="p-3 rounded-2xl text-center"
+                        style={{ background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.07)' }}>
+                        <div className="text-lg">{m.icon}</div>
+                        <div className="text-[9px] font-bold mt-0.5" style={{ color: '#475569' }}>{m.label}</div>
+                        <div className="text-xs font-black text-white">{m.val}</div>
+                        {m.sub && <div className="text-[9px]" style={{ color: '#334155' }}>{m.sub}</div>}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Départ → Arrivée */}
+                  <div className="p-3 rounded-2xl space-y-2" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)' }}>
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white flex-shrink-0"
+                        style={{ background: '#059669' }}>A</div>
+                      <div className="text-xs font-bold text-white truncate">{departStop?.name}</div>
+                    </div>
+                    <div className="ml-2.5 w-px h-3" style={{ background: 'rgba(255,255,255,.1)' }} />
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white flex-shrink-0"
+                        style={{ background: '#dc2626' }}>B</div>
+                      <div className="text-xs font-bold text-white truncate">{destStop?.name}</div>
+                    </div>
+                  </div>
+
+                  <p className="text-[10px] text-center" style={{ color: '#334155' }}>
+                    Le tracé est affiché sur la carte
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer navigation */}
+        <div className="flex-shrink-0 px-5 pb-5 pt-3 space-y-2"
+          style={{ borderTop: '1px solid rgba(255,255,255,.06)' }}>
+
+          {/* Bouton principal */}
+          {step !== 'resultat' && (
+            <button
+              onClick={goNext}
+              disabled={
+                (step === 'depart' && !departStop) ||
+                (step === 'destination' && !destStop)
+              }
+              className="w-full py-3.5 rounded-2xl text-white font-black text-sm transition-all hover:scale-[1.02] active:scale-[.98] disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: 'linear-gradient(135deg,#2563eb,#7c3aed)', boxShadow: '0 6px 24px rgba(37,99,235,.4)' }}>
+              {step === 'depart' ? 'Choisir l\'opérateur →'
+                : step === 'operateur' ? 'Choisir la destination →'
+                : 'Calculer l\'itinéraire 🗺️'}
+            </button>
+          )}
+
+          {/* Valider sur résultat */}
+          {step === 'resultat' && route && (
+            <button onClick={onClose}
+              className="w-full py-3.5 rounded-2xl text-white font-black text-sm transition-all hover:scale-[1.02] active:scale-[.98]"
+              style={{ background: 'linear-gradient(135deg,#059669,#10b981)', boxShadow: '0 6px 24px rgba(5,150,105,.4)' }}>
+              ✅ Voir sur la carte
+            </button>
+          )}
+
+          {/* Retour */}
+          {step !== 'depart' && (
+            <button onClick={goBack}
+              className="w-full py-2 text-sm font-bold transition-colors"
+              style={{ color: '#475569' }}>
+              ← Retour
+            </button>
           )}
         </div>
       </div>
