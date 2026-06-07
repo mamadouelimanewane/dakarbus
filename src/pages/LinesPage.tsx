@@ -147,7 +147,7 @@ function LineDetail({ lineId, onBack, onShowMap }: { lineId: string; onBack: () 
     dispatch(setSelectedStop(stop.id));
     dispatch(setMapCenter([stop.lat, stop.lng]));
     dispatch(setMapZoom(16));
-    dispatch(setActiveTab('plan'));
+    // NE PAS changer l'onglet — on reste sur Lignes
   };
 
   const planFromLine = () => {
@@ -156,7 +156,7 @@ function LineDetail({ lineId, onBack, onShowMap }: { lineId: string; onBack: () 
     if (first && last) {
       dispatch(setRouteOrigin(first));
       dispatch(setRouteDestination(last));
-      dispatch(setActiveTab('plan'));
+      dispatch(setActiveTab('plan'));   // ← intentionnel : on quitte Lignes pour Planifier
     }
   };
 
@@ -325,10 +325,9 @@ export default function LinesPage({ onShowMap }: { onShowMap?: () => void } = {}
     busPositions.filter((b: BusPosition) => b.lineId === lineId).length;
 
   const handleSelectLine = (lineId: string) => {
-    setSelectedLine(lineId);
     dispatch(visitLine(lineId));
     dispatch(setFocusedLine(lineId));
-    // Ne pas basculer vers la carte ici — c'est le bouton "Voir sur carte" qui le fait
+    onShowMap?.();          // → carte directement, sans passer par LineDetail
   };
 
   // ── Line detail view ───────────────────────────────────────
