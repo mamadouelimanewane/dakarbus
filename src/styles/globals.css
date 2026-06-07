@@ -242,6 +242,49 @@
 /* ═══════════════════════════════════════════════════════════════
    ANIMATIONS
 ═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   PAGE TRANSITIONS
+═══════════════════════════════════════════════════════════════ */
+.page-enter-right {
+  animation: page-from-right .28s cubic-bezier(.25,.46,.45,.94) both;
+}
+.page-enter-left {
+  animation: page-from-left .28s cubic-bezier(.25,.46,.45,.94) both;
+}
+.page-enter-up {
+  animation: page-from-up .26s cubic-bezier(.25,.46,.45,.94) both;
+}
+
+@keyframes page-from-right {
+  from { opacity:0; transform:translateX(32px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+@keyframes page-from-left {
+  from { opacity:0; transform:translateX(-32px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+@keyframes page-from-up {
+  from { opacity:0; transform:translateY(-16px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* Mobile full-page slide */
+@keyframes slide-from-bottom {
+  from { transform:translateY(100%); }
+  to   { transform:translateY(0); }
+}
+@keyframes slide-to-bottom {
+  from { transform:translateY(0); }
+  to   { transform:translateY(100%); }
+}
+
+/* Sheet pulse on open */
+@keyframes sheet-open {
+  from { transform:translateY(12px); opacity:.7; }
+  to   { transform:translateY(0); opacity:1; }
+}
+.sheet-open { animation: sheet-open .3s cubic-bezier(.34,1.56,.64,1) both; }
+
 @keyframes live-pulse {
   0%,100% { opacity:1; transform:scale(1); }
   50%      { opacity:.5; transform:scale(.85); }
