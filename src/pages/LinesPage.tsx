@@ -5,7 +5,7 @@ import {
   toggleFavLine, visitLine, setMapCenter, setMapZoom, setSelectedStop,
   setRouteOrigin, setRouteDestination,
 } from '@/store/store';
-import { LINES, OPERATORS, getNextDepartures, getAffluence } from '@/data/transportData';
+import { LINES, STOPS, OPERATORS, getNextDepartures, getAffluence } from '@/data/transportData';
 import { buildStopTimings, searchLinesByStop } from '@/utils/lineUtils';
 import type { Line, BusPosition } from '@/types';
 
@@ -18,26 +18,45 @@ function LineCard({ line, busCount, isFav, isRecent, onSelect, onFav }: {
   onSelect: () => void; onFav: () => void;
 }) {
   const op = OPERATORS[line.operator];
+  // Départ et destination depuis les arrêts terminus
+  const termA = STOPS.find(s => s.id === line.stops[0]);
+  const termZ = STOPS.find(s => s.id === line.stops[line.stops.length - 1]);
+  const depart = termA?.name ?? line.stops[0] ?? '—';
+  const arrivee = termZ?.name ?? line.stops[line.stops.length - 1] ?? '—';
+
   return (
     <div className="flex items-stretch rounded-2xl overflow-hidden card mb-2 transition-all hover:border-white/15 active:scale-[.98] cursor-pointer group"
       onClick={onSelect}>
       {/* Color bar */}
-      <div className="w-1 flex-shrink-0" style={{ background: line.color }} />
+      <div className="w-1.5 flex-shrink-0 rounded-l-2xl" style={{ background: line.color }} />
+
       <div className="flex-1 flex items-center gap-3 px-3 py-3">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
+          {/* Ligne 1 : nom + opérateur + badge */}
+          <div className="flex items-center gap-2 mb-1">
             <span className="font-black text-white text-sm group-hover:text-blue-300 transition-colors">{line.name}</span>
             <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full text-white" style={{ background: op?.color }}>{line.operator}</span>
             {isRecent && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(250,204,21,.15)', color: '#fbbf24' }}>Récent</span>}
           </div>
-          <div className="text-xs truncate" style={{ color: '#475569' }}>{line.route}</div>
-          <div className="flex items-center gap-3 mt-1">
-            <span className="text-[10px] font-bold" style={{ color: '#334155' }}>{line.freq}</span>
-            <span className="text-[10px]" style={{ color: '#334155' }}>·</span>
+
+          {/* Ligne 2 : Départ → Destination */}
+          <div className="flex items-center gap-1.5 mb-1">
+            <span className="text-[11px] font-bold truncate max-w-[90px]" style={{ color: '#e2e8f0' }}>{depart}</span>
+            <span style={{ color: line.color, fontSize: 11, fontWeight: 900 }}>→</span>
+            <span className="text-[11px] font-bold truncate max-w-[90px]" style={{ color: '#e2e8f0' }}>{arrivee}</span>
+          </div>
+
+          {/* Ligne 3 : méta */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold" style={{ color: '#475569' }}>{line.freq}</span>
+            <span style={{ color: '#1e293b', fontSize: 10 }}>·</span>
             <span className="text-[10px] font-bold" style={{ color: line.color }}>{line.tarif} FCFA</span>
-            {line.stops.length > 0 && <span className="text-[10px]" style={{ color: '#334155' }}>{line.stops.length} arrêts</span>}
+            <span style={{ color: '#1e293b', fontSize: 10 }}>·</span>
+            <span className="text-[10px]" style={{ color: '#475569' }}>{line.stops.length} arrêts</span>
           </div>
         </div>
+
+        {/* Droite : bus live + favori */}
         <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
           {busCount > 0 && (
             <div className="flex items-center gap-1 px-2 py-1 rounded-lg" style={{ background: 'rgba(74,222,128,.1)' }}>
@@ -52,7 +71,7 @@ function LineCard({ line, busCount, isFav, isRecent, onSelect, onFav }: {
           </button>
         </div>
       </div>
-      <div className="flex items-center px-3" style={{ color: '#334155' }}>→</div>
+      <div className="flex items-center px-2" style={{ color: '#475569', fontSize: 18 }}>›</div>
     </div>
   );
 }

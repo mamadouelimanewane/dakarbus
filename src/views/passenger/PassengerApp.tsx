@@ -280,7 +280,7 @@ export default function PassengerApp() {
           )}
 
           {/* ══ DESKTOP / NON-MAP TABS LAYOUT ════════════════ */}
-          {!isCitymapper && (
+          {!isCitymapper && !isLinesTab && (
             <>
               <aside className="w-full lg:w-[380px] xl:w-[420px] flex flex-col z-30 overflow-hidden"
                 style={{ background: 'var(--c-bg)', borderRight: '1px solid var(--c-border)' }}>
