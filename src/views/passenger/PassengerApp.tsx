@@ -1,12 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { setActiveTab, logout } from '@/store/store';
+import { setActiveTab, logout, clearFocusedLine } from '@/store/store';
 import MapView from '@/components/MapView';
 import GeolocGate from '@/components/GeolocGate';
 import ToastContainer from '@/components/ToastContainer';
 import JourneyEndModal from '@/components/JourneyEndModal';
 import PlanPage from '@/pages/PlanPage';
 import LinesPage from '@/pages/LinesPage';
+// LinesPage also used directly in lines-tab layout
 import StopsPage from '@/pages/StopsPage';
 import AlertsPage from '@/pages/AlertsPage';
 import TicketsPage from '@/pages/TicketsPage';
@@ -42,7 +43,7 @@ function SheetHandle() {
 
 export default function PassengerApp() {
   const dispatch = useAppDispatch();
-  const { activeTab, routeDisplay } = useAppSelector(s => s.mobility);
+  const { activeTab, routeDisplay, focusedLine } = useAppSelector(s => s.mobility);
   const { reports, myTickets } = useAppSelector(s => s.tickets);
   const { active: activeJourney } = useAppSelector(s => s.journey);
   const [geoReady, setGeoReady] = useState(false);
@@ -80,8 +81,10 @@ export default function PassengerApp() {
   };
   const jColor = activeJourney ? journeyStatusColor[activeJourney.status] : '#2563eb';
 
-  // Citymapper layout: map + bottom sheet on plan tab mobile
-  const isCitymapper = (activeTab === 'plan' || activeTab === 'lines' || activeTab === 'stops') && !journeyPanelOpen;
+  // Citymapper layout: map + bottom sheet on plan/stops tab (lines has its own layout)
+  const isCitymapper = (activeTab === 'plan' || activeTab === 'stops') && !journeyPanelOpen;
+  // Lines tab: full list → click → full map
+  const isLinesTab = activeTab === 'lines' && !journeyPanelOpen;
 
   const sheetHeights: Record<string, string> = {
     peek: '288px',
@@ -243,6 +246,36 @@ export default function PassengerApp() {
                   <Page />
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ══ LINES TAB — liste pleine / carte de ligne ══════ */}
+          {isLinesTab && (
+            <div className="flex-1 flex overflow-hidden relative">
+              {/* Carte de ligne — visible quand une ligne est sélectionnée */}
+              {focusedLine ? (
+                <div className="flex-1 relative overflow-hidden">
+                  {/* Bouton retour flottant */}
+                  <button
+                    onClick={() => { dispatch(clearFocusedLine()); }}
+                    className="absolute top-3 left-3 z-[900] flex items-center gap-2 px-3 py-2 rounded-2xl shadow-xl transition-all hover:scale-105 active:scale-95"
+                    style={{ background: 'rgba(10,15,30,.92)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.15)', color: 'white', fontSize: 13, fontWeight: 800 }}>
+                    ← Retour
+                  </button>
+                  <MapView />
+                </div>
+              ) : (
+                /* Liste complète des lignes */
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  <div className="flex-shrink-0 z-40"
+                    style={{ background: 'rgba(10,15,30,.9)', backdropFilter: 'blur(16px)', borderBottom: '1px solid var(--c-border)' }}>
+                    <OperatorFilter />
+                  </div>
+                  <div className="flex-1 overflow-y-auto">
+                    <LinesPage />
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

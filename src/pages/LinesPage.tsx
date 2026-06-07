@@ -265,7 +265,7 @@ function LineDetail({ lineId, onBack }: { lineId: string; onBack: () => void }) 
           className="flex-1 btn btn-primary">
           🗺️ Planifier ce trajet
         </button>
-        <button onClick={() => { dispatch(setFocusedLine(lineId)); dispatch(setActiveTab('plan')); }}
+        <button onClick={() => { dispatch(setFocusedLine(lineId)); }}
           className="flex-1 btn btn-ghost">
           📍 Voir sur carte
         </button>
