@@ -352,6 +352,7 @@ function buildRouteDisplay(opt: RouteOption, userLoc: [number, number] | null): 
     destStopId: (() => { const bs = opt.steps.filter(s => s.type === 'bus'); return bs[bs.length - 1]?.toStopId || ''; })(),
     transferStopIds,
     walkFrom: opt.walkMin > 0 && userLoc ? userLoc : null,
+    fare: opt.fare,
   };
 }
 

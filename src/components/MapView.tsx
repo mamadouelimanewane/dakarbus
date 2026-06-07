@@ -307,6 +307,9 @@ const makeTransferIcon = (lineNames: string) => L.divIcon({
   html: `<div style="width:30px;height:30px;border-radius:50%;background:#d97706;border:3px solid white;box-shadow:0 3px 10px #d9770660;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:white" title="${lineNames}">↻</div>`,
 });
 
+// Palette de couleurs distinctes pour chaque segment de bus
+const SEGMENT_COLORS = ['#2563eb', '#059669', '#f59e0b', '#7c3aed', '#dc2626'];
+
 // ── RouteOverlay ───────────────────────────────────────────────
 function RouteOverlay() {
   const map = useMap();
@@ -389,19 +392,19 @@ function RouteOverlay() {
         />
       )}
 
-      {/* Bus segments : tracé propre + arrêts intermédiaires + étiquette ligne */}
+      {/* Bus segments : couleur distincte par index (bleu=1er, vert=2ème…) */}
       {routeDisplay.segments.map((seg, i) => {
         const key = `${seg.lineId}:${seg.fromStopId}:${seg.toStopId}`;
         const coords = busCoords[key];
         if (!coords) return null;
+        const segColor = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
 
         return (
           <React.Fragment key={i}>
             {/* Halo blanc */}
             <Polyline positions={coords} pathOptions={{ color: '#fff', weight: 14, opacity: 0.35, lineCap: 'round' }} />
-            {/* Tracé principal */}
-            <Polyline positions={coords} pathOptions={{ color: seg.color, weight: 7, opacity: 1, lineCap: 'round', lineJoin: 'round' }} />
-            {/* Étiquette retirée — info disponible dans la timeline flottante */}
+            {/* Tracé principal couleur distincte */}
+            <Polyline positions={coords} pathOptions={{ color: segColor, weight: 7, opacity: 1, lineCap: 'round', lineJoin: 'round' }} />
           </React.Fragment>
         );
       })}
@@ -599,6 +602,28 @@ export default function MapView() {
         ) : null;
       })()}
 
+      {/* ── Badge tarif — affiché sous le médaillon marche à pied ── */}
+      {routeDisplay?.fare && (
+        <div className="absolute z-[900]"
+          style={{
+            bottom: routeDisplay.walkFrom ? '6.5rem' : '1.5rem',
+            left: '0.75rem',
+          }}>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-2xl shadow-xl"
+            style={{
+              background: 'rgba(10,15,30,.92)',
+              backdropFilter: 'blur(16px)',
+              border: '1px solid rgba(250,204,21,.35)',
+            }}>
+            <span className="text-base">🎫</span>
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#64748b' }}>Tarif total</div>
+              <div className="text-sm font-black" style={{ color: '#fbbf24' }}>{routeDisplay.fare} FCFA</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Timeline flottante sur la carte (côté chatbot) ────── */}
       {routeDisplay && (() => {
         const origin = STOPS.find(s => s.id === routeDisplay.originStopId);
@@ -616,10 +641,11 @@ export default function MapView() {
         routeDisplay.segments.forEach((seg, i) => {
           const fromStop = STOPS.find(s => s.id === seg.fromStopId);
           const toStop   = STOPS.find(s => s.id === seg.toStopId);
+          const segColor = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
           nodes.push({
             t: 'segment',
             lineName: seg.lineName,
-            color: seg.color,
+            color: segColor,
             from: fromStop?.name ?? '',
             to:   toStop?.name  ?? '',
           });

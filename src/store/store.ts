@@ -15,6 +15,7 @@ export interface RouteDisplay {
   destStopId: string;
   transferStopIds: string[];
   walkFrom: [number, number] | null;
+  fare?: number;
 }
 
 interface MobilityState {
