@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setSelectedStop, toggleFavStop, setMapCenter, setMapZoom } from '@/store/store';
 import { STOPS, OPERATORS, LINES, getNextDepartures } from '@/data/transportData';
@@ -124,6 +124,33 @@ export default function StopsPage() {
   const [search, setSearch] = useState('');
   const [view, setView] = useState<ViewMode>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [pullY, setPullY] = useState(0);
+  const pullStart = useRef<number | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const triggerRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 900);
+  }, []);
+
+  const onPullStart = useCallback((e: React.TouchEvent) => {
+    if ((listRef.current?.scrollTop ?? 0) === 0) {
+      pullStart.current = e.touches[0].clientY;
+    }
+  }, []);
+
+  const onPullMove = useCallback((e: React.TouchEvent) => {
+    if (pullStart.current === null) return;
+    const dy = e.touches[0].clientY - pullStart.current;
+    if (dy > 0) setPullY(Math.min(dy * 0.45, 64));
+  }, []);
+
+  const onPullEnd = useCallback(() => {
+    if (pullY > 48) triggerRefresh();
+    pullStart.current = null;
+    setPullY(0);
+  }, [pullY, triggerRefresh]);
 
   // Filter by operator
   let base = selectedOperator === 'all' ? STOPS : STOPS.filter(s => s.operators.includes(selectedOperator as OperatorId));
@@ -205,8 +232,22 @@ export default function StopsPage() {
         </div>
       </div>
 
+      {/* Pull-to-refresh indicator */}
+      {(pullY > 0 || refreshing) && (
+        <div className="flex-shrink-0 flex justify-center items-center transition-all"
+          style={{ height: refreshing ? 40 : pullY, overflow: 'hidden' }}>
+          <div className={`text-xl ${refreshing ? 'animate-spin' : ''}`} style={{ opacity: refreshing || pullY > 24 ? 1 : 0.3 }}>
+            {refreshing ? '🔄' : '↓'}
+          </div>
+        </div>
+      )}
+
       {/* List */}
-      <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-2" style={{ scrollbarWidth: 'none' }}>
+      <div ref={listRef} className="flex-1 overflow-y-auto px-4 pb-24 space-y-2"
+        style={{ scrollbarWidth: 'none' }}
+        onTouchStart={onPullStart}
+        onTouchMove={onPullMove}
+        onTouchEnd={onPullEnd}>
         {stops.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-4xl mb-3">{view === 'fav' ? '⭐' : view === 'near' ? '🧭' : '📍'}</div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   MapContainer, TileLayer, Marker, Popup,
-  Polyline, Circle, useMap,
+  Polyline, Circle, useMap, useMapEvents,
 } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -730,6 +730,12 @@ function RouteOverlay() {
   );
 }
 
+// ── ZoomTracker (sous-composant interne) ──────────────────────
+function ZoomTracker({ onZoom }: { onZoom: (z: number) => void }) {
+  useMapEvents({ zoomend: (e) => onZoom(e.target.getZoom()) });
+  return null;
+}
+
 export default function MapView() {
   const dispatch = useAppDispatch();
   const { selectedOperator, userLocation, route, focusedLine, busPositions, routeDisplay } = useAppSelector(s => s.mobility);
@@ -738,6 +744,7 @@ export default function MapView() {
   const [routeCoords, setRouteCoords]   = useState<[number, number][] | null>(null);
   const [locLoading, setLocLoading]     = useState(false);
   const [fullscreen, setFullscreen]     = useState(false);
+  const [currentZoom, setCurrentZoom]   = useState(12);
 
   // Plein écran natif (avec fallback CSS)
   const mapWrapRef = useRef<HTMLDivElement>(null);
@@ -935,6 +942,7 @@ export default function MapView() {
           attribution=""
           keepBuffer={4}
         />
+        <ZoomTracker onZoom={setCurrentZoom} />
         <MapController />
         <RouteOverlay />
 
@@ -960,7 +968,8 @@ export default function MapView() {
             {visibleLines.map(line => (
               <BusLine key={line.id} line={line} isFocused={false} hasFocus={false} />
             ))}
-            {visibleStops.map(stop => {
+            {/* Stops uniquement au zoom >= 13 pour éviter la surcharge sur mobile */}
+            {currentZoom >= 13 && visibleStops.map(stop => {
               const mainOp = stop.operators[0];
               const color  = OPERATORS[mainOp]?.color || '#1a56db';
               const isHub  = stop.lines.length > 2;

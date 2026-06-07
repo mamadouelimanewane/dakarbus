@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addReport, upvoteReport, acknowledgeReport, showToast } from '@/store/store';
 
@@ -77,6 +77,27 @@ export default function AlertsPage() {
   const [voted, setVoted] = useState(new Set<string>());
   const [filter, setFilter] = useState<typeof FILTER_OPTS[number]>('Tous');
   const [hasPhoto, setHasPhoto] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [pullY, setPullY] = useState(0);
+  const pullStart = useRef<number | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const triggerRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 900);
+  }, []);
+  const onPullStart = useCallback((e: React.TouchEvent) => {
+    if ((listRef.current?.scrollTop ?? 0) === 0) pullStart.current = e.touches[0].clientY;
+  }, []);
+  const onPullMove = useCallback((e: React.TouchEvent) => {
+    if (pullStart.current === null) return;
+    const dy = e.touches[0].clientY - pullStart.current;
+    if (dy > 0) setPullY(Math.min(dy * 0.45, 64));
+  }, []);
+  const onPullEnd = useCallback(() => {
+    if (pullY > 48) triggerRefresh();
+    pullStart.current = null; setPullY(0);
+  }, [pullY, triggerRefresh]);
 
   const filtered = useMemo(() => {
     let r = [...reports];
@@ -170,7 +191,15 @@ export default function AlertsPage() {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-20">
+      {(pullY > 0 || refreshing) && (
+        <div className="flex-shrink-0 flex justify-center items-center" style={{ height: refreshing ? 40 : pullY, overflow: 'hidden' }}>
+          <div className={`text-xl ${refreshing ? 'animate-spin' : ''}`} style={{ opacity: refreshing || pullY > 24 ? 1 : 0.3 }}>
+            {refreshing ? '🔄' : '↓'}
+          </div>
+        </div>
+      )}
+      <div ref={listRef} className="flex-1 overflow-y-auto px-4 pb-20"
+        onTouchStart={onPullStart} onTouchMove={onPullMove} onTouchEnd={onPullEnd}>
 
         {/* Form */}
         {showForm && (

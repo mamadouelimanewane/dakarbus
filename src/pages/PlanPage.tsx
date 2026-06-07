@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setActiveTab, clearRoute, setRouteOrigin, setRouteDestination } from '@/store/store';
 import RoutePanel from '@/components/RoutePanel';
@@ -136,6 +136,17 @@ export default function PlanPage() {
   const recentAlerts = reports.filter(r => Date.now() - r.timestamp < 1000 * 60 * 30).length;
   const lastTrip = history[0];
 
+  // Shortcut domicile ↔ travail (persisté en localStorage)
+  const [homeWork, setHomeWork] = useState<{ homeId: string; workId: string } | null>(() => {
+    try { const s = localStorage.getItem('sunubus_home_work'); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
+  const saveHomeWork = useCallback((homeId: string, workId: string) => {
+    const val = { homeId, workId };
+    setHomeWork(val);
+    localStorage.setItem('sunubus_home_work', JSON.stringify(val));
+  }, []);
+  const [hwSetup, setHwSetup] = useState(false);
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto pb-6">
@@ -176,6 +187,89 @@ export default function PlanPage() {
                   <span className="text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0"
                     style={{ background: 'rgba(37,99,235,.15)', color: '#60a5fa' }}>{lastTrip.fare} F</span>
                 </button>
+              </div>
+            )}
+
+            {/* Shortcut domicile ↔ travail */}
+            {homeWork && !hwSetup && (() => {
+              const home = STOPS.find(s => s.id === homeWork.homeId);
+              const work = STOPS.find(s => s.id === homeWork.workId);
+              if (!home || !work) return null;
+              return (
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--c-muted)' }}>Raccourcis</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button onClick={() => { dispatch(setRouteOrigin(home)); dispatch(setRouteDestination(work)); }}
+                      className="flex items-center gap-2 p-3 rounded-2xl text-left transition-all active:scale-95"
+                      style={{ background: 'rgba(5,150,105,.1)', border: '1px solid rgba(5,150,105,.25)' }}>
+                      <span className="text-xl">🏠</span>
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-black" style={{ color: '#34d399' }}>Domicile → Travail</div>
+                        <div className="text-[10px] truncate mt-0.5" style={{ color: '#475569' }}>{home.name}</div>
+                      </div>
+                    </button>
+                    <button onClick={() => { dispatch(setRouteOrigin(work)); dispatch(setRouteDestination(home)); }}
+                      className="flex items-center gap-2 p-3 rounded-2xl text-left transition-all active:scale-95"
+                      style={{ background: 'rgba(124,58,237,.1)', border: '1px solid rgba(124,58,237,.25)' }}>
+                      <span className="text-xl">🏢</span>
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-black" style={{ color: '#a78bfa' }}>Travail → Domicile</div>
+                        <div className="text-[10px] truncate mt-0.5" style={{ color: '#475569' }}>{work.name}</div>
+                      </div>
+                    </button>
+                  </div>
+                  <button onClick={() => setHwSetup(true)}
+                    className="w-full mt-1.5 text-center text-[10px] font-bold py-1.5 rounded-xl transition-all"
+                    style={{ color: '#334155', background: 'rgba(255,255,255,.03)' }}>
+                    ✏️ Modifier domicile / travail
+                  </button>
+                </div>
+              );
+            })()}
+            {(!homeWork || hwSetup) && (
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--c-muted)' }}>
+                  {hwSetup ? '✏️ Modifier domicile / travail' : '🏠 Définir domicile & travail'}
+                </p>
+                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid var(--c-border)' }}>
+                  {['home', 'work'].map((role, ri) => {
+                    const currentId = role === 'home' ? homeWork?.homeId : homeWork?.workId;
+                    return (
+                      <div key={role} className={ri === 0 ? '' : 'border-t'} style={{ borderColor: 'var(--c-border)' }}>
+                        <p className="px-3 pt-2.5 pb-1 text-[10px] font-black uppercase"
+                          style={{ color: role === 'home' ? '#34d399' : '#a78bfa' }}>
+                          {role === 'home' ? '🏠 Domicile' : '🏢 Travail'}
+                        </p>
+                        <div className="px-3 pb-2.5 max-h-28 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+                          {STOPS.slice(0, 30).map(s => (
+                            <button key={s.id}
+                              onClick={() => {
+                                const other = role === 'home' ? homeWork?.workId : homeWork?.homeId;
+                                if (role === 'home') saveHomeWork(s.id, other || '');
+                                else saveHomeWork(homeWork?.homeId || '', s.id);
+                                if (homeWork?.homeId && homeWork?.workId) setHwSetup(false);
+                              }}
+                              className="w-full text-left px-2 py-1.5 rounded-lg text-xs transition-all"
+                              style={{
+                                fontWeight: currentId === s.id ? 900 : 500,
+                                color: currentId === s.id ? (role === 'home' ? '#34d399' : '#a78bfa') : '#64748b',
+                                background: currentId === s.id ? (role === 'home' ? 'rgba(52,211,153,.1)' : 'rgba(167,139,250,.1)') : 'transparent',
+                              }}>
+                              {s.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {hwSetup && (
+                  <button onClick={() => setHwSetup(false)}
+                    className="w-full mt-2 text-center text-[11px] font-black py-2 rounded-xl transition-all active:scale-95"
+                    style={{ background: 'rgba(37,99,235,.12)', color: '#60a5fa' }}>
+                    ✓ Fermer
+                  </button>
+                )}
               </div>
             )}
 
