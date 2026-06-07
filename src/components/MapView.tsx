@@ -219,8 +219,8 @@ function DraggableTimeline({ routeDisplay }: { routeDisplay: NonNullable<ReturnT
     border: '1px solid rgba(255,255,255,.12)',
     borderRadius: 16,
     boxShadow: '0 8px 32px rgba(0,0,0,.45)',
-    minWidth: 180,
-    maxWidth: 230,
+    minWidth: 150,
+    maxWidth: 190,
   };
   if (pos.x < 0) { style.right  = -pos.x; } else { style.left   = pos.x; }
   if (pos.y < 0) { style.bottom = -pos.y; } else { style.top    = pos.y; }
@@ -819,12 +819,12 @@ export default function MapView() {
 
       {/* ── Barre déplaçable : marche + tarif ── */}
       {routeDisplay && (routeDisplay.fare || routeDisplay.walkFrom) && (
-        <DraggableInfoBar routeDisplay={routeDisplay} />
+        <DraggableInfoBar key={`infobar-${fullscreen}`} routeDisplay={routeDisplay} />
       )}
 
       {/* ── Timeline déplaçable ── */}
       {routeDisplay && (
-        <DraggableTimeline routeDisplay={routeDisplay} />
+        <DraggableTimeline key={`timeline-${fullscreen}`} routeDisplay={routeDisplay} />
       )}
 
       {/* Fullscreen button */}
