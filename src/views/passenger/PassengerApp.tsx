@@ -130,8 +130,8 @@ export default function PassengerApp() {
             onClick={() => setVoyagerOpen(true)}
             className="flex items-center gap-2 px-5 py-3 rounded-full text-white font-black text-sm transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
             style={{
-              background: 'linear-gradient(135deg,#1e3a8a,#2563eb,#7c3aed)',
-              boxShadow: '0 6px 28px rgba(37,99,235,.65)',
+              background: 'linear-gradient(135deg,#dc2626,#b91c1c)',
+              boxShadow: '0 6px 28px rgba(220,38,38,.65)',
               border: '1.5px solid rgba(255,255,255,.2)',
             }}>
             🚀 <span>Modifier le trajet Voyager</span>
@@ -165,7 +165,7 @@ export default function PassengerApp() {
             {/* ── Voyager — bouton principal dans le header ── */}
             <button onClick={() => setVoyagerOpen(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-xl font-black text-sm text-white transition-all hover:scale-105 active:scale-95 mr-1"
-              style={{ background: 'linear-gradient(135deg,#2563eb,#7c3aed)', boxShadow: '0 4px 20px rgba(37,99,235,.5)' }}>
+              style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 4px 20px rgba(220,38,38,.5)' }}>
               🚀 Voyager
             </button>
             <button onClick={() => dispatch(logout())}
@@ -186,7 +186,7 @@ export default function PassengerApp() {
               {/* Voyager — bouton étoile en haut du nav */}
               <button onClick={() => setVoyagerOpen(true)} title="Voyager"
                 className="relative w-12 h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-110 active:scale-90 mb-1"
-                style={{ background: 'linear-gradient(135deg,#2563eb,#7c3aed)', boxShadow: '0 4px 18px rgba(37,99,235,.55)' }}>
+                style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 4px 18px rgba(220,38,38,.55)' }}>
                 <span className="text-xl leading-none">🚀</span>
                 <span className="text-[8px] font-black text-white">Go</span>
               </button>
@@ -242,7 +242,7 @@ export default function PassengerApp() {
                     {/* Voyager — bouton hero dans la top bar mobile */}
                     <button onClick={() => setVoyagerOpen(true)}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-2xl font-black text-sm text-white transition-all hover:scale-105 active:scale-95"
-                      style={{ background: 'linear-gradient(135deg,#2563eb,#7c3aed)', boxShadow: '0 4px 16px rgba(37,99,235,.55)' }}>
+                      style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 4px 16px rgba(220,38,38,.55)' }}>
                       🚀 <span>Voyager</span>
                     </button>
                   </div>
@@ -306,7 +306,7 @@ export default function PassengerApp() {
                       className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all active:scale-[.98]"
                       style={{
                         background: 'linear-gradient(135deg,#1e3a8a,#2563eb 50%,#7c3aed)',
-                        boxShadow: '0 4px 20px rgba(37,99,235,.5)',
+                        boxShadow: '0 4px 20px rgba(220,38,38,.5)',
                       }}>
                       <span className="text-2xl">🚀</span>
                       <div className="flex-1 text-left">
@@ -385,7 +385,7 @@ export default function PassengerApp() {
                       className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all hover:scale-[1.02] active:scale-[.98]"
                       style={{
                         background: 'linear-gradient(135deg,#1e3a8a,#2563eb 50%,#7c3aed)',
-                        boxShadow: '0 4px 20px rgba(37,99,235,.5)',
+                        boxShadow: '0 4px 20px rgba(220,38,38,.5)',
                       }}>
                       <span className="text-2xl">🚀</span>
                       <div className="flex-1 text-left">
@@ -424,7 +424,7 @@ export default function PassengerApp() {
                       className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all hover:scale-[1.02] active:scale-[.98]"
                       style={{
                         background: 'linear-gradient(135deg,#1e3a8a,#2563eb 50%,#7c3aed)',
-                        boxShadow: '0 4px 20px rgba(37,99,235,.5)',
+                        boxShadow: '0 4px 20px rgba(220,38,38,.5)',
                       }}>
                       <span className="text-2xl">🚀</span>
                       <div className="flex-1 text-left">
@@ -492,14 +492,14 @@ export default function PassengerApp() {
               className="flex flex-col items-center justify-center gap-1 transition-all hover:scale-110 active:scale-90"
               style={{
                 width: 58, height: 58, borderRadius: 18,
-                background: 'linear-gradient(135deg,#2563eb,#7c3aed)',
+                background: 'linear-gradient(135deg,#dc2626,#b91c1c)',
                 boxShadow: '0 -4px 24px rgba(37,99,235,.6), 0 4px 16px rgba(124,58,237,.4)',
                 position: 'absolute', bottom: 8,
                 border: '3px solid rgba(8,12,24,.97)',
               }}>
               <span className="text-2xl leading-none">🚀</span>
             </button>
-            <span className="text-[9px] font-black mt-1" style={{ color: '#818cf8', paddingTop: 44 }}>Voyager</span>
+            <span className="text-[9px] font-black mt-1" style={{ color: '#f87171', paddingTop: 44 }}>Voyager</span>
           </div>
 
           {/* Tabs droite : Arrêts + Alertes + Billets + Profil */}

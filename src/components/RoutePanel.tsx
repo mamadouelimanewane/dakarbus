@@ -527,8 +527,8 @@ export default function RoutePanel() {
           onClick={() => window.dispatchEvent(new CustomEvent('open-voyager'))}
           className="w-full flex items-center gap-3 p-3.5 rounded-2xl transition-all hover:scale-[1.02] active:scale-[.98]"
           style={{
-            background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #7c3aed 100%)',
-            boxShadow: '0 6px 24px rgba(37,99,235,.4), inset 0 1px 0 rgba(255,255,255,.12)',
+            background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+            boxShadow: '0 6px 24px rgba(220,38,38,.45), inset 0 1px 0 rgba(255,255,255,.12)',
           }}>
           <div className="w-10 h-10 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
             style={{ background: 'rgba(255,255,255,.15)' }}>🚀</div>

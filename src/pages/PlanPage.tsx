@@ -149,7 +149,7 @@ export default function PlanPage() {
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('open-voyager'))}
               className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl transition-all hover:scale-[1.02] active:scale-[.98]"
-              style={{ background: '#7c3aed', boxShadow: '0 6px 24px rgba(124,58,237,.55)' }}>
+              style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 6px 24px rgba(220,38,38,.55)' }}>
               <span className="text-3xl">🚀</span>
               <div className="flex-1 text-left">
                 <div className="text-base font-black text-white">Voyager</div>

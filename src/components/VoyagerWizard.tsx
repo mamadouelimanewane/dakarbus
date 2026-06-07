@@ -42,8 +42,8 @@ function StepBar({ step }: { step: Step }) {
             <div className="rounded-full transition-all duration-300 flex items-center justify-center"
               style={{
                 width: i <= idx ? 28 : 22, height: i <= idx ? 28 : 22,
-                background: i < idx ? '#2563eb' : i === idx ? 'linear-gradient(135deg,#2563eb,#7c3aed)' : 'rgba(255,255,255,.08)',
-                boxShadow: i === idx ? '0 0 12px rgba(124,58,237,.6)' : 'none',
+                background: i < idx ? '#dc2626' : i === idx ? 'linear-gradient(135deg,#dc2626,#b91c1c)' : 'rgba(255,255,255,.08)',
+                boxShadow: i === idx ? '0 0 12px rgba(220,38,38,.6)' : 'none',
                 fontSize: 11, fontWeight: 900, color: i <= idx ? 'white' : '#475569',
               }}>
               {i < idx ? '✓' : i + 1}
@@ -255,7 +255,7 @@ export default function VoyagerWizard({ onClose }: { onClose: () => void }) {
           style={{ borderBottom: '1px solid rgba(255,255,255,.07)' }}>
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl"
-              style={{ background: 'linear-gradient(135deg,#2563eb,#7c3aed)' }}>🚀</div>
+              style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>🚀</div>
             <div>
               <div className="text-sm font-black text-white">Voyager</div>
               <div className="text-[10px]" style={{ color: '#475569' }}>Trajet guidé pas à pas</div>
@@ -504,7 +504,7 @@ export default function VoyagerWizard({ onClose }: { onClose: () => void }) {
                 (step === 'destination' && (!departStop || !destStop))
               }
               className="w-full py-3.5 rounded-2xl text-white font-black text-sm transition-all hover:scale-[1.02] active:scale-[.98] disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ background: 'linear-gradient(135deg,#2563eb,#7c3aed)', boxShadow: '0 6px 24px rgba(37,99,235,.4)' }}>
+              style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 6px 24px rgba(220,38,38,.4)' }}>
               {step === 'depart' ? 'Choisir l\'opérateur →'
                 : step === 'operateur' ? 'Choisir la destination →'
                 : 'Calculer l\'itinéraire 🗺️'}
