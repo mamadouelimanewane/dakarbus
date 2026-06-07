@@ -255,12 +255,19 @@ export default function PassengerApp() {
               {/* Carte de ligne — visible quand une ligne est sélectionnée */}
               {focusedLine ? (
                 <div className="flex-1 relative overflow-hidden">
-                  {/* Bouton retour flottant */}
+                  {/* Bouton retour — bottom-left pour ne pas chevaucher la bannière ligne */}
                   <button
                     onClick={() => { dispatch(clearFocusedLine()); }}
-                    className="absolute top-3 left-3 z-[900] flex items-center gap-2 px-3 py-2 rounded-2xl shadow-xl transition-all hover:scale-105 active:scale-95"
-                    style={{ background: 'rgba(10,15,30,.92)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.15)', color: 'white', fontSize: 13, fontWeight: 800 }}>
-                    ← Retour
+                    className="absolute z-[1000] flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-2xl transition-all hover:scale-105 active:scale-95"
+                    style={{
+                      bottom: 96, left: 12,
+                      background: 'rgba(10,15,30,.95)',
+                      backdropFilter: 'blur(14px)',
+                      border: '1px solid rgba(255,255,255,.18)',
+                      color: 'white', fontSize: 13, fontWeight: 800,
+                      boxShadow: '0 8px 32px rgba(0,0,0,.5)',
+                    }}>
+                    ← Liste des lignes
                   </button>
                   <MapView />
                 </div>
