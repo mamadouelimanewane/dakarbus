@@ -161,79 +161,140 @@ function AffluenceWidget({ stopId }: { stopId: string }) {
   );
 }
 
-// ── Detail panel for selected option ─────────────────────────
-function OptionDetail({ option, origin, dest, onBuy, onStart }: {
+// ── Timeline claire de l'itinéraire ──────────────────────────
+function RouteTimeline({ option, origin, dest, onBuy, onStart }: {
   option: RouteOption; origin: Stop; dest: Stop;
   onBuy: (method: string) => void; onStart: () => void;
 }) {
   const [buying, setBuying] = useState(false);
-  const departures = getNextDepartures(origin.id).slice(0, 3);
+  const nextDep = getNextDepartures(origin.id)[0];
+
+  // Construire une liste de nœuds lisibles depuis les steps
+  type Node =
+    | { kind: 'stop';     name: string; color: string; role: 'start' | 'end' | 'transfer' }
+    | { kind: 'segment';  lineName: string; color: string; durationMin: number; stops?: string }
+    | { kind: 'walk';     durationMin: number; meters?: number };
+
+  const nodes: Node[] = [];
+  nodes.push({ kind: 'stop', name: origin.name, color: '#059669', role: 'start' });
+
+  for (const step of option.steps) {
+    if (step.type === 'walk') {
+      nodes.push({ kind: 'walk', durationMin: step.durationMin, meters: option.walkMeters });
+    } else if (step.type === 'bus') {
+      const line = LINES.find(l => l.id === step.lineId);
+      const from = step.fromStopId ? STOPS.find(s => s.id === step.fromStopId) : null;
+      const to   = step.toStopId   ? STOPS.find(s => s.id === step.toStopId)   : null;
+      nodes.push({
+        kind: 'segment',
+        lineName: line?.name || step.label,
+        color: step.color,
+        durationMin: step.durationMin,
+        stops: from && to ? `${from.name} → ${to.name}` : undefined,
+      });
+      if (to && step !== option.steps[option.steps.length - 1]) {
+        nodes.push({ kind: 'stop', name: to.name, color: '#d97706', role: 'transfer' });
+      }
+    } else if (step.type === 'transfer') {
+      // skip — déjà géré par le stop précédent
+    }
+  }
+  nodes.push({ kind: 'stop', name: dest.name, color: '#dc2626', role: 'end' });
 
   return (
     <div className="rounded-2xl overflow-hidden mt-2 animate-fade-up"
       style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
 
-      {/* Steps detail */}
-      <div className="px-4 pt-4 pb-3 space-y-2">
-        {option.steps.map((step, i) => {
-          const stopFrom = step.fromStopId ? STOPS.find(s => s.id === step.fromStopId) : null;
-          const stopTo   = step.toStopId   ? STOPS.find(s => s.id === step.toStopId)   : null;
-          return (
-            <div key={i} className="flex items-start gap-3 py-2"
-              style={{ borderTop: i > 0 ? '1px solid var(--c-border)' : 'none' }}>
-              <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 text-sm mt-0.5"
-                style={step.type === 'transfer' ? { background: 'rgba(255,255,255,.05)' } : { background: step.color + '22' }}>
-                {step.type === 'walk' ? '🚶' : step.type === 'transfer' ? '↻' : '🚌'}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm" style={{ color: step.type === 'transfer' ? '#475569' : '#e2e8f0' }}>
-                  {step.label}
-                </p>
-                {step.type === 'bus' && stopFrom && stopTo && (
-                  <p className="text-[10px] mt-0.5" style={{ color: '#475569' }}>
-                    {stopFrom.name} → {stopTo.name}
-                  </p>
-                )}
-              </div>
-              <span className="text-sm font-black flex-shrink-0"
-                style={{ color: step.type === 'transfer' ? '#334155' : 'white' }}>
-                {step.durationMin} min
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Affluence prediction */}
-      {origin && (
-        <div className="px-4 pb-3" style={{ borderTop: '1px solid var(--c-border)' }}>
-          <AffluenceWidget stopId={origin.id} />
+      {/* Prochain départ */}
+      {nextDep && (
+        <div className="flex items-center gap-3 px-4 py-2.5"
+          style={{ background: 'rgba(37,99,235,.1)', borderBottom: '1px solid var(--c-border)' }}>
+          <span className="text-base">🕐</span>
+          <span className="text-xs font-bold" style={{ color: '#94a3b8' }}>Prochain départ</span>
+          <span className="ml-auto text-sm font-black" style={{ color: '#60a5fa' }}>
+            <Countdown seconds={nextDep.waitMin * 60} />
+          </span>
         </div>
       )}
 
-      {/* Next departures */}
-      {departures.length > 0 && (
-        <div className="px-4 pb-3" style={{ borderTop: '1px solid var(--c-border)' }}>
-          <p className="text-[10px] font-black uppercase tracking-widest pt-3 mb-2" style={{ color: '#334155' }}>Prochains départs</p>
-          <div className="flex gap-2">
-            {departures.map((d, i) => (
-              <div key={i} className="flex-1 text-center py-2 rounded-xl"
-                style={i === 0
-                  ? { background: 'rgba(37,99,235,.15)', border: '1px solid rgba(37,99,235,.35)' }
-                  : { background: 'rgba(255,255,255,.04)', border: '1px solid transparent' }}>
-                <div className={`text-xs font-black ${i === 0 ? 'text-blue-400' : 'text-slate-400'}`}>
-                  <Countdown seconds={d.waitMin * 60} />
+      {/* Timeline verticale */}
+      <div className="px-4 py-3">
+        {nodes.map((node, i) => (
+          <div key={i} className="flex gap-3">
+            {/* Colonne icône + ligne verticale */}
+            <div className="flex flex-col items-center" style={{ minWidth: 28 }}>
+              {node.kind === 'stop' && (
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-black text-white flex-shrink-0 z-10"
+                  style={{ background: node.color, border: '2px solid var(--c-surface)', boxShadow: `0 0 0 2px ${node.color}40` }}>
+                  {node.role === 'start' ? 'A' : node.role === 'end' ? 'B' : '↻'}
                 </div>
-                {i === 0 && <div className="text-[9px] mt-0.5 text-blue-500">prochain</div>}
-              </div>
-            ))}
+              )}
+              {node.kind === 'segment' && (
+                <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 z-10 text-sm"
+                  style={{ background: node.color, border: '2px solid var(--c-surface)' }}>
+                  🚌
+                </div>
+              )}
+              {node.kind === 'walk' && (
+                <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0 z-10 text-sm"
+                  style={{ background: 'rgba(5,150,105,.2)', border: '2px solid var(--c-surface)' }}>
+                  🚶
+                </div>
+              )}
+              {/* Ligne verticale entre nœuds */}
+              {i < nodes.length - 1 && (
+                <div className="flex-1 w-0.5 my-0.5"
+                  style={{
+                    background: nodes[i+1]?.kind === 'segment' ? (nodes[i+1] as any).color + '60'
+                      : node.kind === 'segment' ? (node as any).color + '60'
+                      : 'rgba(255,255,255,.1)',
+                    minHeight: 16,
+                  }} />
+              )}
+            </div>
+
+            {/* Contenu du nœud */}
+            <div className="flex-1 pb-2 pt-0.5 min-w-0">
+              {node.kind === 'stop' && (
+                <div>
+                  <span className="text-sm font-black" style={{ color: node.color }}>{node.name}</span>
+                  {node.role === 'transfer' && (
+                    <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-md"
+                      style={{ background: 'rgba(217,119,6,.2)', color: '#fbbf24' }}>
+                      Correspondance
+                    </span>
+                  )}
+                </div>
+              )}
+              {node.kind === 'segment' && (
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-black px-2.5 py-0.5 rounded-full text-white"
+                      style={{ background: node.color }}>
+                      {node.lineName}
+                    </span>
+                    <span className="text-xs font-bold" style={{ color: '#94a3b8' }}>
+                      {node.durationMin} min
+                    </span>
+                  </div>
+                  {node.stops && (
+                    <p className="text-[10px] mt-0.5 truncate" style={{ color: '#475569' }}>{node.stops}</p>
+                  )}
+                </div>
+              )}
+              {node.kind === 'walk' && (
+                <span className="text-xs font-bold" style={{ color: '#34d399' }}>
+                  À pied {node.meters ? `${node.meters} m · ` : ''}{node.durationMin} min
+                </span>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
 
       {/* CTA */}
       {!buying ? (
-        <div className="flex gap-2 px-4 pb-4" style={{ borderTop: '1px solid var(--c-border)', paddingTop: 12 }}>
+        <div className="flex gap-2 px-4 pb-4 pt-1" style={{ borderTop: '1px solid var(--c-border)' }}>
           <button onClick={onStart}
             className="flex-1 py-3 rounded-xl text-sm font-black text-white transition-all active:scale-95"
             style={{ background: 'linear-gradient(135deg,#059669,#10b981)', boxShadow: '0 6px 20px rgba(5,150,105,.3)' }}>
@@ -246,8 +307,8 @@ function OptionDetail({ option, origin, dest, onBuy, onStart }: {
           </button>
         </div>
       ) : (
-        <div className="px-4 pb-4" style={{ borderTop: '1px solid var(--c-border)', paddingTop: 12 }}>
-          <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: '#475569' }}>
+        <div className="px-4 pb-4 pt-1" style={{ borderTop: '1px solid var(--c-border)' }}>
+          <p className="text-[10px] font-black uppercase tracking-widest mb-3 pt-2" style={{ color: '#475569' }}>
             Payer {option.fare} FCFA via
           </p>
           <div className="space-y-2">
@@ -322,7 +383,7 @@ export default function RoutePanel() {
     if (results[0]) {
       dispatch(recordTrip({ fare: results[0].fare, operator: results[0].operator }));
       dispatch(setRouteDisplay(buildRouteDisplay(results[0], userLocation)));
-      dispatch(setFocusedLine(results[0].primaryLineId));
+      // NE PAS setFocusedLine ici — la FocusedLineOverlay pollue le tracé avec ses numéros
     }
   };
 
@@ -347,7 +408,6 @@ export default function RoutePanel() {
       steps: selected.steps,
     };
     dispatch(startJourney(journey));
-    dispatch(setFocusedLine(selected.primaryLineId));
     dispatch(showToast({ type: 'success', message: `Trajet démarré → ${route.destination.name} !` }));
   };
 
@@ -359,7 +419,6 @@ export default function RoutePanel() {
 
   const handleSelectOption = (opt: RouteOption) => {
     setSelected(opt);
-    dispatch(setFocusedLine(opt.primaryLineId));
     dispatch(recordTrip({ fare: opt.fare, operator: opt.operator }));
     dispatch(setRouteDisplay(buildRouteDisplay(opt, userLocation)));
   };
@@ -477,7 +536,7 @@ export default function RoutePanel() {
               onSelect={() => handleSelectOption(opt)} />
           ))}
           {selected && route.origin && route.destination && (
-            <OptionDetail option={selected} origin={route.origin} dest={route.destination}
+            <RouteTimeline option={selected} origin={route.origin} dest={route.destination}
               onBuy={handleBuy} onStart={handleStartJourney} />
           )}
         </div>

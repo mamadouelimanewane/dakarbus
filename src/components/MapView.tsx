@@ -586,8 +586,8 @@ export default function MapView() {
         <MapController />
         <RouteOverlay />
 
-        {/* When a line is focused: show full overlay with numbered stops + arrows */}
-        {!routeMode && focusedLine && (() => {
+        {/* FocusedLineOverlay masquée quand un itinéraire calculé est affiché */}
+        {!routeMode && !routeDisplay && focusedLine && (() => {
           const fl = LINES.find(l => l.id === focusedLine);
           if (!fl) return null;
           return (
