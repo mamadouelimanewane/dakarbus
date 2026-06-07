@@ -243,12 +243,6 @@ export default function PassengerApp() {
                         style={{ background: 'linear-gradient(135deg,#1d4ed8,#2563eb)' }}>🚌</div>
                       <span className="text-sm font-black text-white">SunuBus</span>
                     </div>
-                    {/* Bouton Voyager */}
-                    <button onClick={() => setVoyagerOpen(true)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-2xl font-black text-sm text-white transition-all active:scale-95"
-                      style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 4px 16px rgba(220,38,38,.5)' }}>
-                      🚀 <span>Voyager</span>
-                    </button>
                   </div>
                   <div className="flex items-center gap-1.5 pointer-events-auto">
                     {activeJourney && (
@@ -298,22 +292,6 @@ export default function PassengerApp() {
                   <div style={{ width: 44, height: 4, borderRadius: 3, background: 'rgba(255,255,255,.22)' }} />
                 </button>
 
-                {/* Voyager pill — épinglé sur plan tab */}
-                {activeTab === 'plan' && !journeyPanelOpen && (
-                  <div className="flex-shrink-0 px-3 pb-2">
-                    <button onClick={() => setVoyagerOpen(true)}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all active:scale-[.98]"
-                      style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 4px 20px rgba(220,38,38,.4)' }}>
-                      <span className="text-xl">🚀</span>
-                      <div className="flex-1 text-left">
-                        <div className="text-sm font-black text-white">Voyager avec le GPS</div>
-                        <div className="text-[10px]" style={{ color: 'rgba(255,255,255,.65)' }}>Trajet guidé · opérateur · tarif · temps réel</div>
-                      </div>
-                      <span className="text-white opacity-60">›</span>
-                    </button>
-                  </div>
-                )}
-
                 {/* Contenu scrollable */}
                 <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
                   <Page />
@@ -333,16 +311,9 @@ export default function PassengerApp() {
                   style={{ background: 'rgba(10,15,30,.92)', backdropFilter: 'blur(16px)', borderBottom: '1px solid var(--c-border)' }}>
 
                   {/* Mobile header lignes */}
-                  <div className="lg:hidden flex items-center justify-between px-4 pt-3 pb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">🚌</span>
-                      <span className="text-base font-black text-white">Lignes</span>
-                    </div>
-                    <button onClick={() => setVoyagerOpen(true)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black text-white transition-all active:scale-95"
-                      style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 3px 12px rgba(220,38,38,.4)' }}>
-                      🚀 Voyager
-                    </button>
+                  <div className="lg:hidden flex items-center px-4 pt-3 pb-2 gap-2">
+                    <span className="text-2xl">🚌</span>
+                    <span className="text-base font-black text-white">Lignes</span>
                   </div>
                   <OperatorFilter />
                 </div>
@@ -415,11 +386,6 @@ export default function PassengerApp() {
                       <span style={{ color: jColor }}>En cours</span>
                     </button>
                   )}
-                  <button onClick={() => setVoyagerOpen(true)}
-                    className="w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90"
-                    style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 3px 12px rgba(220,38,38,.4)' }}>
-                    🚀
-                  </button>
                 </div>
               </div>
 
