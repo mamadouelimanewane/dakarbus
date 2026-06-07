@@ -569,56 +569,48 @@ export default function MapView() {
         );
       })()}
 
-      {/* Médaillon "chemin vers l'arrêt départ" — affiché quand il y a une marche à pied */}
-      {routeDisplay?.walkFrom && (() => {
+      {/* ── Barre bas-gauche : marche + tarif côte à côte ── */}
+      {routeDisplay && (routeDisplay.fare || routeDisplay.walkFrom) && (() => {
         const origin = STOPS.find(s => s.id === routeDisplay.originStopId);
-        const walkDist = origin ? Math.round(
+        const walkDist = routeDisplay.walkFrom && origin ? Math.round(
           Math.sqrt(
-            Math.pow((routeDisplay.walkFrom![0] - origin.lat) * 111000, 2) +
-            Math.pow((routeDisplay.walkFrom![1] - origin.lng) * 85000, 2)
+            Math.pow((routeDisplay.walkFrom[0] - origin.lat) * 111000, 2) +
+            Math.pow((routeDisplay.walkFrom[1] - origin.lng) * 85000, 2)
           )
         ) : null;
         const walkMin = walkDist ? Math.ceil(walkDist / 80) : null;
-        return origin ? (
-          <div className="absolute bottom-36 left-3 z-[900] rounded-2xl overflow-hidden shadow-2xl"
-            style={{ background: 'rgba(10,15,30,.92)', backdropFilter: 'blur(16px)', border: '1px solid rgba(5,150,105,.35)', maxWidth: 220 }}>
-            <div className="h-1" style={{ background: 'linear-gradient(90deg, #059669, #34d399)' }} />
-            <div className="px-3 py-2.5 flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-                style={{ background: 'rgba(5,150,105,.2)' }}>🚶</div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-black" style={{ color: '#34d399' }}>
-                  À pied jusqu'à l'arrêt
-                </div>
-                <div className="text-xs font-black text-white truncate mt-0.5">{origin.name}</div>
-                {walkMin && (
-                  <div className="text-[10px] mt-0.5" style={{ color: '#64748b' }}>
-                    ~{walkDist} m · {walkMin} min
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : null;
-      })()}
 
-      {/* ── Badge tarif — toujours en bas à gauche, sous le médaillon ── */}
-      {routeDisplay?.fare && (
-        <div className="absolute bottom-6 left-3 z-[900]">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-2xl shadow-xl"
-            style={{
-              background: 'rgba(10,15,30,.92)',
-              backdropFilter: 'blur(16px)',
-              border: '1px solid rgba(250,204,21,.35)',
-            }}>
-            <span className="text-base">🎫</span>
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#64748b' }}>Tarif total</div>
-              <div className="text-sm font-black" style={{ color: '#fbbf24' }}>{routeDisplay.fare} FCFA</div>
-            </div>
+        return (
+          <div className="absolute bottom-16 left-3 z-[900] flex items-stretch gap-2">
+            {/* Médaillon marche — visible seulement si GPS actif */}
+            {routeDisplay.walkFrom && origin && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-2xl shadow-xl"
+                style={{ background: 'rgba(10,15,30,.92)', backdropFilter: 'blur(16px)', border: '1px solid rgba(5,150,105,.35)' }}>
+                <span className="text-base">🚶</span>
+                <div>
+                  <div className="text-[10px] font-black" style={{ color: '#34d399' }}>À pied</div>
+                  <div className="text-[11px] font-black text-white truncate" style={{ maxWidth: 100 }}>{origin.name}</div>
+                  {walkMin && (
+                    <div className="text-[10px]" style={{ color: '#64748b' }}>~{walkDist}m · {walkMin}min</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Badge tarif */}
+            {routeDisplay.fare && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-2xl shadow-xl"
+                style={{ background: 'rgba(10,15,30,.92)', backdropFilter: 'blur(16px)', border: '1px solid rgba(250,204,21,.35)' }}>
+                <span className="text-base">🎫</span>
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#64748b' }}>Tarif</div>
+                  <div className="text-sm font-black" style={{ color: '#fbbf24' }}>{routeDisplay.fare} FCFA</div>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Timeline flottante sur la carte (côté chatbot) ────── */}
       {routeDisplay && (() => {
