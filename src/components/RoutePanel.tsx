@@ -522,25 +522,6 @@ export default function RoutePanel() {
           <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,.08)' }} />
         </div>
       )}
-      {options.length === 0 && !noRoute && (
-        <button
-          onClick={() => window.dispatchEvent(new CustomEvent('open-voyager'))}
-          className="w-full flex items-center gap-3 p-3.5 rounded-2xl transition-all hover:scale-[1.02] active:scale-[.98]"
-          style={{
-            background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-            boxShadow: '0 6px 24px rgba(220,38,38,.45), inset 0 1px 0 rgba(255,255,255,.12)',
-          }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-            style={{ background: 'rgba(255,255,255,.15)' }}>🚀</div>
-          <div className="flex-1 text-left">
-            <div className="text-sm font-black text-white">Voyager avec le GPS</div>
-            <div className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,.7)' }}>
-              Trajet guidé · opérateur · tarif · bus en temps réel
-            </div>
-          </div>
-          <span className="text-white text-lg">→</span>
-        </button>
-      )}
 
       {noRoute && (
         <div className="rounded-2xl p-4 text-center animate-fade-up"
