@@ -313,10 +313,10 @@
 .leaflet-popup-content {
   margin: 0 !important;
   overflow: hidden !important;
-  border-radius: var(--r-xl) !important;
-  box-shadow: var(--shadow-xl) !important;
-  background: var(--c-surface) !important;
-  border: 1px solid var(--c-border2) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,.35) !important;
+  background: #0f172a !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
 }
 .leaflet-popup-tip-container { display:none; }
 .leaflet-div-icon            { background:transparent; border:none; }
