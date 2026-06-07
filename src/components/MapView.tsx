@@ -580,7 +580,7 @@ export default function MapView() {
         ) : null;
         const walkMin = walkDist ? Math.ceil(walkDist / 80) : null;
         return origin ? (
-          <div className="absolute bottom-24 left-3 z-[900] rounded-2xl overflow-hidden shadow-2xl"
+          <div className="absolute bottom-36 left-3 z-[900] rounded-2xl overflow-hidden shadow-2xl"
             style={{ background: 'rgba(10,15,30,.92)', backdropFilter: 'blur(16px)', border: '1px solid rgba(5,150,105,.35)', maxWidth: 220 }}>
             <div className="h-1" style={{ background: 'linear-gradient(90deg, #059669, #34d399)' }} />
             <div className="px-3 py-2.5 flex items-center gap-2.5">
@@ -602,13 +602,9 @@ export default function MapView() {
         ) : null;
       })()}
 
-      {/* ── Badge tarif — affiché sous le médaillon marche à pied ── */}
+      {/* ── Badge tarif — toujours en bas à gauche, sous le médaillon ── */}
       {routeDisplay?.fare && (
-        <div className="absolute z-[900]"
-          style={{
-            bottom: routeDisplay.walkFrom ? '6.5rem' : '1.5rem',
-            left: '0.75rem',
-          }}>
+        <div className="absolute bottom-6 left-3 z-[900]">
           <div className="flex items-center gap-2 px-3 py-2 rounded-2xl shadow-xl"
             style={{
               background: 'rgba(10,15,30,.92)',
