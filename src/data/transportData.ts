@@ -221,6 +221,9 @@ export const STOPS: Stop[] = [
   { id:'ha3', name:'Hann Bel-Air',                zone:'Hann',       lat:14.7225, lng:-17.4100, operators:['DDD','AFTU'],       lines:['L8','A51'] },
   { id:'ha4', name:'Zone Industrielle Hann',      zone:'Hann',       lat:14.7197, lng:-17.3994, operators:['DDD'],              lines:['L45','L15'] },
   { id:'ha5', name:'Hann Marché',                 zone:'Hann',       lat:14.7248, lng:-17.4050, operators:['DDD','AFTU'],       lines:['L8','L9','A51'] },
+  { id:'ha6', name:'Hann Maristes',              zone:'Hann',       lat:14.7308, lng:-17.4133, operators:['DDD','AFTU'],       lines:['L8','L9','A51','A86'] },
+  { id:'ha7', name:'Hann Maristes Cité',         zone:'Hann',       lat:14.7335, lng:-17.4108, operators:['AFTU'],             lines:['A86'] },
+  { id:'ha8', name:'Hann Maristes Carrefour',    zone:'Hann',       lat:14.7282, lng:-17.4158, operators:['DDD','AFTU'],       lines:['L8','A86'] },
 
   // ── THIAROYE / YEUMBEUL / KEUR MASSAR ───────────────────
   { id:'th1', name:'Thiaroye Marché',             zone:'Thiaroye',   lat:14.7358, lng:-17.3533, operators:['DDD','TER'],        lines:['L15','L30','L46','TER-01'] },
@@ -414,6 +417,7 @@ const AFTU_LINES: Line[] = [
   { id:'A83',  name:'AFTU 83',  operator:'AFTU', route:'Thiaroye sur Mer ↔ Thiaroye Azur ↔ Palais', color:AFTU_COLORS[1], freq:'20 min', tarif:200, stops:['tsm3','tsm1','tsm2','taz3','taz1','taz2','th5','th3','th1','ha2','p02'] },
   { id:'A84',  name:'AFTU 84',  operator:'AFTU', route:'Diamaguène ↔ Guédiawaye',                color:AFTU_COLORS[2], freq:'15 min', tarif:150, stops:['dg4','dg3','dg1','dg2','dg5','pk9','pk1','gd9','gd8','gd1'] },
   { id:'A85',  name:'AFTU 85',  operator:'AFTU', route:'Diamaguène ↔ Liberté 6',                 color:AFTU_COLORS[0], freq:'20 min', tarif:150, stops:['dg4','dg3','dg1','dg2','pk10','pk1','ha2','lb6'] },
+  { id:'A86',  name:'AFTU 86',  operator:'AFTU', route:'Hann Maristes ↔ Palais',                 color:AFTU_COLORS[1], freq:'15 min', tarif:150, stops:['ha7','ha6','ha8','ha5','ha3','ha2','bm1','p09','p02'] },
 ];
 
 const BRT_LINES: Line[] = [
