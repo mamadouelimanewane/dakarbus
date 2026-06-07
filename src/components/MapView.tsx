@@ -1018,7 +1018,14 @@ export default function MapView() {
         )}
 
         {/* Bus simulés masqués quand un itinéraire est affiché */}
-        {!routeMode && !routeDisplay && busPositions.map((bus: BusPosition, i: number) => {
+        {!routeMode && !routeDisplay && (() => {
+          const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+          // Sur mobile : max 6 bus (1 par opérateur principal), sur desktop : tous
+          const visibleBuses = isMobile
+            ? busPositions.filter((_: BusPosition, idx: number) => idx < 6)
+            : busPositions;
+          return visibleBuses;
+        })().map((bus: BusPosition, i: number) => {
           const line = LINES.find(l => l.id === bus.lineId);
           const color = line?.color || '#10b981';
           const driver = MOCK_DRIVERS[bus.busId] ?? Object.values(MOCK_DRIVERS).find(d => d.lineId === bus.lineId);
