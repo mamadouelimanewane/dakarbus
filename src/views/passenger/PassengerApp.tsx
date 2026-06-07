@@ -54,6 +54,8 @@ export default function PassengerApp() {
   // Lines tab: état local pour basculer liste ↔ carte de ligne (indépendant de focusedLine Redux)
   const [linesMapView, setLinesMapView] = useState(false);
   const [voyagerOpen, setVoyagerOpen] = useState(false);
+  // true dès qu'un trajet Voyager a été calculé et affiché sur la carte
+  const [voyagerRouteActive, setVoyagerRouteActive] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -113,7 +115,29 @@ export default function PassengerApp() {
       <JourneyEndModal />
 
       <ChatBot />
-      {voyagerOpen && <VoyagerWizard onClose={() => setVoyagerOpen(false)} />}
+      {voyagerOpen && (
+        <VoyagerWizard onClose={() => {
+          setVoyagerOpen(false);
+          setVoyagerRouteActive(true); // marquer qu'un trajet Voyager est actif
+        }} />
+      )}
+
+      {/* Bouton flottant "Retour Voyager" — visible quand trajet Voyager affiché sur carte */}
+      {voyagerRouteActive && !voyagerOpen && routeDisplay && (
+        <div className="fixed z-[9000] flex flex-col gap-2"
+          style={{ bottom: 80, left: '50%', transform: 'translateX(-50%)' }}>
+          <button
+            onClick={() => setVoyagerOpen(true)}
+            className="flex items-center gap-2 px-5 py-3 rounded-full text-white font-black text-sm transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
+            style={{
+              background: 'linear-gradient(135deg,#1e3a8a,#2563eb,#7c3aed)',
+              boxShadow: '0 6px 28px rgba(37,99,235,.65)',
+              border: '1.5px solid rgba(255,255,255,.2)',
+            }}>
+            🚀 <span>Modifier le trajet Voyager</span>
+          </button>
+        </div>
+      )}
 
       <div className={`flex-1 flex flex-col overflow-hidden ${!geoReady ? 'opacity-0 pointer-events-none' : ''}`}
         style={{ transition: 'opacity .3s' }}>

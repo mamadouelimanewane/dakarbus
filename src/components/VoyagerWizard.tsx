@@ -1,10 +1,10 @@
 /**
  * VoyagerWizard — Workflow guidé "Voyager"
  * Étapes :
- *  1. Départ    — position GPS pré-remplie, modifiable
+ *  1. Départ    — position GPS confirmée (PAS d'arrêt suggéré encore)
  *  2. Opérateur — DDD | AFTU | TER | BRT
- *  3. Destination — saisie texte avec suggestions
- *  4. Résultat  — tracé sur carte + validation
+ *  3. Destination — saisie + arrêt de départ affiché APRÈS choix opérateur
+ *  4. Résultat  — tracé sur carte
  */
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -136,17 +136,17 @@ export default function VoyagerWizard({ onClose }: { onClose: () => void }) {
 
   const [step, setStep] = useState<Step>('depart');
 
-  // Étape 1 — Départ
+  // Étape 1 — Départ : juste la position GPS, PAS d'arrêt encore
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState('');
   const [myPos, setMyPos] = useState<[number, number] | null>(userLocation);
-  const [departInput, setDepartInput] = useState('');
-  const [departStop, setDepartStop] = useState<Stop | null>(null);
 
   // Étape 2 — Opérateur
   const [selectedOp, setSelectedOp] = useState<OperatorId | null>(null);
 
-  // Étape 3 — Destination
+  // Étape 3 — Destination + arrêt de départ résolu APRÈS opérateur
+  const [departStop, setDepartStop] = useState<Stop | null>(null);
+  const [departInput, setDepartInput] = useState('');
   const [destInput, setDestInput] = useState('');
   const [destStop, setDestStop] = useState<Stop | null>(null);
 
@@ -156,10 +156,7 @@ export default function VoyagerWizard({ onClose }: { onClose: () => void }) {
 
   // ── Init GPS au montage ────────────────────────────────────
   useEffect(() => {
-    if (myPos) {
-      prefillNearest(myPos);
-      return;
-    }
+    if (myPos) return; // position déjà connue, pas besoin de demander
     setGeoLoading(true);
     navigator.geolocation?.getCurrentPosition(
       pos => {
@@ -167,20 +164,25 @@ export default function VoyagerWizard({ onClose }: { onClose: () => void }) {
         setMyPos(loc);
         dispatch(setUserLocation(loc));
         setGeoLoading(false);
-        prefillNearest(loc);
       },
       () => { setGeoLoading(false); setGeoError('GPS indisponible'); },
       { timeout: 8000 }
     );
   }, []);
 
-  function prefillNearest(pos: [number, number]) {
-    const res = getNearestStop(pos[0], pos[1]);
-    if (res) {
-      setDepartStop(res.stop);
-      setDepartInput(res.stop.name);
+  // ── Résoudre l'arrêt de départ quand on arrive à l'étape destination ──
+  // C'est ICI que l'arrêt est suggéré, APRÈS le choix d'opérateur
+  useEffect(() => {
+    if (step !== 'destination') return;
+    if (!myPos) return;
+    if (departStop) return; // déjà choisi manuellement
+
+    const nearest = getNearestStop(myPos[0], myPos[1]);
+    if (nearest) {
+      setDepartStop(nearest.stop);
+      setDepartInput(nearest.stop.name);
     }
-  }
+  }, [step]);
 
   // ── Navigation entre étapes ────────────────────────────────
   const goNext = () => {
@@ -198,7 +200,6 @@ export default function VoyagerWizard({ onClose }: { onClose: () => void }) {
     if (!departStop || !destStop) { setRouteError('Départ ou destination manquant'); return; }
     setRoute(null); setRouteError('');
 
-    // Filtrer par opérateur si sélectionné
     const options = findRoutes(departStop, destStop, myPos?.[0], myPos?.[1]);
     const filtered = selectedOp
       ? options.filter(o => o.operator === selectedOp)
@@ -208,7 +209,6 @@ export default function VoyagerWizard({ onClose }: { onClose: () => void }) {
     if (!best) { setRouteError('Aucun trajet trouvé'); return; }
     setRoute(best);
 
-    // Dispatcher sur la carte
     dispatch(setRouteOrigin(departStop));
     dispatch(setRouteDestination(destStop));
     const busSteps = best.steps.filter((s: any) => s.type === 'bus' && s.lineId && s.fromStopId && s.toStopId);
@@ -270,38 +270,50 @@ export default function VoyagerWizard({ onClose }: { onClose: () => void }) {
         <div className="flex-1 overflow-y-auto px-5 py-4" style={{ scrollbarWidth: 'none' }}>
           <StepBar step={step} />
 
-          {/* ══ ÉTAPE 1 : DÉPART ══════════════════════════════ */}
+          {/* ══ ÉTAPE 1 : DÉPART — position GPS seulement ════════ */}
           {step === 'depart' && (
             <div>
               <p className="text-base font-black text-white mb-1">D'où partez-vous ?</p>
-              <p className="text-xs mb-4" style={{ color: '#475569' }}>
+              <p className="text-xs mb-5" style={{ color: '#475569' }}>
                 {geoLoading ? '📡 Localisation GPS en cours…'
                   : geoError ? `⚠️ ${geoError}`
                   : myPos ? '📍 Position GPS détectée'
-                  : '📍 Entrez votre point de départ'}
+                  : '📍 Activation du GPS…'}
               </p>
 
-              {/* Badge position GPS */}
-              {myPos && departStop && (
-                <button
-                  onClick={() => { setDepartInput(departStop.name); }}
-                  className="w-full flex items-center gap-3 p-3 rounded-2xl mb-3 transition-all hover:scale-[1.01]"
-                  style={{ background: 'rgba(37,99,235,.12)', border: '1.5px solid rgba(37,99,235,.3)' }}>
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'rgba(37,99,235,.2)' }}>📍</div>
-                  <div className="flex-1 text-left">
-                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#60a5fa' }}>Ma position · arrêt le plus proche</div>
-                    <div className="text-sm font-black text-white">{departStop.name}</div>
-                    {nearestMeters && <div className="text-[10px]" style={{ color: '#475569' }}>{nearestMeters} m de vous</div>}
+              {/* Carte de confirmation GPS */}
+              {myPos ? (
+                <div className="flex items-center gap-3 p-4 rounded-2xl mb-4"
+                  style={{ background: 'rgba(5,150,105,.1)', border: '1.5px solid rgba(5,150,105,.3)' }}>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl"
+                    style={{ background: 'rgba(5,150,105,.2)' }}>📍</div>
+                  <div className="flex-1">
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#34d399' }}>Position GPS confirmée</div>
+                    <div className="text-sm font-black text-white mt-0.5">Ma position actuelle</div>
+                    <div className="text-[10px] mt-0.5 font-mono" style={{ color: '#475569' }}>
+                      {myPos[0].toFixed(5)}, {myPos[1].toFixed(5)}
+                    </div>
                   </div>
-                  <span style={{ color: '#60a5fa', fontWeight: 900 }}>✓</span>
-                </button>
+                  <span className="text-2xl">✅</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 p-4 rounded-2xl mb-4"
+                  style={{ background: 'rgba(234,179,8,.1)', border: '1.5px solid rgba(234,179,8,.3)' }}>
+                  <div className="text-2xl">📡</div>
+                  <div className="flex-1">
+                    <div className="text-sm font-bold text-white">
+                      {geoLoading ? 'Recherche GPS…' : geoError || 'GPS non disponible'}
+                    </div>
+                    <div className="text-[10px] mt-0.5" style={{ color: '#92400e' }}>
+                      Activez le GPS pour un trajet précis
+                    </div>
+                  </div>
+                </div>
               )}
 
-              <SearchInput value={departInput} onChange={setDepartInput}
-                onSelect={s => { setDepartStop(s); setDepartInput(s.name); }}
-                placeholder="Chercher un arrêt de départ…"
-                userPos={myPos ?? undefined} autoFocus={!myPos} />
+              <p className="text-[10px] text-center" style={{ color: '#334155' }}>
+                L'arrêt de départ sera suggéré après le choix de l'opérateur
+              </p>
             </div>
           )}
 
@@ -309,7 +321,7 @@ export default function VoyagerWizard({ onClose }: { onClose: () => void }) {
           {step === 'operateur' && (
             <div>
               <p className="text-base font-black text-white mb-1">Quel opérateur ?</p>
-              <p className="text-xs mb-4" style={{ color: '#475569' }}>Choisissez ou passez à la suite</p>
+              <p className="text-xs mb-4" style={{ color: '#475569' }}>Choisissez ou passez pour toutes les lignes</p>
               <div className="grid grid-cols-2 gap-3">
                 {OP_CONFIG.map(op => (
                   <button key={op.id} onClick={() => setSelectedOp(op.id === selectedOp ? null : op.id)}
@@ -337,27 +349,67 @@ export default function VoyagerWizard({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          {/* ══ ÉTAPE 3 : DESTINATION ═════════════════════════ */}
+          {/* ══ ÉTAPE 3 : DESTINATION + arrêt de départ ══════ */}
           {step === 'destination' && (
-            <div>
-              <p className="text-base font-black text-white mb-1">Où allez-vous ?</p>
-              <p className="text-xs mb-4" style={{ color: '#475569' }}>Tapez un quartier, arrêt ou lieu</p>
-              <SearchInput value={destInput} onChange={setDestInput}
-                onSelect={s => { setDestStop(s); setDestInput(s.name); }}
-                placeholder="Ex: Sandaga, UCAD, Liberté 6…"
-                userPos={myPos ?? undefined} autoFocus />
+            <div className="space-y-4">
+              <div>
+                <p className="text-base font-black text-white mb-1">Où allez-vous ?</p>
+                <p className="text-xs mb-3" style={{ color: '#475569' }}>Tapez un quartier, arrêt ou lieu</p>
+              </div>
 
-              {destStop && (
-                <div className="mt-3 flex items-center gap-2 p-3 rounded-2xl"
-                  style={{ background: 'rgba(5,150,105,.1)', border: '1px solid rgba(5,150,105,.25)' }}>
-                  <span>🎯</span>
-                  <div className="flex-1">
-                    <div className="text-[10px]" style={{ color: '#34d399' }}>Destination sélectionnée</div>
-                    <div className="text-sm font-black text-white">{destStop.name}</div>
+              {/* Arrêt de départ — résolu MAINTENANT, après l'opérateur */}
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: '#475569' }}>
+                  Arrêt de départ suggéré
+                </p>
+                {departStop ? (
+                  <div className="flex items-center gap-3 p-3 rounded-2xl mb-1"
+                    style={{ background: 'rgba(37,99,235,.1)', border: '1px solid rgba(37,99,235,.25)' }}>
+                    <span className="text-lg">🚏</span>
+                    <div className="flex-1">
+                      <div className="text-sm font-black text-white">{departStop.name}</div>
+                      {nearestMeters && (
+                        <div className="text-[10px]" style={{ color: '#60a5fa' }}>
+                          {nearestMeters} m · {walkingMinutes(nearestMeters)} min à pied
+                        </div>
+                      )}
+                    </div>
+                    <span style={{ color: '#60a5fa' }}>✓</span>
                   </div>
-                  <span style={{ color: '#34d399', fontWeight: 900 }}>✓</span>
-                </div>
-              )}
+                ) : (
+                  <div className="p-3 rounded-2xl mb-1 text-xs" style={{ background: 'rgba(255,255,255,.04)', color: '#475569' }}>
+                    GPS requis pour suggérer un arrêt
+                  </div>
+                )}
+                {/* Possibilité de changer l'arrêt */}
+                <SearchInput value={departInput} onChange={v => { setDepartInput(v); }}
+                  onSelect={s => { setDepartStop(s); setDepartInput(s.name); }}
+                  placeholder="Changer l'arrêt de départ…"
+                  userPos={myPos ?? undefined} />
+              </div>
+
+              {/* Destination */}
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: '#475569' }}>
+                  Destination
+                </p>
+                <SearchInput value={destInput} onChange={setDestInput}
+                  onSelect={s => { setDestStop(s); setDestInput(s.name); }}
+                  placeholder="Ex: Sandaga, UCAD, Liberté 6…"
+                  userPos={myPos ?? undefined} autoFocus />
+
+                {destStop && (
+                  <div className="mt-2 flex items-center gap-2 p-3 rounded-2xl"
+                    style={{ background: 'rgba(5,150,105,.1)', border: '1px solid rgba(5,150,105,.25)' }}>
+                    <span>🎯</span>
+                    <div className="flex-1">
+                      <div className="text-[10px]" style={{ color: '#34d399' }}>Destination sélectionnée</div>
+                      <div className="text-sm font-black text-white">{destStop.name}</div>
+                    </div>
+                    <span style={{ color: '#34d399', fontWeight: 900 }}>✓</span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -431,7 +483,7 @@ export default function VoyagerWizard({ onClose }: { onClose: () => void }) {
                   </div>
 
                   <p className="text-[10px] text-center" style={{ color: '#334155' }}>
-                    Le tracé est affiché sur la carte
+                    Le tracé est affiché sur la carte ↓
                   </p>
                 </div>
               )}
@@ -448,8 +500,8 @@ export default function VoyagerWizard({ onClose }: { onClose: () => void }) {
             <button
               onClick={goNext}
               disabled={
-                (step === 'depart' && !departStop) ||
-                (step === 'destination' && !destStop)
+                (step === 'depart' && !myPos) ||
+                (step === 'destination' && (!departStop || !destStop))
               }
               className="w-full py-3.5 rounded-2xl text-white font-black text-sm transition-all hover:scale-[1.02] active:scale-[.98] disabled:opacity-40 disabled:cursor-not-allowed"
               style={{ background: 'linear-gradient(135deg,#2563eb,#7c3aed)', boxShadow: '0 6px 24px rgba(37,99,235,.4)' }}>
@@ -464,7 +516,7 @@ export default function VoyagerWizard({ onClose }: { onClose: () => void }) {
             <button onClick={onClose}
               className="w-full py-3.5 rounded-2xl text-white font-black text-sm transition-all hover:scale-[1.02] active:scale-[.98]"
               style={{ background: 'linear-gradient(135deg,#059669,#10b981)', boxShadow: '0 6px 24px rgba(5,150,105,.4)' }}>
-              ✅ Voir sur la carte
+              ✅ Voir le tracé sur la carte
             </button>
           )}
 

@@ -9,7 +9,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setSelectedStop, setMapCenter, setMapZoom, clearFocusedLine, setUserLocation } from '@/store/store';
 import type { RouteDisplay } from '@/store/store';
 import { STOPS, LINES, OPERATORS } from '@/data/transportData';
-import { routeOnRoads, routeLine, lineRouteCache } from '@/utils/osrm';
+import { routeOnRoads, routeOnFoot, routeLine, lineRouteCache } from '@/utils/osrm';
 import { buildStopTimings, sampleArrowPoints } from '@/utils/lineUtils';
 import StopPopup from './StopPopup';
 import type { Stop, Line, BusPosition } from '@/types';
@@ -539,6 +539,7 @@ function RouteOverlay() {
   const { routeDisplay, userLocation } = useAppSelector(s => s.mobility);
   const { active: journey } = useAppSelector(s => s.journey);
   const [busCoords, setBusCoords] = useState<Record<string, [number, number][]>>({});
+  const [walkCoords, setWalkCoords] = useState<[number, number][] | null>(null);
 
   useEffect(() => {
     if (!routeDisplay) { setBusCoords({}); return; }
@@ -568,6 +569,24 @@ function RouteOverlay() {
     fetchSegments();
     return () => { cancelled = true; };
   }, [routeDisplay]);
+
+  // Walking path: fetch road-following route from GPS to departure stop
+  useEffect(() => {
+    if (!routeDisplay?.walkFrom) { setWalkCoords(null); return; }
+    const origin = STOPS.find(s => s.id === routeDisplay.originStopId);
+    if (!origin) { setWalkCoords(null); return; }
+    let cancelled = false;
+    routeOnFoot([
+      { lat: routeDisplay.walkFrom[0], lng: routeDisplay.walkFrom[1] },
+      { lat: origin.lat, lng: origin.lng },
+    ]).then(coords => {
+      if (!cancelled) {
+        // Fallback to straight line if OSRM fails
+        setWalkCoords(coords ?? [routeDisplay.walkFrom!, [origin.lat, origin.lng]]);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [routeDisplay?.walkFrom?.[0], routeDisplay?.walkFrom?.[1], routeDisplay?.originStopId]);
 
   // Fit map bounds to show the whole route
   useEffect(() => {
@@ -606,13 +625,56 @@ function RouteOverlay() {
 
   return (
     <>
-      {/* Walking segment: dashed green */}
-      {routeDisplay.walkFrom && origin && (
+      {/* Walking segment: road-following path with halo */}
+      {walkCoords && walkCoords.length >= 2 && (
+        <>
+          {/* White halo for legibility */}
+          <Polyline
+            positions={walkCoords}
+            pathOptions={{ color: '#ffffff', weight: 11, opacity: 0.55, lineCap: 'round', lineJoin: 'round' }}
+          />
+          {/* Thick green dashed line */}
+          <Polyline
+            positions={walkCoords}
+            pathOptions={{ color: '#10b981', weight: 5, dashArray: '10 8', opacity: 1, lineCap: 'round', lineJoin: 'round' }}
+          />
+        </>
+      )}
+      {/* Fallback straight line while OSRM loads */}
+      {!walkCoords && routeDisplay.walkFrom && origin && (
         <Polyline
           positions={[routeDisplay.walkFrom, [origin.lat, origin.lng]]}
-          pathOptions={{ color: '#059669', weight: 3, dashArray: '8 7', opacity: 0.85 }}
+          pathOptions={{ color: '#10b981', weight: 3, dashArray: '6 6', opacity: 0.5 }}
         />
       )}
+      {/* 🚶 Person marker at user GPS position */}
+      {routeDisplay.walkFrom && (() => {
+        const walkIcon = L.divIcon({
+          html: `<div style="
+            width:36px; height:36px; border-radius:50%;
+            background:linear-gradient(135deg,#059669,#10b981);
+            border:3px solid #fff;
+            box-shadow:0 3px 12px rgba(5,150,105,.7);
+            display:flex; align-items:center; justify-content:center;
+            font-size:18px; line-height:1;
+          ">🚶</div>`,
+          className: '',
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
+        });
+        return (
+          <Marker position={routeDisplay.walkFrom!} icon={walkIcon}>
+            <Popup>
+              <div style={{ fontWeight: 700, color: '#059669' }}>📍 Votre position GPS</div>
+              {walkCoords && origin && (
+                <div style={{ fontSize: 12, marginTop: 4, color: '#334155' }}>
+                  → {origin.name}
+                </div>
+              )}
+            </Popup>
+          </Marker>
+        );
+      })()}
 
       {/* Bus segments : couleur distincte par index (bleu=1er, vert=2ème…) */}
       {routeDisplay.segments.map((seg, i) => {
