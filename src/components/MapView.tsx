@@ -278,6 +278,28 @@ const makeLetterIcon = (letter: string, color: string) => L.divIcon({
   </div>`,
 });
 
+// ── Étiquette du numéro de bus sur le tracé ──────────────────
+const makeLineLabelIcon = (lineName: string, color: string) => L.divIcon({
+  className: '',
+  iconSize: [72, 28],
+  iconAnchor: [36, 14],
+  html: `<div style="
+    background:${color};
+    color:white;
+    font-family:'Inter',sans-serif;
+    font-size:11px;
+    font-weight:900;
+    padding:4px 10px;
+    border-radius:20px;
+    border:2.5px solid white;
+    box-shadow:0 3px 12px rgba(0,0,0,.35);
+    white-space:nowrap;
+    text-align:center;
+    line-height:1.2;
+    letter-spacing:.02em;
+  ">🚌 ${lineName}</div>`,
+});
+
 const makeTransferIcon = (lineNames: string) => L.divIcon({
   className: '',
   iconSize: [30, 30],
@@ -366,17 +388,22 @@ function RouteOverlay() {
         />
       )}
 
-      {/* Bus segments */}
+      {/* Bus segments + étiquette numéro de ligne au milieu du tracé */}
       {routeDisplay.segments.map((seg, i) => {
         const key = `${seg.lineId}:${seg.fromStopId}:${seg.toStopId}`;
         const coords = busCoords[key];
         if (!coords) return null;
+        // Point au 1/3 du tracé (évite le chevauchement avec les marqueurs A/B)
+        const labelIdx = Math.floor(coords.length * 0.4);
+        const labelPos = coords[labelIdx] ?? coords[Math.floor(coords.length / 2)];
         return (
           <React.Fragment key={i}>
-            {/* Outer glow */}
-            <Polyline positions={coords} pathOptions={{ color: '#fff', weight: 10, opacity: 0.25, lineCap: 'round' }} />
-            {/* Main line */}
-            <Polyline positions={coords} pathOptions={{ color: seg.color, weight: 6, opacity: 1, lineCap: 'round', lineJoin: 'round' }} />
+            {/* Halo blanc */}
+            <Polyline positions={coords} pathOptions={{ color: '#fff', weight: 12, opacity: 0.3, lineCap: 'round' }} />
+            {/* Tracé principal */}
+            <Polyline positions={coords} pathOptions={{ color: seg.color, weight: 7, opacity: 1, lineCap: 'round', lineJoin: 'round' }} />
+            {/* Numéro de ligne centré sur le tracé */}
+            <Marker position={labelPos} icon={makeLineLabelIcon(seg.lineName, seg.color)} interactive={false} zIndexOffset={800} />
           </React.Fragment>
         );
       })}

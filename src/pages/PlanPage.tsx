@@ -138,7 +138,7 @@ export default function PlanPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <RouteMap show={hasRoute} onClose={() => dispatch(clearRoute())} />
+      {/* Petite carte supprimée — l'itinéraire s'affiche directement sur la grande carte */}
       <div className="flex-1 overflow-y-auto pb-6">
         <RoutePanel />
 
