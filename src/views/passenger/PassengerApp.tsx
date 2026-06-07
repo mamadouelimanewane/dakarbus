@@ -252,12 +252,24 @@ export default function PassengerApp() {
           {/* ══ LINES TAB — liste pleine / carte de ligne ══════ */}
           {isLinesTab && (
             <div className="flex-1 flex overflow-hidden relative">
-              {/* Carte de ligne — visible quand une ligne est sélectionnée */}
-              {focusedLine ? (
+
+              {/* Liste + détail — toujours monté, caché en CSS quand carte visible */}
+              <div className="flex-1 flex flex-col overflow-hidden"
+                style={{ display: focusedLine ? 'none' : 'flex' }}>
+                <div className="flex-shrink-0 z-40"
+                  style={{ background: 'rgba(10,15,30,.9)', backdropFilter: 'blur(16px)', borderBottom: '1px solid var(--c-border)' }}>
+                  <OperatorFilter />
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  <LinesPage />
+                </div>
+              </div>
+
+              {/* Carte — visible seulement quand une ligne est sélectionnée */}
+              {focusedLine && (
                 <div className="flex-1 relative overflow-hidden">
-                  {/* Bouton retour — bottom-left pour ne pas chevaucher la bannière ligne */}
                   <button
-                    onClick={() => { dispatch(clearFocusedLine()); }}
+                    onClick={() => dispatch(clearFocusedLine())}
                     className="absolute z-[1000] flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-2xl transition-all hover:scale-105 active:scale-95"
                     style={{
                       bottom: 96, left: 12,
@@ -267,20 +279,9 @@ export default function PassengerApp() {
                       color: 'white', fontSize: 13, fontWeight: 800,
                       boxShadow: '0 8px 32px rgba(0,0,0,.5)',
                     }}>
-                    ← Liste des lignes
+                    ← Retour
                   </button>
                   <MapView />
-                </div>
-              ) : (
-                /* Liste complète des lignes */
-                <div className="flex-1 flex flex-col overflow-hidden">
-                  <div className="flex-shrink-0 z-40"
-                    style={{ background: 'rgba(10,15,30,.9)', backdropFilter: 'blur(16px)', borderBottom: '1px solid var(--c-border)' }}>
-                    <OperatorFilter />
-                  </div>
-                  <div className="flex-1 overflow-y-auto">
-                    <LinesPage />
-                  </div>
                 </div>
               )}
             </div>
