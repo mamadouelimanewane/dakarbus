@@ -75,6 +75,65 @@ export default function ChatBot() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLInputElement>(null);
 
+  // ── Drag ──────────────────────────────────────────────────────
+  // Position en px depuis le coin bas-droit (valeurs positives = distance depuis le bord)
+  const [pos, setPos] = useState({ right: 16, bottom: 96 });
+  const dragging  = useRef(false);
+  const didDrag   = useRef(false);
+  const dragOrigin = useRef({ mx: 0, my: 0, right: 16, bottom: 96 });
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    // Seulement sur la poignée (bouton principal), pas sur les éléments du panel
+    dragging.current = true;
+    didDrag.current  = false;
+    dragOrigin.current = { mx: e.clientX, my: e.clientY, right: pos.right, bottom: pos.bottom };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup',   onMouseUp);
+    e.preventDefault();
+  };
+
+  const onMouseMove = (e: MouseEvent) => {
+    if (!dragging.current) return;
+    const dx = e.clientX - dragOrigin.current.mx;
+    const dy = e.clientY - dragOrigin.current.my;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didDrag.current = true;
+    setPos({
+      right:  Math.max(4, dragOrigin.current.right  - dx),
+      bottom: Math.max(4, dragOrigin.current.bottom + dy),
+    });
+  };
+
+  const onMouseUp = (e: MouseEvent) => {
+    dragging.current = false;
+    window.removeEventListener('mousemove', onMouseMove);
+    window.removeEventListener('mouseup',   onMouseUp);
+    // Si pas de drag réel → toggle open
+    if (!didDrag.current) setOpen(o => !o);
+  };
+
+  // Touch support
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    dragging.current = true;
+    didDrag.current  = false;
+    dragOrigin.current = { mx: t.clientX, my: t.clientY, right: pos.right, bottom: pos.bottom };
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!dragging.current) return;
+    const t = e.touches[0];
+    const dx = t.clientX - dragOrigin.current.mx;
+    const dy = t.clientY - dragOrigin.current.my;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didDrag.current = true;
+    setPos({
+      right:  Math.max(4, dragOrigin.current.right  - dx),
+      bottom: Math.max(4, dragOrigin.current.bottom + dy),
+    });
+  };
+  const onTouchEnd = () => {
+    dragging.current = false;
+    if (!didDrag.current) setOpen(o => !o);
+  };
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -154,23 +213,36 @@ export default function ChatBot() {
     }, 600);
   };
 
+  // Hauteur estimée du panel (~60vh) + bouton (56px) + gap (16px)
+  const panelBottom = pos.bottom + 56 + 12;
+
   return (
     <>
-      {/* Floating button */}
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="fixed bottom-24 right-4 z-[9999] w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-2xl transition-all hover:scale-110 active:scale-95"
+      {/* Floating button — draggable */}
+      <div
+        onMouseDown={onMouseDown}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        className="fixed z-[9999] w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-2xl transition-shadow"
         style={{
+          right: pos.right,
+          bottom: pos.bottom,
+          cursor: dragging.current ? 'grabbing' : 'grab',
           background: open ? 'linear-gradient(135deg,#7c3aed,#5b21b6)' : 'linear-gradient(135deg,#2563eb,#1d4ed8)',
           boxShadow: open ? '0 8px 32px rgba(124,58,237,.5)' : '0 8px 32px rgba(37,99,235,.5)',
+          userSelect: 'none',
+          touchAction: 'none',
         }}>
         {open ? '✕' : '💬'}
-      </button>
+      </div>
 
-      {/* Chat panel */}
+      {/* Chat panel — suit la position du bouton */}
       {open && (
-        <div className="fixed bottom-40 right-4 z-[9998] w-80 rounded-3xl overflow-hidden shadow-2xl flex flex-col animate-slide-up"
+        <div className="fixed z-[9998] w-80 rounded-3xl overflow-hidden shadow-2xl flex flex-col animate-slide-up"
           style={{
+            right: pos.right,
+            bottom: panelBottom,
             maxHeight: '60vh',
             background: 'var(--c-surface)',
             border: '1px solid var(--c-border2)',
