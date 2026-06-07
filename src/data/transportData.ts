@@ -224,7 +224,7 @@ export const STOPS: Stop[] = [
 
   // ── THIAROYE / YEUMBEUL / KEUR MASSAR ───────────────────
   { id:'th1', name:'Thiaroye Marché',             zone:'Thiaroye',   lat:14.7358, lng:-17.3533, operators:['DDD','TER'],        lines:['L15','L30','L46','TER-01'] },
-  { id:'th2', name:'Thiaroye sur Mer',            zone:'Thiaroye',   lat:14.7283, lng:-17.3508, operators:['AFTU'],             lines:['A57','A68'] },
+  { id:'th2', name:'Thiaroye sur Mer (arrêt)',     zone:'Thiaroye',   lat:14.7283, lng:-17.3508, operators:['DDD','AFTU'],       lines:['A57','A68','A83','L50'] },
   { id:'th3', name:'Thiaroye Gare',               zone:'Thiaroye',   lat:14.7330, lng:-17.3528, operators:['DDD','AFTU'],       lines:['L46','A68','A57'] },
   { id:'th4', name:'Thiaroye Kao',                zone:'Thiaroye',   lat:14.7380, lng:-17.3422, operators:['AFTU'],             lines:['A68','A57'] },
   { id:'th5', name:'Thiaroye Aviation',           zone:'Thiaroye',   lat:14.7282, lng:-17.3470, operators:['AFTU'],             lines:['A68','A57'] },
@@ -239,11 +239,30 @@ export const STOPS: Stop[] = [
   { id:'ye3', name:'Yeumbeul Marché',             zone:'Yeumbeul',   lat:14.7652, lng:-17.3502, operators:['DDD','AFTU'],       lines:['L31','A26','A68'] },
   { id:'ml1', name:'Malika Terminus',             zone:'Malika',     lat:14.7958, lng:-17.3475, operators:['DDD','AFTU'],       lines:['L16A','A50','A75'] },
 
-  // ── MBAO / RUFISQUE / BARGNY ─────────────────────────────
+  // ── THIAROYE AZUR / THIAROYE SUR MER ÉTENDU ─────────────
+  { id:'taz1', name:'Thiaroye Azur',              zone:'Thiaroye',   lat:14.7183, lng:-17.3392, operators:['AFTU'],             lines:['A57','A68','A82','A83'] },
+  { id:'taz2', name:'Thiaroye Azur Plage',        zone:'Thiaroye',   lat:14.7152, lng:-17.3428, operators:['AFTU'],             lines:['A82','A83'] },
+  { id:'taz3', name:'Thiaroye Azur Cité',         zone:'Thiaroye',   lat:14.7202, lng:-17.3362, operators:['AFTU'],             lines:['A82','A57'] },
+  { id:'tsm1', name:'Thiaroye sur Mer Centre',    zone:'Thiaroye',   lat:14.7253, lng:-17.3488, operators:['DDD','AFTU'],       lines:['A57','A68','A83','L50'] },
+  { id:'tsm2', name:'Thiaroye sur Mer Marché',    zone:'Thiaroye',   lat:14.7272, lng:-17.3452, operators:['AFTU'],             lines:['A57','A83'] },
+  { id:'tsm3', name:'Thiaroye sur Mer Extension', zone:'Thiaroye',   lat:14.7238, lng:-17.3522, operators:['AFTU'],             lines:['A68','A83'] },
+
+  // ── DIAMAGUÈNE ────────────────────────────────────────────
+  { id:'dg1', name:'Diamaguène Sicap Mbao',       zone:'Diamaguène', lat:14.7453, lng:-17.3558, operators:['DDD','AFTU'],       lines:['L50','L51','A84','A85'] },
+  { id:'dg2', name:'Diamaguène Marché',           zone:'Diamaguène', lat:14.7428, lng:-17.3528, operators:['DDD','AFTU'],       lines:['L50','A84','A85'] },
+  { id:'dg3', name:'Diamaguène HLM',              zone:'Diamaguène', lat:14.7472, lng:-17.3583, operators:['AFTU'],             lines:['A84','A85'] },
+  { id:'dg4', name:'Diamaguène Cité Tamba',       zone:'Diamaguène', lat:14.7502, lng:-17.3608, operators:['AFTU'],             lines:['A84','A85'] },
+  { id:'dg5', name:'Diamaguène Cité Soprim',      zone:'Diamaguène', lat:14.7418, lng:-17.3498, operators:['DDD','AFTU'],       lines:['L51','A84'] },
+
+  // ── MBAO ÉTENDU ──────────────────────────────────────────
   { id:'mb1', name:'Grand Mbao',                  zone:'Mbao',       lat:14.7500, lng:-17.2917, operators:['DDD','AFTU'],       lines:['L39','L45','L48','A40','A44'] },
   { id:'mb2', name:'Mbao Marché',                 zone:'Mbao',       lat:14.7483, lng:-17.2956, operators:['AFTU'],             lines:['A40','A44'] },
   { id:'mb3', name:'Petit Mbao',                  zone:'Mbao',       lat:14.7472, lng:-17.3052, operators:['DDD','AFTU'],       lines:['L39','L48','A40'] },
   { id:'mb4', name:'Grand Mbao Marché',           zone:'Mbao',       lat:14.7532, lng:-17.2952, operators:['DDD','AFTU'],       lines:['L39','L48','A44'] },
+  { id:'mb5', name:'Mbao Gare (TER)',             zone:'Mbao',       lat:14.7490, lng:-17.3008, operators:['DDD','TER','AFTU'], lines:['L39','L48','TER-01','A40','A43'], terConnection:true },
+  { id:'mb6', name:'Mbao Sotrac',                 zone:'Mbao',       lat:14.7462, lng:-17.3075, operators:['AFTU'],             lines:['A40','A43'] },
+  { id:'mb7', name:'Mbao Cité Cheikh Ibra Fall',  zone:'Mbao',       lat:14.7518, lng:-17.2988, operators:['DDD','AFTU'],       lines:['L39','A43','A44'] },
+  { id:'mb8', name:'Mbao Cité Cayor',             zone:'Mbao',       lat:14.7542, lng:-17.2933, operators:['AFTU'],             lines:['A40','A43'] },
   { id:'rf1', name:'Rufisque Gare Routière',      zone:'Rufisque',   lat:14.7153, lng:-17.2747, operators:['DDD','TER','AFTU'], lines:['L15','L33','L47','L48','TER-01','A40','A55','A57','A64','A12'], terConnection:true },
   { id:'rf2', name:'Rufisque Centre',             zone:'Rufisque',   lat:14.7167, lng:-17.2783, operators:['DDD','AFTU'],       lines:['L15','L47','A55','A12'] },
   { id:'rf3', name:'Rufisque Keury Kaw',          zone:'Rufisque',   lat:14.7252, lng:-17.2700, operators:['DDD','AFTU'],       lines:['L47','A12','A40'] },
@@ -332,6 +351,8 @@ const DDD_LINES: Line[] = [
   { id:'L47',  name:'Ligne 47',  operator:'DDD', route:'Rufisque ↔ Grand Yoff',                color:'#1a56db', freq:'30 min', tarif:300, stops:['rf1','rf2','rf3','mb4','mb1','pk1','ha2','gy1'] },
   { id:'L48',  name:'Ligne 48',  operator:'DDD', route:'Mbao ↔ Palais Express',                color:'#2563eb', freq:'25 min', tarif:300, stops:['mb1','mb4','mb3','pk3','pk1','ha4','ha2','p03','p01'] },
   { id:'L49',  name:'Ligne 49',  operator:'DDD', route:'Keur Massar ↔ Leclerc Express',        color:'#1d4ed8', freq:'25 min', tarif:300, stops:['km1','km4','km5','ye1','ye3','pk8','gd1','lb5','lc1'] },
+  { id:'L50',  name:'Ligne 50',  operator:'DDD', route:'Diamaguène ↔ Thiaroye sur Mer ↔ Palais', color:'#1e40af', freq:'20 min', tarif:250, stops:['dg4','dg3','dg1','dg2','dg5','tsm3','tsm1','tsm2','th3','th1','pk1','ha2','p01'] },
+  { id:'L51',  name:'Ligne 51',  operator:'DDD', route:'Diamaguène ↔ Pikine ↔ Grand Yoff',       color:'#2563eb', freq:'20 min', tarif:200, stops:['dg5','dg1','dg2','pk10','pk11','pk1','gd3','gy1'] },
 ];
 
 const AFTU_COLORS = ['#e11d48','#f43f5e','#be123c'];
@@ -388,6 +409,11 @@ const AFTU_LINES: Line[] = [
   { id:'A18',  name:'AFTU 18',  operator:'AFTU', route:'Médina ↔ Grand Yoff',                   color:AFTU_COLORS[2], freq:'12 min', tarif:150, stops:['me1','me2','me4','ti2','ti1','co2','co1','p04','gy3','gy1'] },
   { id:'A19',  name:'AFTU 19',  operator:'AFTU', route:'Point-E ↔ Pikine',                      color:AFTU_COLORS[0], freq:'20 min', tarif:150, stops:['pe1','pe2','pe3','pe4','p07','lb5','pk5','pk1'] },
   { id:'A20',  name:'AFTU 20',  operator:'AFTU', route:'Colobane ↔ Guédiawaye (direct)',        color:AFTU_COLORS[1], freq:'15 min', tarif:150, stops:['co2','co1','me2','ti2','p04','lb6','gd10','gd8','gd1'] },
+  { id:'A43',  name:'AFTU 43',  operator:'AFTU', route:'Mbao ↔ Pikine',                          color:AFTU_COLORS[2], freq:'15 min', tarif:150, stops:['mb8','mb7','mb5','mb6','mb3','pk5','pk11','pk1'] },
+  { id:'A82',  name:'AFTU 82',  operator:'AFTU', route:'Thiaroye Azur ↔ Pikine',                 color:AFTU_COLORS[0], freq:'15 min', tarif:150, stops:['taz2','taz1','taz3','tsm3','tsm1','th5','th3','pk1'] },
+  { id:'A83',  name:'AFTU 83',  operator:'AFTU', route:'Thiaroye sur Mer ↔ Thiaroye Azur ↔ Palais', color:AFTU_COLORS[1], freq:'20 min', tarif:200, stops:['tsm3','tsm1','tsm2','taz3','taz1','taz2','th5','th3','th1','ha2','p02'] },
+  { id:'A84',  name:'AFTU 84',  operator:'AFTU', route:'Diamaguène ↔ Guédiawaye',                color:AFTU_COLORS[2], freq:'15 min', tarif:150, stops:['dg4','dg3','dg1','dg2','dg5','pk9','pk1','gd9','gd8','gd1'] },
+  { id:'A85',  name:'AFTU 85',  operator:'AFTU', route:'Diamaguène ↔ Liberté 6',                 color:AFTU_COLORS[0], freq:'20 min', tarif:150, stops:['dg4','dg3','dg1','dg2','pk10','pk1','ha2','lb6'] },
 ];
 
 const BRT_LINES: Line[] = [
