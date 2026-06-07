@@ -216,14 +216,7 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
 
-  // Auto-theme: force immédiatement au montage + recalcul toutes les minutes
-  useEffect(() => {
-    if (!autoTheme) return;
-    // Recalcul immédiat dès le chargement (corrige le cache Service Worker)
-    dispatch(setAutoTheme(true));
-    const id = setInterval(() => dispatch(setAutoTheme(true)), 60000);
-    return () => clearInterval(id);
-  }, [autoTheme]);
+  // Auto-theme désactivé — UI toujours sombre, carte toujours claire (géré dans MapView)
 
   useEffect(() => {
     initSimulation();

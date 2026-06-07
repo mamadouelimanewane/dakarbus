@@ -110,8 +110,8 @@ function getAutoTheme(): boolean {
 const uiSlice = createSlice({
   name: 'ui',
   initialState: {
-    darkMode: getAutoTheme(), // calculé dès le départ selon l'heure, pas la préférence système
-    autoTheme: true,
+    darkMode: true,   // UI toujours sombre — la carte est gérée séparément
+    autoTheme: false, // auto-thème désactivé par défaut (trop de conflits UI/carte)
     lang: 'fr' as Lang,
     sidebarCollapsed: false,
     showQR: false,
