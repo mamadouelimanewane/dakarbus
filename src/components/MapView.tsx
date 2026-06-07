@@ -395,15 +395,6 @@ function RouteOverlay() {
         const coords = busCoords[key];
         if (!coords) return null;
 
-        // Arrêts intermédiaires du segment (entre fromStop et toStop)
-        const line = LINES.find(l => l.id === seg.lineId);
-        const fromIdx = line ? line.stops.indexOf(seg.fromStopId) : -1;
-        const toIdx   = line ? line.stops.indexOf(seg.toStopId)   : -1;
-        const segStopIds = (line && fromIdx >= 0 && toIdx >= 0)
-          ? line.stops.slice(Math.min(fromIdx, toIdx), Math.max(fromIdx, toIdx) + 1)
-          : [seg.fromStopId, seg.toStopId];
-        const segStops = segStopIds.map(id => STOPS.find(s => s.id === id)).filter(Boolean) as typeof STOPS;
-
         // Label au milieu du tracé
         const labelIdx = Math.floor(coords.length * 0.45);
         const labelPos = coords[labelIdx] ?? coords[Math.floor(coords.length / 2)];
@@ -416,14 +407,6 @@ function RouteOverlay() {
             <Polyline positions={coords} pathOptions={{ color: seg.color, weight: 7, opacity: 1, lineCap: 'round', lineJoin: 'round' }} />
             {/* Étiquette numéro de ligne */}
             <Marker position={labelPos} icon={makeLineLabelIcon(seg.lineName, seg.color)} interactive={false} zIndexOffset={800} />
-            {/* Arrêts intermédiaires (petits ronds cliquables avec popup) */}
-            {segStops.map(stop => (
-              <Marker key={stop.id} position={[stop.lat, stop.lng]}
-                icon={makeStopIcon(seg.color, 9)} zIndexOffset={200}
-                eventHandlers={{ click: () => dispatch(setSelectedStop(stop.id)) }}>
-                <Popup maxWidth={240} minWidth={210}><StopPopup stop={stop} /></Popup>
-              </Marker>
-            ))}
           </React.Fragment>
         );
       })}
@@ -588,6 +571,39 @@ export default function MapView() {
         );
       })()}
 
+      {/* Médaillon "chemin vers l'arrêt départ" — affiché quand il y a une marche à pied */}
+      {routeDisplay?.walkFrom && (() => {
+        const origin = STOPS.find(s => s.id === routeDisplay.originStopId);
+        const walkDist = origin ? Math.round(
+          Math.sqrt(
+            Math.pow((routeDisplay.walkFrom![0] - origin.lat) * 111000, 2) +
+            Math.pow((routeDisplay.walkFrom![1] - origin.lng) * 85000, 2)
+          )
+        ) : null;
+        const walkMin = walkDist ? Math.ceil(walkDist / 80) : null;
+        return origin ? (
+          <div className="absolute bottom-24 left-3 z-[900] rounded-2xl overflow-hidden shadow-2xl"
+            style={{ background: 'rgba(10,15,30,.92)', backdropFilter: 'blur(16px)', border: '1px solid rgba(5,150,105,.35)', maxWidth: 220 }}>
+            <div className="h-1" style={{ background: 'linear-gradient(90deg, #059669, #34d399)' }} />
+            <div className="px-3 py-2.5 flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                style={{ background: 'rgba(5,150,105,.2)' }}>🚶</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] font-black" style={{ color: '#34d399' }}>
+                  À pied jusqu'à l'arrêt
+                </div>
+                <div className="text-xs font-black text-white truncate mt-0.5">{origin.name}</div>
+                {walkMin && (
+                  <div className="text-[10px] mt-0.5" style={{ color: '#64748b' }}>
+                    ~{walkDist} m · {walkMin} min
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : null;
+      })()}
+
       {/* Geolocate button */}
       <button onClick={handleLocate} title="Ma position"
         className="absolute bottom-6 right-4 z-[900] w-12 h-12 rounded-xl border border-blue-500/20 shadow-xl flex items-center justify-center text-xl hover:scale-105 active:scale-95 transition-all"
@@ -685,7 +701,8 @@ export default function MapView() {
           </>
         )}
 
-        {!routeMode && busPositions.map((bus: BusPosition, i: number) => {
+        {/* Bus simulés masqués quand un itinéraire est affiché */}
+        {!routeMode && !routeDisplay && busPositions.map((bus: BusPosition, i: number) => {
           const line = LINES.find(l => l.id === bus.lineId);
           const color = line?.color || '#10b981';
           const driver = MOCK_DRIVERS[bus.busId] ?? Object.values(MOCK_DRIVERS).find(d => d.lineId === bus.lineId);
