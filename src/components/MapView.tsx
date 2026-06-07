@@ -829,13 +829,13 @@ export default function MapView() {
 
       {/* Fullscreen button */}
       <button onClick={toggleFullscreen} title={fullscreen ? 'Quitter plein écran' : 'Plein écran'}
-        className="absolute z-[900] w-12 h-12 rounded-xl shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+        className="absolute z-[900] w-10 h-10 rounded-xl shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
         style={{
-          bottom: 72, right: 16,
-          background: fullscreen ? 'rgba(37,99,235,.9)' : 'rgba(15,23,42,.9)',
+          top: 12, right: 12,
+          background: fullscreen ? 'rgba(37,99,235,.9)' : 'rgba(15,23,42,.85)',
           backdropFilter: 'blur(8px)',
           border: fullscreen ? '1px solid rgba(96,165,250,.5)' : '1px solid rgba(255,255,255,.1)',
-          fontSize: 18,
+          fontSize: 16,
         }}>
         {fullscreen ? '⊡' : '⤢'}
       </button>
