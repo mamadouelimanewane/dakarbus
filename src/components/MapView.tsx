@@ -709,6 +709,23 @@ export default function MapView() {
     ? [route.origin?.id, route.destination?.id].filter(Boolean) as string[]
     : focusedLine ? (LINES.find(l => l.id === focusedLine)?.stops || []) : null;
 
+  // ── Filtre mer : polygone simplifié de la presqu'île de Dakar ──
+  const DAKAR_POLY: [number, number][] = [
+    [14.6450,-17.4430],[14.6650,-17.4550],[14.6900,-17.4780],[14.7100,-17.4950],
+    [14.7300,-17.5000],[14.7450,-17.5150],[14.7600,-17.5050],[14.7700,-17.4800],
+    [14.7700,-17.4400],[14.8000,-17.3800],[14.8600,-17.3000],[14.8600,-17.0500],
+    [14.6500,-17.0500],[14.6450,-17.4430],
+  ];
+  const stopOnLand = (lat: number, lng: number) => {
+    let inside = false;
+    const poly = DAKAR_POLY;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [xi, yi] = poly[i]; const [xj, yj] = poly[j];
+      if (((yi > lng) !== (yj > lng)) && (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi)) inside = !inside;
+    }
+    return inside;
+  };
+
   const allVisibleStops = routeMode ? [] : routeStopIds
     ? STOPS.filter(s => routeStopIds.includes(s.id))
     : (selectedOperator === 'all' ? STOPS : STOPS.filter(s => s.operators.includes(selectedOperator as any)));
@@ -716,6 +733,7 @@ export default function MapView() {
   // Dédoublonnage par position géographique : si deux arrêts sont à moins de 20m,
   // on garde celui qui a le plus d'opérateurs (hubs BRT/DDD colocalisés → un seul marqueur)
   const visibleStops = allVisibleStops.filter((stop, idx) => {
+    if (!stopOnLand(stop.lat, stop.lng)) return false; // exclure les stops en mer
     if (selectedOperator !== 'all') return true; // pas de dédup quand on filtre par opérateur
     return !allVisibleStops.some((other, oidx) => {
       if (oidx >= idx) return false;

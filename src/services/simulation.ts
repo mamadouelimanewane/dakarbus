@@ -27,6 +27,40 @@ export const MOCK_DRIVERS: Record<string, DriverInfo> = {
 
 const simRouteCache: Record<string, [number, number][]> = {};
 
+// ── Filtre basique : exclure les positions en mer autour de Dakar ──
+// Polygone simplifié de la presqu'île : points dans le sens des aiguilles
+const DAKAR_LAND: [number, number][] = [
+  [14.6450, -17.4430], // pointe sud du Plateau
+  [14.6650, -17.4550], // côte SO Plateau
+  [14.6900, -17.4780], // Mermoz/Fann Résidence
+  [14.7100, -17.4950], // Mamelles
+  [14.7300, -17.5000], // Ouest Ouakam
+  [14.7450, -17.5150], // Almadies pointe
+  [14.7600, -17.5050], // Nord Almadies
+  [14.7700, -17.4800], // Yoff côte nord
+  [14.7700, -17.4400], // Yoff intérieur
+  [14.8000, -17.3800], // Guédiawaye nord
+  [14.8600, -17.3000], // Limite est
+  [14.8600, -17.0500], // AIBD est
+  [14.6500, -17.0500], // sud-est
+  [14.6450, -17.4430], // retour pointe
+];
+
+function pointInPolygon(lat: number, lng: number, poly: [number, number][]): boolean {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], yi = poly[i][1];
+    const xj = poly[j][0], yj = poly[j][1];
+    const intersect = ((yi > lng) !== (yj > lng)) && (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+function isOnLand(lat: number, lng: number): boolean {
+  return pointInPolygon(lat, lng, DAKAR_LAND);
+}
+
 let simulatedBuses: {
   id: string;
   lineId: string;
@@ -49,12 +83,18 @@ async function buildSimRoute(lineId: string): Promise<[number, number][]> {
   const interpolated: [number, number][] = [];
   for (let i = 0; i < route.length - 1; i++) {
     const p1 = route[i]; const p2 = route[i + 1];
-    interpolated.push(p1);
+    if (isOnLand(p1[0], p1[1])) interpolated.push(p1);
     for (let j = 1; j <= 5; j++) {
-      interpolated.push([p1[0] + (p2[0] - p1[0]) * (j / 6), p1[1] + (p2[1] - p1[1]) * (j / 6)]);
+      const pt: [number, number] = [p1[0] + (p2[0] - p1[0]) * (j / 6), p1[1] + (p2[1] - p1[1]) * (j / 6)];
+      if (isOnLand(pt[0], pt[1])) interpolated.push(pt);
     }
   }
-  interpolated.push(route[route.length - 1]);
+  const last = route[route.length - 1];
+  if (isOnLand(last[0], last[1])) interpolated.push(last);
+  // Si trop peu de points valides, garder les stops de départ/arrivée directement
+  if (interpolated.length < 2) {
+    return points.filter(p => isOnLand(p.lat, p.lng)).map(p => [p.lat, p.lng] as [number, number]);
+  }
   simRouteCache[lineId] = interpolated;
   return interpolated;
 }

@@ -81,7 +81,7 @@ export const STOPS: Stop[] = [
   { id:'p09', name:'Kermel Marché',              zone:'Plateau',    lat:14.6744, lng:-17.4403, operators:['DDD','AFTU'],       lines:['L9','A30'] },
   { id:'p10', name:'Hôpital Principal',          zone:'Plateau',    lat:14.6725, lng:-17.4447, operators:['DDD'],              lines:['L6','L15'] },
   { id:'p11', name:'Médina Marché',              zone:'Médina',     lat:14.6858, lng:-17.4442, operators:['DDD','AFTU'],       lines:['L9','A30','A33'] },
-  { id:'p12', name:'Corniche Ouest',             zone:'Plateau',    lat:14.6856, lng:-17.4756, operators:['AFTU'],             lines:['A36','A49'] },
+  { id:'p12', name:'Corniche Ouest',             zone:'Plateau',    lat:14.6856, lng:-17.4661, operators:['AFTU'],             lines:['A36','A49'] },
   { id:'p13', name:'Fann Hôpital',               zone:'Fann',       lat:14.6953, lng:-17.4631, operators:['AFTU'],             lines:['A24','A36'] },
   { id:'p14', name:'UCAD Université',            zone:'Fann',       lat:14.6922, lng:-17.4572, operators:['DDD','AFTU'],       lines:['L10','A34','A36'] },
   { id:'p15', name:'Avenue Bourguiba',           zone:'Plateau',    lat:14.6736, lng:-17.4417, operators:['DDD'],              lines:['L6','L8','L9'] },
@@ -109,10 +109,9 @@ export const STOPS: Stop[] = [
 
   // ── GRAND YOFF / OUAKAM / NGOR / ALMADIES ────────────────
   { id:'gy1', name:'Grand Yoff Terminus',        zone:'Grand Yoff', lat:14.7268, lng:-17.4553, operators:['DDD','AFTU'],       lines:['L20','L121','A3','A35','A42','A72'] },
-  { id:'ok1', name:'Ouakam Terminus',            zone:'Ouakam',     lat:14.7186, lng:-17.4994, operators:['DDD','AFTU'],       lines:['L7','A35','A36','A42','A44','A61','A72'] },
-  { id:'ng1', name:'Ngor Village',               zone:'Ngor',       lat:14.7461, lng:-17.5097, operators:['AFTU'],             lines:['A35','A49','A61'] },
-  { id:'al1', name:'Almadies',                   zone:'Almadies',   lat:14.7472, lng:-17.5189, operators:['AFTU'],             lines:['A49','A61'] },
-  { id:'al2', name:'Almadies Plage',             zone:'Almadies',   lat:14.7503, lng:-17.5228, operators:['AFTU'],             lines:['A49'] },
+  { id:'ok1', name:'Ouakam Terminus',            zone:'Ouakam',     lat:14.7186, lng:-17.4897, operators:['DDD','AFTU'],       lines:['L7','A35','A36','A42','A44','A61','A72'] },
+  { id:'ng1', name:'Ngor Village',               zone:'Ngor',       lat:14.7469, lng:-17.5031, operators:['AFTU'],             lines:['A35','A49','A61'] },
+  { id:'al1', name:'Almadies',                   zone:'Almadies',   lat:14.7447, lng:-17.5108, operators:['AFTU'],             lines:['A49','A61'] },
 
   // ── YOFF / AÉROPORT ──────────────────────────────────────
   { id:'yf1', name:'Yoff Village',               zone:'Yoff',       lat:14.7467, lng:-17.4903, operators:['DDD','AFTU'],       lines:['L8','A3','A4','A66'] },

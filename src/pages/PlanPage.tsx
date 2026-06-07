@@ -138,7 +138,6 @@ export default function PlanPage() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Petite carte supprimée — l'itinéraire s'affiche directement sur la grande carte */}
       <div className="flex-1 overflow-y-auto pb-6">
         <RoutePanel />
 
@@ -146,11 +145,18 @@ export default function PlanPage() {
         {!hasRoute && (
           <div className="px-4 space-y-4 mt-2">
 
-            {/* Greeting */}
-            <div className="pt-1">
-              <h2 className="text-lg font-black" style={{ color: 'var(--c-text)' }}>{greeting()}</h2>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--c-muted)' }}>Où allez-vous aujourd'hui ?</p>
-            </div>
+            {/* ══ VOYAGER ══ */}
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('open-voyager'))}
+              className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl transition-all hover:scale-[1.02] active:scale-[.98]"
+              style={{ background: '#7c3aed', boxShadow: '0 6px 24px rgba(124,58,237,.55)' }}>
+              <span className="text-3xl">🚀</span>
+              <div className="flex-1 text-left">
+                <div className="text-base font-black text-white">Voyager</div>
+                <div className="text-xs text-white" style={{ opacity: .8 }}>Trajet guidé depuis ma position GPS</div>
+              </div>
+              <span className="text-white text-xl font-black">→</span>
+            </button>
 
             {/* Transport status */}
             <TransportStatus />
