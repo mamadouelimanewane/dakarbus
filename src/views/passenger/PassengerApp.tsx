@@ -1,6 +1,6 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { setActiveTab, logout, clearFocusedLine } from '@/store/store';
+import { setActiveTab, logout, clearFocusedLine, setMapCenter, setMapZoom } from '@/store/store';
 import MapView from '@/components/MapView';
 import GeolocGate from '@/components/GeolocGate';
 import ToastContainer from '@/components/ToastContainer';
@@ -16,6 +16,10 @@ import OperatorFilter from '@/components/OperatorFilter';
 import ChatBot from '@/components/ChatBot';
 import VoyagerWizard from '@/components/VoyagerWizard';
 import OnboardingModal from '@/components/OnboardingModal';
+import GlobalSearch from '@/components/GlobalSearch';
+import { haptic } from '@/utils/haptic';
+
+const LAST_TAB_KEY = 'sunubus_last_tab';
 
 // ── Types ──────────────────────────────────────────────────────
 type Tab = 'plan' | 'lines' | 'stops' | 'alerts' | 'tickets' | 'profile';
@@ -57,8 +61,88 @@ export default function PassengerApp() {
   const [prevTab, setPrevTab] = useState<Tab>(activeTab as Tab);
   const [transitionDir, setTransitionDir] = useState<'right' | 'left'>('right');
   const [transitionKey, setTransitionKey] = useState(0);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [mapFullscreen, setMapFullscreen] = useState(false);
 
   const sheetRef = useRef<HTMLDivElement>(null);
+
+  // ── Sauvegarde/restaure le dernier onglet ─────────────────
+  useEffect(() => {
+    const saved = localStorage.getItem(LAST_TAB_KEY) as Tab | null;
+    if (saved && TAB_ORDER.includes(saved) && saved !== 'plan') {
+      dispatch(setActiveTab(saved));
+    }
+  }, []);
+  useEffect(() => {
+    localStorage.setItem(LAST_TAB_KEY, activeTab as string);
+  }, [activeTab]);
+
+  // ── Auto-centrage GPS à l'ouverture ───────────────────────
+  const { userLocation } = useAppSelector(s => s.mobility);
+  const hasAutocentered = useRef(false);
+  useEffect(() => {
+    if (!hasAutocentered.current && userLocation && geoReady) {
+      hasAutocentered.current = true;
+      dispatch(setMapCenter(userLocation));
+      dispatch(setMapZoom(13));
+    }
+  }, [userLocation, geoReady]);
+
+  // ── Swipe horizontal pour changer d'onglet (mobile) ──────
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const swipeTarget = useRef<EventTarget | null>(null);
+
+  const onSwipeStart = useCallback((e: React.TouchEvent) => {
+    swipeStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    swipeTarget.current = e.target;
+  }, []);
+
+  const onSwipeEnd = useCallback((e: React.TouchEvent) => {
+    if (!swipeStart.current) return;
+    const dx = e.changedTouches[0].clientX - swipeStart.current.x;
+    const dy = Math.abs(e.changedTouches[0].clientY - swipeStart.current.y);
+    swipeStart.current = null;
+    // Ignore si scroll vertical dominant ou si l'événement vient d'un input/scroll
+    if (dy > 60 || Math.abs(dx) < 80) return;
+    const el = swipeTarget.current as HTMLElement | null;
+    if (el?.closest('[data-no-swipe]')) return;
+    const curIdx = TAB_ORDER.indexOf(activeTab as Tab);
+    if (dx < 0 && curIdx < TAB_ORDER.length - 1) {
+      haptic('light');
+      goTab(TAB_ORDER[curIdx + 1]);
+    } else if (dx > 0 && curIdx > 0) {
+      haptic('light');
+      goTab(TAB_ORDER[curIdx - 1]);
+    }
+  }, [activeTab]);
+
+  // ── Drag bottom sheet (natif) ─────────────────────────────
+  const sheetDragStart = useRef<{ y: number; state: string } | null>(null);
+  const SHEET_HEIGHTS = { peek: 290, half: Math.round(window.innerHeight * 0.58), full: Math.round(window.innerHeight * 0.91) };
+  const [sheetDragY, setSheetDragY] = useState(0);
+  const isDraggingSheet = useRef(false);
+
+  const onSheetTouchStart = useCallback((e: React.TouchEvent) => {
+    sheetDragStart.current = { y: e.touches[0].clientY, state: sheetState };
+    isDraggingSheet.current = false;
+  }, [sheetState]);
+
+  const onSheetTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!sheetDragStart.current) return;
+    const dy = e.touches[0].clientY - sheetDragStart.current.y;
+    if (Math.abs(dy) > 8) isDraggingSheet.current = true;
+    if (isDraggingSheet.current) setSheetDragY(Math.max(-40, dy));
+  }, []);
+
+  const onSheetTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!sheetDragStart.current || !isDraggingSheet.current) { sheetDragStart.current = null; setSheetDragY(0); return; }
+    const dy = e.changedTouches[0].clientY - sheetDragStart.current.y;
+    sheetDragStart.current = null;
+    setSheetDragY(0);
+    isDraggingSheet.current = false;
+    if (dy < -60) setSheetState(s => s === 'peek' ? 'half' : 'full');
+    else if (dy > 60) setSheetState(s => s === 'full' ? 'half' : 'peek');
+  }, []);
 
   // ── Tab change avec direction de transition ────────────────
   const goTab = useCallback((tab: Tab) => {
@@ -72,6 +156,14 @@ export default function PassengerApp() {
     setJourneyPanelOpen(false);
     if (TABS.find(t => t.id === tab)?.mapRelevant) setSheetState('peek');
   }, [activeTab, dispatch]);
+
+  const handleGPSCenter = useCallback(() => {
+    if (userLocation) {
+      haptic('medium');
+      dispatch(setMapCenter(userLocation));
+      dispatch(setMapZoom(15));
+    }
+  }, [userLocation, dispatch]);
 
   React.useEffect(() => {
     if (activeJourney) setJourneyPanelOpen(true);
@@ -118,7 +210,10 @@ export default function PassengerApp() {
   const accentColor = TAB_COLORS[activeTab as Tab] || '#3b82f6';
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--c-bg)' }}>
+    <div className="h-screen flex flex-col overflow-hidden"
+      style={{ background: 'var(--c-bg)' }}
+      onTouchStart={onSwipeStart}
+      onTouchEnd={onSwipeEnd}>
       {!geoReady && <GeolocGate onDone={() => setGeoReady(true)} />}
       <ToastContainer />
       <JourneyEndModal />
@@ -126,6 +221,9 @@ export default function PassengerApp() {
 
       {/* ── Onboarding (1re visite) ─────────────────────────── */}
       <OnboardingModal />
+
+      {/* ── Recherche universelle ────────────────────────────── */}
+      {searchOpen && <GlobalSearch onClose={() => setSearchOpen(false)} />}
 
       {/* ── Wizard Voyager ──────────────────────────────────── */}
       {voyagerOpen && (
@@ -249,6 +347,10 @@ export default function PassengerApp() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 pointer-events-auto">
+                    {/* Bouton recherche */}
+                    <button onClick={() => { haptic('light'); setSearchOpen(true); }}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-base"
+                      style={{ background: 'rgba(10,15,30,.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.1)' }}>🔍</button>
                     {activeJourney && (
                       <button onClick={() => setJourneyPanelOpen(true)}
                         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-black"
@@ -271,12 +373,30 @@ export default function PassengerApp() {
                     </div>
                   </div>
                 )}
+
+                {/* Boutons GPS + fullscreen flottants */}
+                <div className="absolute z-[800] flex flex-col gap-2 pointer-events-auto"
+                  style={{ bottom: activeTab !== 'plan' ? 52 : 12, right: 12 }}>
+                  <button onClick={handleGPSCenter}
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shadow-2xl transition-all active:scale-90"
+                    style={{ background: 'rgba(8,12,24,.92)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.15)', boxShadow: '0 4px 16px rgba(0,0,0,.5)' }}
+                    title="Centrer sur ma position">
+                    📍
+                  </button>
+                  <button onClick={() => { haptic('light'); setMapFullscreen(f => !f); }}
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center text-lg shadow-2xl transition-all active:scale-90"
+                    style={{ background: 'rgba(8,12,24,.92)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.15)', boxShadow: '0 4px 16px rgba(0,0,0,.5)' }}
+                    title={mapFullscreen ? 'Réduire la carte' : 'Plein écran'}>
+                    {mapFullscreen ? '⊡' : '⛶'}
+                  </button>
+                </div>
+
                 <MapView />
               </div>
 
               {/* ── BOTTOM SHEET ──────────────────────────── */}
               <div ref={sheetRef} className="sheet-open" style={{
-                height: sheetHeights[sheetState],
+                height: mapFullscreen ? 0 : sheetHeights[sheetState],
                 transition: 'height .38s cubic-bezier(.32,.72,0,1)',
                 background: 'rgba(8,12,24,.98)',
                 backdropFilter: 'blur(28px)',
@@ -292,7 +412,11 @@ export default function PassengerApp() {
                 {/* Handle drag */}
                 <button
                   onClick={() => setSheetState(s => s === 'peek' ? 'half' : s === 'half' ? 'full' : 'peek')}
-                  className="flex-shrink-0 w-full flex justify-center items-center pt-3 pb-2">
+                  onTouchStart={onSheetTouchStart}
+                  onTouchMove={onSheetTouchMove}
+                  onTouchEnd={onSheetTouchEnd}
+                  className="flex-shrink-0 w-full flex justify-center items-center pt-3 pb-2"
+                  style={{ touchAction: 'none' }}>
                   <div style={{ width: 44, height: 4, borderRadius: 3, background: 'rgba(255,255,255,.22)' }} />
                 </button>
 
