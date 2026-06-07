@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   MapContainer, TileLayer, Marker, Popup,
   Polyline, Circle, useMap,
@@ -107,6 +107,180 @@ const makeArrowIcon = (deg: number, color: string) => L.divIcon({
   iconSize: [14, 14],
   iconAnchor: [7, 7],
 });
+
+// ── Carte déplaçable : tarif + marche ────────────────────────
+function DraggableInfoBar({ routeDisplay }: { routeDisplay: NonNullable<ReturnType<typeof useAppSelector<any>>> }) {
+  const { pos, onMouseDown, onTouchStart, onTouchMove, onTouchEnd } = useDraggable({ x: 12, y: -80 });
+
+  const origin = STOPS.find((s: Stop) => s.id === routeDisplay.originStopId);
+  const walkDist = routeDisplay.walkFrom && origin ? Math.round(
+    Math.sqrt(
+      Math.pow((routeDisplay.walkFrom[0] - origin.lat) * 111000, 2) +
+      Math.pow((routeDisplay.walkFrom[1] - origin.lng) * 85000, 2)
+    )
+  ) : null;
+  const walkMin = walkDist ? Math.ceil(walkDist / 80) : null;
+
+  return (
+    <div
+      onMouseDown={onMouseDown}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      style={{
+        position: 'absolute',
+        left: pos.x,
+        bottom: -pos.y,
+        zIndex: 900,
+        cursor: 'grab',
+        display: 'flex',
+        gap: 8,
+        userSelect: 'none',
+        touchAction: 'none',
+      }}>
+
+      {/* Marche à pied */}
+      {routeDisplay.walkFrom && origin && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '8px 12px', borderRadius: 16,
+          background: 'rgba(10,15,30,.92)', backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(5,150,105,.4)', boxShadow: '0 6px 24px rgba(0,0,0,.4)',
+        }}>
+          <span style={{ fontSize: 18 }}>🚶</span>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 800, color: '#34d399', textTransform: 'uppercase', letterSpacing: '.05em' }}>À pied</div>
+            <div style={{ fontSize: 12, fontWeight: 900, color: 'white', maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{origin.name}</div>
+            {walkMin && <div style={{ fontSize: 10, color: '#64748b' }}>~{walkDist}m · {walkMin}min</div>}
+          </div>
+        </div>
+      )}
+
+      {/* Tarif */}
+      {routeDisplay.fare && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '8px 12px', borderRadius: 16,
+          background: 'rgba(10,15,30,.92)', backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(250,204,21,.4)', boxShadow: '0 6px 24px rgba(0,0,0,.4)',
+        }}>
+          <span style={{ fontSize: 18 }}>🎫</span>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em' }}>Tarif</div>
+            <div style={{ fontSize: 14, fontWeight: 900, color: '#fbbf24' }}>{routeDisplay.fare} FCFA</div>
+          </div>
+        </div>
+      )}
+
+      {/* Poignée drag */}
+      <div style={{
+        position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%)',
+        width: 32, height: 4, borderRadius: 4, background: 'rgba(255,255,255,.2)',
+      }} />
+    </div>
+  );
+}
+
+// ── Carte déplaçable : timeline itinéraire ────────────────────
+function DraggableTimeline({ routeDisplay }: { routeDisplay: NonNullable<ReturnType<typeof useAppSelector<any>>> }) {
+  // Position initiale : bas-droit (valeurs négatives = depuis le bas/droite)
+  const { pos, onMouseDown, onTouchStart, onTouchMove, onTouchEnd } = useDraggable({ x: -244, y: -88 });
+
+  const origin = STOPS.find((s: Stop) => s.id === routeDisplay.originStopId);
+  const dest   = STOPS.find((s: Stop) => s.id === routeDisplay.destStopId);
+  if (!origin || !dest) return null;
+
+  type TNode =
+    | { t: 'stop';    name: string; color: string; label: string }
+    | { t: 'segment'; lineName: string; color: string; from: string; to: string };
+
+  const nodes: TNode[] = [];
+  nodes.push({ t: 'stop', name: origin.name, color: '#059669', label: 'A' });
+  routeDisplay.segments.forEach((seg: any, i: number) => {
+    const fromStop = STOPS.find((s: Stop) => s.id === seg.fromStopId);
+    const toStop   = STOPS.find((s: Stop) => s.id === seg.toStopId);
+    const segColor = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
+    nodes.push({ t: 'segment', lineName: seg.lineName, color: segColor, from: fromStop?.name ?? '', to: toStop?.name ?? '' });
+    if (i < routeDisplay.segments.length - 1 && toStop) {
+      nodes.push({ t: 'stop', name: toStop.name, color: '#d97706', label: '↻' });
+    }
+  });
+  nodes.push({ t: 'stop', name: dest.name, color: '#dc2626', label: 'B' });
+
+  // Calcul position : si x négatif → depuis droite
+  const style: React.CSSProperties = {
+    position: 'absolute',
+    zIndex: 900,
+    cursor: 'grab',
+    userSelect: 'none',
+    touchAction: 'none',
+    background: 'rgba(10,15,30,.93)',
+    backdropFilter: 'blur(18px)',
+    border: '1px solid rgba(255,255,255,.12)',
+    borderRadius: 16,
+    boxShadow: '0 8px 32px rgba(0,0,0,.45)',
+    minWidth: 180,
+    maxWidth: 230,
+  };
+  if (pos.x < 0) { style.right  = -pos.x; } else { style.left   = pos.x; }
+  if (pos.y < 0) { style.bottom = -pos.y; } else { style.top    = pos.y; }
+
+  return (
+    <div style={style}
+      onMouseDown={onMouseDown}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}>
+
+      {/* Poignée */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px 6px', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
+        <span style={{ fontSize: 10, fontWeight: 900, color: '#475569', textTransform: 'uppercase', letterSpacing: '.08em' }}>Itinéraire</span>
+        <div style={{ width: 24, height: 3, borderRadius: 4, background: 'rgba(255,255,255,.18)' }} />
+      </div>
+
+      {/* Nœuds */}
+      <div style={{ padding: '8px 12px' }}>
+        {nodes.map((node, idx) => (
+          <div key={idx} style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 20, flexShrink: 0 }}>
+              {node.t === 'stop' ? (
+                <div style={{ width: 20, height: 20, borderRadius: '50%', background: node.color, border: '1.5px solid rgba(255,255,255,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, color: 'white', flexShrink: 0 }}>
+                  {node.label}
+                </div>
+              ) : (
+                <div style={{ width: 20, height: 20, borderRadius: 6, background: node.color + 'cc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, flexShrink: 0 }}>
+                  🚌
+                </div>
+              )}
+              {idx < nodes.length - 1 && (
+                <div style={{ flex: 1, width: 1, margin: '2px 0', minHeight: 10, background: node.t === 'segment' ? node.color + '80' : ((nodes[idx + 1] as any)?.color ?? '#fff') + '60' }} />
+              )}
+            </div>
+            <div style={{ flex: 1, paddingBottom: 6, paddingTop: 2, minWidth: 0 }}>
+              {node.t === 'stop' && (
+                <span style={{ fontSize: 11, fontWeight: 900, color: node.color, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {node.name}
+                </span>
+              )}
+              {node.t === 'segment' && (
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 900, padding: '2px 6px', borderRadius: 6, background: node.color, color: 'white', display: 'inline-block' }}>
+                    {node.lineName}
+                  </span>
+                  {node.from && node.to && (
+                    <p style={{ fontSize: 9, marginTop: 2, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {node.from} → {node.to}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ── Focused line: numbered stops + arrows ─────────────────────
 function FocusedLineOverlay({ line }: { line: Line }) {
@@ -309,6 +483,54 @@ const makeTransferIcon = (lineNames: string) => L.divIcon({
 
 // Palette de couleurs distinctes pour chaque segment de bus
 const SEGMENT_COLORS = ['#2563eb', '#059669', '#f59e0b', '#7c3aed', '#dc2626'];
+
+// ── Hook drag déplaçable ──────────────────────────────────────
+function useDraggable(initialPos: { x: number; y: number }) {
+  const [pos, setPos] = useState(initialPos);
+  const dragging = useRef(false);
+  const origin   = useRef({ mx: 0, my: 0, px: 0, py: 0 });
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    dragging.current = true;
+    origin.current = { mx: e.clientX, my: e.clientY, px: pos.x, py: pos.y };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup',  onMouseUp);
+  };
+
+  const onMouseMove = (e: MouseEvent) => {
+    if (!dragging.current) return;
+    setPos({
+      x: origin.current.px + (e.clientX - origin.current.mx),
+      y: origin.current.py + (e.clientY - origin.current.my),
+    });
+  };
+
+  const onMouseUp = () => {
+    dragging.current = false;
+    window.removeEventListener('mousemove', onMouseMove);
+    window.removeEventListener('mouseup',   onMouseUp);
+  };
+
+  // Touch support
+  const onTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    const t = e.touches[0];
+    dragging.current = true;
+    origin.current = { mx: t.clientX, my: t.clientY, px: pos.x, py: pos.y };
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!dragging.current) return;
+    const t = e.touches[0];
+    setPos({
+      x: origin.current.px + (t.clientX - origin.current.mx),
+      y: origin.current.py + (t.clientY - origin.current.my),
+    });
+  };
+  const onTouchEnd = () => { dragging.current = false; };
+
+  return { pos, onMouseDown, onTouchStart, onTouchMove, onTouchEnd };
+}
 
 // ── RouteOverlay ───────────────────────────────────────────────
 function RouteOverlay() {
@@ -569,156 +791,15 @@ export default function MapView() {
         );
       })()}
 
-      {/* ── Barre bas-gauche : marche + tarif côte à côte ── */}
-      {routeDisplay && (routeDisplay.fare || routeDisplay.walkFrom) && (() => {
-        const origin = STOPS.find(s => s.id === routeDisplay.originStopId);
-        const walkDist = routeDisplay.walkFrom && origin ? Math.round(
-          Math.sqrt(
-            Math.pow((routeDisplay.walkFrom[0] - origin.lat) * 111000, 2) +
-            Math.pow((routeDisplay.walkFrom[1] - origin.lng) * 85000, 2)
-          )
-        ) : null;
-        const walkMin = walkDist ? Math.ceil(walkDist / 80) : null;
+      {/* ── Barre déplaçable : marche + tarif ── */}
+      {routeDisplay && (routeDisplay.fare || routeDisplay.walkFrom) && (
+        <DraggableInfoBar routeDisplay={routeDisplay} />
+      )}
 
-        return (
-          <div className="absolute bottom-16 left-3 z-[900] flex items-stretch gap-2">
-            {/* Médaillon marche — visible seulement si GPS actif */}
-            {routeDisplay.walkFrom && origin && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-2xl shadow-xl"
-                style={{ background: 'rgba(10,15,30,.92)', backdropFilter: 'blur(16px)', border: '1px solid rgba(5,150,105,.35)' }}>
-                <span className="text-base">🚶</span>
-                <div>
-                  <div className="text-[10px] font-black" style={{ color: '#34d399' }}>À pied</div>
-                  <div className="text-[11px] font-black text-white truncate" style={{ maxWidth: 100 }}>{origin.name}</div>
-                  {walkMin && (
-                    <div className="text-[10px]" style={{ color: '#64748b' }}>~{walkDist}m · {walkMin}min</div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Badge tarif */}
-            {routeDisplay.fare && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-2xl shadow-xl"
-                style={{ background: 'rgba(10,15,30,.92)', backdropFilter: 'blur(16px)', border: '1px solid rgba(250,204,21,.35)' }}>
-                <span className="text-base">🎫</span>
-                <div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#64748b' }}>Tarif</div>
-                  <div className="text-sm font-black" style={{ color: '#fbbf24' }}>{routeDisplay.fare} FCFA</div>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })()}
-
-      {/* ── Timeline flottante sur la carte (côté chatbot) ────── */}
-      {routeDisplay && (() => {
-        const origin = STOPS.find(s => s.id === routeDisplay.originStopId);
-        const dest   = STOPS.find(s => s.id === routeDisplay.destStopId);
-        if (!origin || !dest) return null;
-
-        // Construire les nœuds depuis routeDisplay.segments
-        type TNode =
-          | { t: 'stop';    name: string; color: string; label: 'A' | 'B' | '↻' }
-          | { t: 'segment'; lineName: string; color: string; from: string; to: string };
-
-        const nodes: TNode[] = [];
-        nodes.push({ t: 'stop', name: origin.name, color: '#059669', label: 'A' });
-
-        routeDisplay.segments.forEach((seg, i) => {
-          const fromStop = STOPS.find(s => s.id === seg.fromStopId);
-          const toStop   = STOPS.find(s => s.id === seg.toStopId);
-          const segColor = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
-          nodes.push({
-            t: 'segment',
-            lineName: seg.lineName,
-            color: segColor,
-            from: fromStop?.name ?? '',
-            to:   toStop?.name  ?? '',
-          });
-          // Nœud de correspondance (sauf après le dernier segment)
-          if (i < routeDisplay.segments.length - 1 && toStop) {
-            nodes.push({ t: 'stop', name: toStop.name, color: '#d97706', label: '↻' });
-          }
-        });
-
-        nodes.push({ t: 'stop', name: dest.name, color: '#dc2626', label: 'B' });
-
-        return (
-          <div className="absolute bottom-20 right-4 z-[900] animate-fade-up"
-            style={{
-              background: 'rgba(10,15,30,.93)',
-              backdropFilter: 'blur(18px)',
-              border: '1px solid rgba(255,255,255,.12)',
-              borderRadius: 16,
-              boxShadow: '0 8px 32px rgba(0,0,0,.45)',
-              minWidth: 180,
-              maxWidth: 230,
-            }}>
-            {/* En-tête */}
-            <div className="px-3 pt-2.5 pb-1.5" style={{ borderBottom: '1px solid rgba(255,255,255,.07)' }}>
-              <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#475569' }}>
-                Itinéraire
-              </span>
-            </div>
-
-            {/* Nœuds */}
-            <div className="px-3 py-2">
-              {nodes.map((node, idx) => (
-                <div key={idx} className="flex gap-2 items-stretch">
-                  {/* Colonne icône + trait */}
-                  <div className="flex flex-col items-center" style={{ width: 20, flexShrink: 0 }}>
-                    {node.t === 'stop' ? (
-                      <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white flex-shrink-0"
-                        style={{ background: node.color, border: '1.5px solid rgba(255,255,255,.25)' }}>
-                        {node.label}
-                      </div>
-                    ) : (
-                      <div className="w-5 h-5 rounded-lg flex items-center justify-center text-[10px] flex-shrink-0"
-                        style={{ background: node.color + 'cc' }}>
-                        🚌
-                      </div>
-                    )}
-                    {idx < nodes.length - 1 && (
-                      <div className="flex-1 w-px my-0.5"
-                        style={{
-                          background: node.t === 'segment'
-                            ? node.color + '80'
-                            : ((nodes[idx + 1] as any)?.color ?? '#ffffff') + '60',
-                          minHeight: 10,
-                        }} />
-                    )}
-                  </div>
-
-                  {/* Texte */}
-                  <div className="flex-1 pb-1.5 pt-0.5 min-w-0">
-                    {node.t === 'stop' && (
-                      <span className="text-[11px] font-black leading-tight block truncate"
-                        style={{ color: node.color }}>
-                        {node.name}
-                      </span>
-                    )}
-                    {node.t === 'segment' && (
-                      <div>
-                        <span className="text-[11px] font-black px-1.5 py-0.5 rounded-md text-white inline-block"
-                          style={{ background: node.color }}>
-                          {node.lineName}
-                        </span>
-                        {node.from && node.to && (
-                          <p className="text-[9px] mt-0.5 truncate" style={{ color: '#475569' }}>
-                            {node.from} → {node.to}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
+      {/* ── Timeline déplaçable ── */}
+      {routeDisplay && (
+        <DraggableTimeline routeDisplay={routeDisplay} />
+      )}
 
       {/* Geolocate button */}
       <button onClick={handleLocate} title="Ma position"
