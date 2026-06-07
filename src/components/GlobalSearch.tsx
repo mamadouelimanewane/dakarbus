@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setActiveTab, setSelectedStop, setMapCenter, setMapZoom, setFocusedLine } from '@/store/store';
 import { STOPS, LINES, OPERATORS } from '@/data/transportData';
@@ -20,9 +20,34 @@ export default function GlobalSearch({ onClose }: { onClose: () => void }) {
   const dispatch = useAppDispatch();
   const { userLocation } = useAppSelector(s => s.mobility);
   const [q, setQ] = useState('');
+  const [listening, setListening] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const startVoice = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) { alert('Reconnaissance vocale non disponible sur ce navigateur.'); return; }
+    const rec = new SpeechRecognition();
+    rec.lang = 'fr-FR';
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+    rec.onstart  = () => setListening(true);
+    rec.onend    = () => setListening(false);
+    rec.onerror  = () => setListening(false);
+    rec.onresult = (e: any) => {
+      const transcript = e.results[0][0].transcript;
+      setQ(transcript);
+    };
+    recognitionRef.current = rec;
+    rec.start();
+  }, []);
+
+  const stopVoice = useCallback(() => {
+    recognitionRef.current?.stop();
+    setListening(false);
+  }, []);
 
   const results: Result[] = q.trim().length < 2 ? [] : (() => {
     const out: Result[] = [];
@@ -89,6 +114,13 @@ export default function GlobalSearch({ onClose }: { onClose: () => void }) {
           className="flex-1 bg-transparent text-white text-base font-semibold outline-none placeholder-slate-600"
           style={{ caretColor: '#3b82f6' }}
         />
+        {/* Bouton micro */}
+        <button onClick={listening ? stopVoice : startVoice}
+          className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-base transition-all active:scale-90"
+          style={{ background: listening ? 'rgba(220,38,38,.25)' : 'rgba(255,255,255,.08)', border: listening ? '1px solid rgba(220,38,38,.5)' : 'none' }}
+          title="Recherche vocale">
+          {listening ? <span style={{ color: '#f87171', animation: 'live-pulse 1s infinite' }}>🎤</span> : '🎙️'}
+        </button>
         <button onClick={onClose}
           className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-black transition-all active:scale-90"
           style={{ background: 'rgba(255,255,255,.1)', color: '#94a3b8' }}>✕</button>

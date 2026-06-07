@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import LineChatPanel from '@/components/LineChatPanel';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   setFocusedLine, clearFocusedLine, setActiveTab,
@@ -134,6 +135,7 @@ function LineDetail({ lineId, onBack, onShowMap }: { lineId: string; onBack: () 
   const { busPositions, userLocation } = useAppSelector(s => s.mobility);
   const { lineIds: favIds } = useAppSelector(s => s.favorites);
 
+  const [chatOpen, setChatOpen] = useState(false);
   const line = LINES.find(l => l.id === lineId);
   if (!line) return null;
 
@@ -282,13 +284,19 @@ function LineDetail({ lineId, onBack, onShowMap }: { lineId: string; onBack: () 
       <div className="flex-shrink-0 p-4 flex gap-2" style={{ borderTop: '1px solid var(--c-border)' }}>
         <button onClick={planFromLine}
           className="flex-1 btn btn-primary">
-          🗺️ Planifier ce trajet
+          🗺️ Planifier
         </button>
         <button onClick={() => { dispatch(setFocusedLine(lineId)); onShowMap?.(); }}
           className="flex-1 btn btn-ghost">
-          📍 Voir sur carte
+          📍 Carte
+        </button>
+        <button onClick={() => setChatOpen(true)}
+          className="btn btn-ghost flex items-center gap-1 px-3"
+          style={{ background: 'rgba(37,99,235,.1)', border: '1px solid rgba(37,99,235,.2)', color: '#60a5fa' }}>
+          💬
         </button>
       </div>
+      {chatOpen && <LineChatPanel lineId={lineId} lineName={line.name} onClose={() => setChatOpen(false)} />}
     </div>
   );
 }

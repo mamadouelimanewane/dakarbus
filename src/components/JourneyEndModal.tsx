@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { finishJourney, dismissEndModal, setRouteOrigin, setRouteDestination, startJourney, setActiveTab, showToast } from '@/store/store';
+import { finishJourney, dismissEndModal, setRouteOrigin, setRouteDestination, startJourney, setActiveTab, showToast, addPoints, earnBadge } from '@/store/store';
 import { LINES } from '@/data/transportData';
 import { walkingMinutes } from '@/utils/nearest';
 import type { ActiveJourney } from '@/types';
@@ -38,6 +38,10 @@ export default function JourneyEndModal() {
 
   const handleFinish = () => {
     dispatch(finishJourney());
+    dispatch(addPoints(10));
+    if (newTotal === 1)  dispatch(earnBadge('first_trip'));
+    if (newTotal === 5)  dispatch(earnBadge('trip5'));
+    if (newTotal === 20) dispatch(earnBadge('trip20'));
     dispatch(setActiveTab('plan'));
   };
 

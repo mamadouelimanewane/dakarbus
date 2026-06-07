@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { toggleFavStop, toggleFavLine, logout, setRouteOrigin, setRouteDestination, setActiveTab, toggleDarkMode, setAutoTheme, setNotifEnabled, setLang } from '@/store/store';
+import { toggleFavStop, toggleFavLine, logout, setRouteOrigin, setRouteDestination, setActiveTab, toggleDarkMode, setAutoTheme, setNotifEnabled, setLang, BADGES_DEF } from '@/store/store';
 import { STOPS, LINES, OPERATORS } from '@/data/transportData';
 import type { Lang } from '@/types';
+
+const LEVEL_CONFIG = {
+  bronze:   { label: 'Bronze',   color: '#cd7f32', emoji: '🥉', next: 80,  bar: '#cd7f32' },
+  silver:   { label: 'Argent',   color: '#94a3b8', emoji: '🥈', next: 200, bar: '#94a3b8' },
+  gold:     { label: 'Or',       color: '#fbbf24', emoji: '🥇', next: 500, bar: '#fbbf24' },
+  platinum: { label: 'Platine',  color: '#a78bfa', emoji: '💎', next: 999, bar: '#a78bfa' },
+};
 
 // ── Toggle switch ──────────────────────────────────────────────
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
@@ -23,7 +30,11 @@ export default function ProfilePage() {
   const { name } = useAppSelector(s => s.auth);
   const { history } = useAppSelector(s => s.journey);
   const { darkMode, autoTheme, notifEnabled, lang } = useAppSelector(s => s.ui);
-  const [tab, setTab] = useState<'stats' | 'history' | 'favs' | 'settings'>('stats');
+  const [tab, setTab] = useState<'stats' | 'badges' | 'history' | 'favs' | 'settings'>('stats');
+  const { points, badges, level } = useAppSelector(s => s.gamif);
+  const lvlCfg = LEVEL_CONFIG[level];
+  const nextThreshold = lvlCfg.next;
+  const lvlPct = Math.min(100, (points / nextThreshold) * 100);
 
   const handleNotifToggle = async (v: boolean) => {
     if (v) {
@@ -70,18 +81,30 @@ export default function ProfilePage() {
           <p className="text-sm mt-1 font-medium" style={{ color: 'rgba(147,197,253,.6)' }}>
             {favOperator ? `Fidèle ${OPERATORS[favOperator]?.fullName || favOperator}` : 'Voyageur SunuBus'}
           </p>
-          {ecoLevel && (
-            <span className="inline-block mt-2 text-xs font-bold px-3 py-1 rounded-full"
-              style={{ background: 'rgba(5,150,105,.15)', color: '#34d399', border: '1px solid rgba(5,150,105,.2)' }}>
-              Médaille {ecoLevel}
+          {/* Level badge */}
+          <div className="flex items-center justify-center gap-2 mt-3">
+            <span className="text-xl">{lvlCfg.emoji}</span>
+            <span className="text-sm font-black" style={{ color: lvlCfg.color }}>Niveau {lvlCfg.label}</span>
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+              style={{ background: lvlCfg.color + '20', color: lvlCfg.color }}>
+              {points} pts
             </span>
-          )}
+          </div>
+          <div className="mt-2 mx-auto max-w-[160px]">
+            <div className="rounded-full overflow-hidden" style={{ height: 4, background: 'rgba(255,255,255,.08)' }}>
+              <div className="h-full rounded-full transition-all duration-1000"
+                style={{ width: `${lvlPct}%`, background: lvlCfg.bar }} />
+            </div>
+            <div className="text-[9px] text-center mt-1" style={{ color: '#334155' }}>
+              {points} / {nextThreshold} pts
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Tab nav */}
       <div className="flex px-4 gap-1.5 mb-4 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-        {([['stats','📊 Stats'], ['history','🕐 Historique'], ['favs','⭐ Favoris'], ['settings','⚙️ Réglages']] as const).map(([id, label]) => (
+        {([['stats','📊 Stats'], ['badges','🏅 Badges'], ['history','🕐 Historique'], ['favs','⭐ Favoris'], ['settings','⚙️ Réglages']] as const).map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)}
             className="flex-1 py-2 rounded-xl text-xs font-black transition-all"
             style={tab === id
@@ -146,6 +169,39 @@ export default function ProfilePage() {
               )}
             </div>
           </>
+        )}
+
+        {/* ── BADGES TAB ────────────────────────────── */}
+        {tab === 'badges' && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-2">
+              {BADGES_DEF.map(def => {
+                const earned = badges.find(b => b.id === def.id);
+                return (
+                  <div key={def.id} className="rounded-2xl p-3 text-center"
+                    style={{ background: earned ? 'rgba(37,99,235,.12)' : 'rgba(255,255,255,.03)', border: `1px solid ${earned ? 'rgba(37,99,235,.3)' : 'rgba(255,255,255,.06)'}`, opacity: earned ? 1 : 0.45 }}>
+                    <div className="text-2xl mb-1">{def.emoji}</div>
+                    <div className="text-[10px] font-black text-white leading-tight">{def.label}</div>
+                    <div className="text-[9px] mt-1 font-bold" style={{ color: earned ? '#60a5fa' : '#334155' }}>
+                      {earned ? `+${def.pts} pts` : `${def.pts} pts`}
+                    </div>
+                    {earned && <div className="text-[8px] mt-0.5" style={{ color: '#22c55e' }}>✓ Obtenu</div>}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Share stats */}
+            <button onClick={async () => {
+              const text = `🚌 Mon profil SunuBus :\n${points} points · Niveau ${lvlCfg.label}\n${tripCount} voyages · ${co2SavedKg.toFixed(1)} kg CO₂ économisés\n${badges.length} badges obtenus 🏅`;
+              if (navigator.share) { try { await navigator.share({ title: 'Mon profil SunuBus', text }); } catch {} }
+              else { navigator.clipboard?.writeText(text); alert('Stats copiées !'); }
+            }}
+              className="w-full py-3 rounded-2xl font-black text-sm text-white transition-all active:scale-95"
+              style={{ background: 'linear-gradient(135deg,rgba(37,99,235,.3),rgba(124,58,237,.3))', border: '1px solid rgba(37,99,235,.3)' }}>
+              📤 Partager mes stats
+            </button>
+          </div>
         )}
 
         {/* ── HISTORY TAB ───────────────────────────── */}
@@ -319,10 +375,37 @@ export default function ProfilePage() {
               </div>
             </div>
 
+            {/* SOS Urgence */}
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+              <div className="px-4 pt-3 pb-1">
+                <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Numéros d'urgence</p>
+              </div>
+              <div className="px-4 py-2 space-y-2" style={{ borderTop: '1px solid var(--c-border)' }}>
+                {[
+                  { label: 'DDD — Service client',  num: '+221 33 864 00 00', color: '#2563eb', emoji: '🚌' },
+                  { label: 'AFTU — Réclamations',   num: '+221 33 821 14 14', color: '#7c3aed', emoji: '🚐' },
+                  { label: 'SAMU',                  num: '15',               color: '#dc2626', emoji: '🚑' },
+                  { label: 'Police nationale',       num: '17',               color: '#1d4ed8', emoji: '🚔' },
+                  { label: 'Sapeurs-pompiers',       num: '18',               color: '#dc2626', emoji: '🚒' },
+                ].map(c => (
+                  <a key={c.num} href={`tel:${c.num}`}
+                    className="flex items-center gap-3 p-3 rounded-xl transition-all active:scale-95"
+                    style={{ background: c.color + '10', border: `1px solid ${c.color}20` }}>
+                    <span className="text-xl">{c.emoji}</span>
+                    <div className="flex-1">
+                      <div className="text-xs font-black text-white">{c.label}</div>
+                      <div className="text-[11px] font-bold mt-0.5" style={{ color: c.color }}>{c.num}</div>
+                    </div>
+                    <span className="text-base" style={{ color: c.color }}>📞</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+
             {/* About */}
             <div className="rounded-2xl px-4 py-4 text-center" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
               <div className="text-2xl mb-1">🚌</div>
-              <div className="text-xs font-black text-white">SunuBus v5.2</div>
+              <div className="text-xs font-black text-white">SunuBus v6.0</div>
               <div className="text-[10px] mt-0.5" style={{ color: 'var(--c-muted)' }}>DakarBus · Simulation locale · © 2026</div>
             </div>
           </div>

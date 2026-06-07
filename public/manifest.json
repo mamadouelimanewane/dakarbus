@@ -12,5 +12,35 @@
     { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ],
   "categories": ["travel", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Planifier un trajet",
+      "short_name": "Planifier",
+      "description": "Calculer un itinéraire rapidement",
+      "url": "/?tab=plan",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Arrêts proches",
+      "short_name": "Arrêts",
+      "description": "Voir les arrêts autour de moi",
+      "url": "/?tab=stops",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Alertes réseau",
+      "short_name": "Alertes",
+      "description": "Incidents et perturbations",
+      "url": "/?tab=alerts",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Mes billets",
+      "short_name": "Billets",
+      "description": "Consulter mes titres de transport",
+      "url": "/?tab=tickets",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ],
   "screenshots": []
 }

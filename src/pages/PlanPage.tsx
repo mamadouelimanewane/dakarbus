@@ -3,7 +3,10 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setActiveTab, clearRoute, setRouteOrigin, setRouteDestination } from '@/store/store';
 import RoutePanel from '@/components/RoutePanel';
 import RouteMap from '@/components/RouteMap';
-import { STOPS, getNextDepartures } from '@/data/transportData';
+import WeatherWidget from '@/components/WeatherWidget';
+import RecurringTripWidget from '@/components/RecurringTripWidget';
+import CarpoolPanel from '@/components/CarpoolPanel';
+import { STOPS, LINES, OPERATORS, getNextDepartures } from '@/data/transportData';
 import type { AppDispatch } from '@/store/store';
 
 // ── Quick navigation shortcuts ────────────────────────────────
@@ -146,6 +149,8 @@ export default function PlanPage() {
     localStorage.setItem('sunubus_home_work', JSON.stringify(val));
   }, []);
   const [hwSetup, setHwSetup] = useState(false);
+  const [carpoolOpen, setCarpoolOpen] = useState(false);
+  const [tariffOpen, setTariffOpen] = useState(false);
 
   return (
     <div className="flex flex-col h-full">
@@ -155,6 +160,9 @@ export default function PlanPage() {
         {/* Dynamic home content — shown only when no route */}
         {!hasRoute && (
           <div className="px-4 space-y-4 mt-2">
+
+            {/* Météo Dakar */}
+            <WeatherWidget />
 
             {/* Transport status */}
             <TransportStatus />
@@ -307,12 +315,85 @@ export default function PlanPage() {
               </button>
             )}
 
+            {/* Trajets récurrents */}
+            <RecurringTripWidget />
+
+            {/* Calculateur de tarif multi-trajets */}
+            <div>
+              <button onClick={() => setTariffOpen(o => !o)}
+                className="w-full flex items-center gap-3 p-3.5 rounded-2xl text-left transition-all active:scale-[.98]"
+                style={{ background: 'rgba(251,191,36,.07)', border: '1px solid rgba(251,191,36,.15)' }}>
+                <span className="text-xl">💰</span>
+                <div className="flex-1">
+                  <div className="text-xs font-black text-white">Calculateur de tarif mensuel</div>
+                  <div className="text-[10px] mt-0.5" style={{ color: '#475569' }}>Comparer DDD · AFTU · BRT · TER</div>
+                </div>
+                <span style={{ color: '#fbbf24' }}>{tariffOpen ? '▲' : '▼'}</span>
+              </button>
+              {tariffOpen && (() => {
+                const trips = [10, 20, 30, 40];
+                const tariffs = [
+                  { label: 'DDD',  price: 200, color: '#2563eb', emoji: '🚌' },
+                  { label: 'AFTU', price: 300, color: '#7c3aed', emoji: '🚐' },
+                  { label: 'BRT',  price: 350, color: '#059669', emoji: '🚍' },
+                  { label: 'TER',  price: 500, color: '#dc2626', emoji: '🚆' },
+                ];
+                return (
+                  <div className="mt-2 rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(251,191,36,.15)' }}>
+                    <div className="overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                      <table className="w-full text-xs" style={{ minWidth: 280 }}>
+                        <thead>
+                          <tr style={{ background: 'rgba(255,255,255,.04)' }}>
+                            <th className="px-3 py-2 text-left font-black" style={{ color: '#475569' }}>Opérateur</th>
+                            {trips.map(n => <th key={n} className="px-3 py-2 text-right font-black" style={{ color: '#475569' }}>{n} trajets</th>)}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {tariffs.map((t, i) => (
+                            <tr key={t.label} style={{ background: i % 2 === 0 ? 'rgba(255,255,255,.02)' : 'transparent', borderTop: '1px solid rgba(255,255,255,.04)' }}>
+                              <td className="px-3 py-2">
+                                <div className="flex items-center gap-1.5">
+                                  <span>{t.emoji}</span>
+                                  <span className="font-black" style={{ color: t.color }}>{t.label}</span>
+                                </div>
+                                <div className="text-[9px]" style={{ color: '#334155' }}>{t.price} FCFA/trajet</div>
+                              </td>
+                              {trips.map(n => (
+                                <td key={n} className="px-3 py-2 text-right font-bold text-white">
+                                  {(t.price * n).toLocaleString('fr-FR')} F
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Covoiturage */}
+            <button onClick={() => setCarpoolOpen(true)}
+              className="w-full flex items-center gap-3 p-3.5 rounded-2xl text-left transition-all active:scale-[.98]"
+              style={{ background: 'rgba(16,185,129,.07)', border: '1px solid rgba(16,185,129,.2)' }}>
+              <span className="text-xl">🤝</span>
+              <div className="flex-1">
+                <div className="text-xs font-black text-white">Covoiturage informel</div>
+                <div className="text-[10px] mt-0.5" style={{ color: '#475569' }}>Trouvez des voyageurs sur votre trajet</div>
+              </div>
+              <span style={{ color: '#34d399' }}>›</span>
+            </button>
+
             {/* Nav shortcuts */}
             <QuickNav dispatch={dispatch} />
 
           </div>
         )}
       </div>
+
+      {/* CarpoolPanel modal */}
+      {carpoolOpen && <CarpoolPanel onClose={() => setCarpoolOpen(false)} />}
     </div>
   );
 }

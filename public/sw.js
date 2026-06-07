@@ -1,5 +1,5 @@
 // SunuBus Service Worker — Offline-first avec cache intelligent
-const CACHE_VERSION = 'sunubus-v8';
+const CACHE_VERSION = 'sunubus-v9';
 const STATIC_CACHE  = `${CACHE_VERSION}-static`;
 const API_CACHE     = `${CACHE_VERSION}-api`;
 
@@ -7,6 +7,14 @@ const PRECACHE_URLS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/favicon.svg',
+  // Tuiles CartoDB pré-cachées pour zone Dakar (zoom 10-12)
+  'https://a.basemaps.cartocdn.com/light_nolabels/11/926/810.png',
+  'https://a.basemaps.cartocdn.com/light_nolabels/11/927/810.png',
+  'https://a.basemaps.cartocdn.com/light_nolabels/11/926/811.png',
+  'https://a.basemaps.cartocdn.com/light_nolabels/11/927/811.png',
+  'https://a.basemaps.cartocdn.com/light_nolabels/10/463/405.png',
+  'https://a.basemaps.cartocdn.com/light_nolabels/10/463/406.png',
 ];
 
 // ── Install ───────────────────────────────────────────────────
@@ -50,6 +58,20 @@ self.addEventListener('fetch', event => {
           return res;
         })
         .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // Map tiles → Cache-first (offline maps)
+  if (url.hostname.includes('cartocdn') || url.hostname.includes('tile')) {
+    event.respondWith(
+      caches.match(request).then(cached => {
+        if (cached) return cached;
+        return fetch(request).then(res => {
+          if (res.ok) caches.open(STATIC_CACHE).then(c => c.put(request, res.clone()));
+          return res;
+        }).catch(() => new Response('', { status: 503 }));
+      })
     );
     return;
   }

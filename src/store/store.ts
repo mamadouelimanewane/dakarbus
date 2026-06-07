@@ -285,6 +285,62 @@ const journeySlice = createSlice({
   },
 });
 
+// ── Gamification Slice ────────────────────────────────────────
+export interface Badge { id: string; label: string; emoji: string; earnedAt: number; }
+interface GamifState {
+  points: number;
+  badges: Badge[];
+  level: 'bronze' | 'silver' | 'gold' | 'platinum';
+  carpoolRequests: { id: string; userId: string; from: string; to: string; ts: number }[];
+  recurringTrips: { id: string; label: string; originId: string; destId: string; days: number[]; hour: number; minute: number }[];
+}
+const BADGES_DEF = [
+  { id: 'first_trip',   emoji: '🚌', label: 'Premier voyage',       pts: 10  },
+  { id: 'trip5',        emoji: '⭐', label: '5 voyages',             pts: 50  },
+  { id: 'trip20',       emoji: '🏅', label: '20 voyages',            pts: 100 },
+  { id: 'sentinel',     emoji: '🛡️', label: 'Sentinelle du réseau',  pts: 75  },
+  { id: 'explorer',     emoji: '🗺️', label: 'Explorateur',           pts: 60  },
+  { id: 'eco_bronze',   emoji: '🥉', label: 'Éco Bronze',            pts: 30  },
+  { id: 'eco_silver',   emoji: '🥈', label: 'Éco Argent',            pts: 80  },
+  { id: 'eco_gold',     emoji: '🥇', label: 'Éco Or',                pts: 150 },
+  { id: 'sharer',       emoji: '📤', label: 'Grand partageur',       pts: 40  },
+  { id: 'planner',      emoji: '📅', label: 'Planificateur',         pts: 50  },
+];
+function calcLevel(pts: number): GamifState['level'] {
+  if (pts >= 500) return 'platinum';
+  if (pts >= 200) return 'gold';
+  if (pts >= 80)  return 'silver';
+  return 'bronze';
+}
+const gamifSlice = createSlice({
+  name: 'gamif',
+  initialState: {
+    points: 0, badges: [], level: 'bronze',
+    carpoolRequests: [], recurringTrips: [],
+  } as GamifState,
+  reducers: {
+    addPoints: (s, a: PayloadAction<number>) => {
+      s.points += a.payload;
+      s.level = calcLevel(s.points);
+    },
+    earnBadge: (s, a: PayloadAction<string>) => {
+      if (!s.badges.find(b => b.id === a.payload)) {
+        const def = BADGES_DEF.find(b => b.id === a.payload);
+        if (def) { s.badges.push({ id: def.id, label: def.label, emoji: def.emoji, earnedAt: Date.now() }); s.points += def.pts; s.level = calcLevel(s.points); }
+      }
+    },
+    addCarpoolRequest: (s, a: PayloadAction<{ from: string; to: string }>) => {
+      s.carpoolRequests.unshift({ id: Math.random().toString(36).slice(2,9), userId: 'moi', from: a.payload.from, to: a.payload.to, ts: Date.now() });
+      if (s.carpoolRequests.length > 20) s.carpoolRequests.pop();
+    },
+    removeCarpoolRequest: (s, a: PayloadAction<string>) => { s.carpoolRequests = s.carpoolRequests.filter(r => r.id !== a.payload); },
+    addRecurringTrip: (s, a: PayloadAction<Omit<GamifState['recurringTrips'][0], 'id'>>) => {
+      s.recurringTrips.push({ ...a.payload, id: Math.random().toString(36).slice(2,9) });
+    },
+    removeRecurringTrip: (s, a: PayloadAction<string>) => { s.recurringTrips = s.recurringTrips.filter(r => r.id !== a.payload); },
+  },
+});
+
 // ── Store ─────────────────────────────────────────────────────
 export const store = configureStore({
   reducer: {
@@ -295,6 +351,7 @@ export const store = configureStore({
     favorites: favSlice.reducer,
     toasts: toastSlice.reducer,
     journey: journeySlice.reducer,
+    gamif: gamifSlice.reducer,
   },
 });
 
@@ -314,3 +371,5 @@ export const { buyTicket, useTicket, addReport, upvoteReport, acknowledgeReport 
 export const { toggleFavStop, toggleFavLine, recordTrip, visitLine } = favSlice.actions;
 export const { showToast, dismissToast } = toastSlice.actions;
 export const { startJourney, updateJourneyStatus, attachTicketToJourney, finishJourney, cancelJourney, dismissEndModal } = journeySlice.actions;
+export const { addPoints, earnBadge, addCarpoolRequest, removeCarpoolRequest, addRecurringTrip, removeRecurringTrip } = gamifSlice.actions;
+export { BADGES_DEF };

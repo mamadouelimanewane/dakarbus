@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import QRCodeStop from '@/components/QRCodeStop';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setSelectedStop, toggleFavStop, setMapCenter, setMapZoom } from '@/store/store';
 import { STOPS, OPERATORS, LINES, getNextDepartures } from '@/data/transportData';
@@ -48,6 +49,7 @@ function StopCard({ stop, isFav, onClick, onFav, showAllDeps = false }: {
   showAllDeps?: boolean;
 }) {
   const deps = useLiveDepartures(stop.id);
+  const [qrOpen, setQrOpen] = useState(false);
   const mainOp = stop.operators[0];
   const opColor = OPERATORS[mainOp]?.color || '#2563eb';
   const visibleDeps = showAllDeps ? deps : deps.slice(0, 2);
@@ -70,12 +72,21 @@ function StopCard({ stop, isFav, onClick, onFav, showAllDeps = false }: {
             </span>
           )}
         </div>
-        <button onClick={onFav}
-          className="text-lg transition-all hover:scale-125 active:scale-90 flex-shrink-0"
-          style={{ color: isFav ? '#facc15' : '#1e293b' }}>
-          {isFav ? '⭐' : '☆'}
-        </button>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <button onClick={e => { e.stopPropagation(); setQrOpen(true); }}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-sm transition-all active:scale-90"
+            style={{ background: 'rgba(255,255,255,.06)', color: '#475569' }}
+            title="QR Code arrêt">
+            ⬛
+          </button>
+          <button onClick={onFav}
+            className="text-lg transition-all hover:scale-125 active:scale-90"
+            style={{ color: isFav ? '#facc15' : '#1e293b' }}>
+            {isFav ? '⭐' : '☆'}
+          </button>
+        </div>
       </div>
+      {qrOpen && <QRCodeStop stopId={stop.id} stopName={stop.name} onClose={() => setQrOpen(false)} />}
 
       <div className="flex flex-wrap gap-1 mb-3">
         {stop.operators.map(op => (

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { addReport, upvoteReport, acknowledgeReport, showToast } from '@/store/store';
+import { addReport, upvoteReport, acknowledgeReport, showToast, addPoints, earnBadge } from '@/store/store';
 
 // Expiry countdown (30 min)
 function ExpiryBar({ timestamp }: { timestamp: number }) {
@@ -77,6 +77,8 @@ export default function AlertsPage() {
   const [voted, setVoted] = useState(new Set<string>());
   const [filter, setFilter] = useState<typeof FILTER_OPTS[number]>('Tous');
   const [hasPhoto, setHasPhoto] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [pullY, setPullY] = useState(0);
   const pullStart = useRef<number | null>(null);
@@ -135,8 +137,10 @@ export default function AlertsPage() {
       timestamp: Date.now(), upvotes: 0,
     }));
     fireNotif(type, t);
-    dispatch(showToast({ type: 'success', message: `Signalement envoyé${hasPhoto ? ' avec photo' : ''}, merci !` }));
-    setShowForm(false); setDesc(''); setHasPhoto(false);
+    dispatch(addPoints(15));
+    dispatch(earnBadge('sentinel'));
+    dispatch(showToast({ type: 'success', message: `Signalement envoyé${hasPhoto ? ' avec photo' : ''} · +15 pts 🏅` }));
+    setShowForm(false); setDesc(''); setHasPhoto(false); setPhotoPreview(null);
   };
 
   const upvote = (id: string) => {
@@ -222,14 +226,33 @@ export default function AlertsPage() {
               <span className="text-[10px]" style={{ color: '#334155' }}>{desc.length}/200</span>
               {userLocation && <span className="text-[10px]" style={{ color: 'rgba(52,211,153,.6)' }}>📡 GPS détecté</span>}
             </div>
-            {/* Photo simulation */}
-            <button onClick={() => { setHasPhoto(h => !h); dispatch(showToast({ type: 'info', message: hasPhoto ? 'Photo retirée' : '📷 Photo simulée ajoutée !' })); }}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl mb-3 text-xs font-bold transition-all active:scale-95"
-              style={hasPhoto
-                ? { background: 'rgba(5,150,105,.15)', border: '1px solid rgba(5,150,105,.3)', color: '#34d399' }
-                : { background: 'rgba(255,255,255,.04)', border: '1px dashed rgba(255,255,255,.12)', color: '#64748b' }}>
-              {hasPhoto ? '✅ Photo jointe' : '📷 Ajouter une photo (optionnel)'}
-            </button>
+            {/* Photo upload réelle */}
+            <input ref={photoInputRef} type="file" accept="image/*" capture="environment" className="hidden"
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = ev => {
+                  setPhotoPreview(ev.target?.result as string);
+                  setHasPhoto(true);
+                  dispatch(showToast({ type: 'success', message: '📷 Photo ajoutée !' }));
+                };
+                reader.readAsDataURL(file);
+              }} />
+            {photoPreview ? (
+              <div className="relative mb-3 rounded-xl overflow-hidden" style={{ maxHeight: 140 }}>
+                <img src={photoPreview} alt="Signalement" className="w-full object-cover" style={{ maxHeight: 140 }} />
+                <button onClick={() => { setPhotoPreview(null); setHasPhoto(false); if (photoInputRef.current) photoInputRef.current.value = ''; }}
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black"
+                  style={{ background: 'rgba(0,0,0,.7)', color: 'white' }}>✕</button>
+              </div>
+            ) : (
+              <button onClick={() => photoInputRef.current?.click()}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl mb-3 text-xs font-bold transition-all active:scale-95"
+                style={{ background: 'rgba(255,255,255,.04)', border: '1px dashed rgba(255,255,255,.12)', color: '#64748b' }}>
+                📷 Ajouter une photo (optionnel)
+              </button>
+            )}
             <div className="flex gap-2">
               <button onClick={submit} className="btn btn-primary flex-1">Envoyer</button>
               <button onClick={() => { setShowForm(false); setDesc(''); setHasPhoto(false); }} className="btn btn-ghost px-5">Annuler</button>

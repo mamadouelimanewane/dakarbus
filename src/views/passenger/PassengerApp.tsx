@@ -18,6 +18,7 @@ import VoyagerWizard from '@/components/VoyagerWizard';
 import OnboardingModal from '@/components/OnboardingModal';
 import GlobalSearch from '@/components/GlobalSearch';
 import { haptic } from '@/utils/haptic';
+import { useSmartAlerts } from '@/hooks/useSmartAlerts';
 
 const LAST_TAB_KEY = 'sunubus_last_tab';
 
@@ -156,6 +157,8 @@ export default function PassengerApp() {
     setJourneyPanelOpen(false);
     if (TABS.find(t => t.id === tab)?.mapRelevant) setSheetState('peek');
   }, [activeTab, dispatch]);
+
+  useSmartAlerts();
 
   const handleGPSCenter = useCallback(() => {
     if (userLocation) {
