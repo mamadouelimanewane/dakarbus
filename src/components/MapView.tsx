@@ -842,7 +842,7 @@ export default function MapView() {
 
       {/* Geolocate button */}
       <button onClick={handleLocate} title="Ma position"
-        className="absolute bottom-6 right-4 z-[900] w-12 h-12 rounded-xl border border-blue-500/20 shadow-xl flex items-center justify-center text-xl hover:scale-105 active:scale-95 transition-all"
+        className="absolute bottom-20 right-4 z-[900] w-12 h-12 rounded-xl border border-blue-500/20 shadow-xl flex items-center justify-center text-xl hover:scale-105 active:scale-95 transition-all"
         style={{ background: 'rgba(15,23,42,.9)', backdropFilter: 'blur(8px)' }}>
         {locLoading ? <span className="animate-spin text-blue-400 text-base">◌</span> : '📍'}
       </button>
