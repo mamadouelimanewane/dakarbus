@@ -50,6 +50,8 @@ export default function PassengerApp() {
   const [journeyPanelOpen, setJourneyPanelOpen] = useState(false);
   // sheet: 'peek' = search only visible, 'half' = results visible, 'full' = full panel
   const [sheetState, setSheetState] = useState<'peek' | 'half' | 'full'>('peek');
+  // Lines tab: état local pour basculer liste ↔ carte de ligne (indépendant de focusedLine Redux)
+  const [linesMapView, setLinesMapView] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -62,9 +64,10 @@ export default function PassengerApp() {
     if (routeDisplay) setSheetState('half');
   }, [routeDisplay]);
 
-  // Reset sheet on tab change
+  // Reset sheet + linesMapView on tab change
   React.useEffect(() => {
     setSheetState('peek');
+    setLinesMapView(false);
   }, [activeTab]);
 
   const validTickets = myTickets.filter(t => t.status === 'valid').length;
@@ -253,23 +256,24 @@ export default function PassengerApp() {
           {isLinesTab && (
             <div className="flex-1 flex overflow-hidden relative">
 
-              {/* Liste + détail — toujours monté, caché en CSS quand carte visible */}
+              {/* Liste + détail — toujours monté, jamais démonté (état local préservé) */}
               <div className="flex-1 flex flex-col overflow-hidden"
-                style={{ display: focusedLine ? 'none' : 'flex' }}>
+                style={{ display: linesMapView ? 'none' : 'flex' }}>
                 <div className="flex-shrink-0 z-40"
                   style={{ background: 'rgba(10,15,30,.9)', backdropFilter: 'blur(16px)', borderBottom: '1px solid var(--c-border)' }}>
                   <OperatorFilter />
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                  <LinesPage />
+                  {/* Passe un callback pour que LinesPage déclenche la vue carte */}
+                  <LinesPage onShowMap={() => setLinesMapView(true)} />
                 </div>
               </div>
 
-              {/* Carte — visible seulement quand une ligne est sélectionnée */}
-              {focusedLine && (
+              {/* Carte de la ligne — basculée par linesMapView */}
+              {linesMapView && (
                 <div className="flex-1 relative overflow-hidden">
                   <button
-                    onClick={() => dispatch(clearFocusedLine())}
+                    onClick={() => { setLinesMapView(false); }}
                     className="absolute z-[1000] flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-2xl transition-all hover:scale-105 active:scale-95"
                     style={{
                       bottom: 96, left: 12,

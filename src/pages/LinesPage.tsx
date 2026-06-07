@@ -129,7 +129,7 @@ function StopRow({ idx, stop, cumMin, isTerminus, distFromPrev, isNearUser, busO
 }
 
 // ── Line detail panel ─────────────────────────────────────────
-function LineDetail({ lineId, onBack }: { lineId: string; onBack: () => void }) {
+function LineDetail({ lineId, onBack, onShowMap }: { lineId: string; onBack: () => void; onShowMap?: () => void }) {
   const dispatch = useAppDispatch();
   const { busPositions, userLocation } = useAppSelector(s => s.mobility);
   const { lineIds: favIds } = useAppSelector(s => s.favorites);
@@ -284,7 +284,7 @@ function LineDetail({ lineId, onBack }: { lineId: string; onBack: () => void }) 
           className="flex-1 btn btn-primary">
           🗺️ Planifier ce trajet
         </button>
-        <button onClick={() => { dispatch(setFocusedLine(lineId)); }}
+        <button onClick={() => { dispatch(setFocusedLine(lineId)); onShowMap?.(); }}
           className="flex-1 btn btn-ghost">
           📍 Voir sur carte
         </button>
@@ -294,7 +294,7 @@ function LineDetail({ lineId, onBack }: { lineId: string; onBack: () => void }) 
 }
 
 // ── Main LinesPage ─────────────────────────────────────────────
-export default function LinesPage() {
+export default function LinesPage({ onShowMap }: { onShowMap?: () => void } = {}) {
   const dispatch = useAppDispatch();
   const { selectedOperator, busPositions } = useAppSelector(s => s.mobility);
   const { lineIds: favIds, recentLines } = useAppSelector(s => s.favorites);
@@ -328,6 +328,7 @@ export default function LinesPage() {
     setSelectedLine(lineId);
     dispatch(visitLine(lineId));
     dispatch(setFocusedLine(lineId));
+    // Ne pas basculer vers la carte ici — c'est le bouton "Voir sur carte" qui le fait
   };
 
   // ── Line detail view ───────────────────────────────────────
@@ -336,6 +337,7 @@ export default function LinesPage() {
       <LineDetail
         lineId={selectedLine}
         onBack={() => { setSelectedLine(null); dispatch(clearFocusedLine()); }}
+        onShowMap={onShowMap}
       />
     );
   }
