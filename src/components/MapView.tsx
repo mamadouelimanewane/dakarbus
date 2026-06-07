@@ -675,6 +675,26 @@ export default function MapView() {
   const [loadingCount, setLoadingCount] = useState(0);
   const [routeCoords, setRouteCoords]   = useState<[number, number][] | null>(null);
   const [locLoading, setLocLoading]     = useState(false);
+  const [fullscreen, setFullscreen]     = useState(false);
+
+  // Plein écran natif (avec fallback CSS)
+  const mapWrapRef = useRef<HTMLDivElement>(null);
+  const toggleFullscreen = () => {
+    if (!fullscreen) {
+      const el = mapWrapRef.current;
+      if (el?.requestFullscreen) { el.requestFullscreen().catch(() => {}); }
+      else { setFullscreen(true); }
+    } else {
+      if (document.fullscreenElement) { document.exitFullscreen().catch(() => {}); }
+      else { setFullscreen(false); }
+    }
+  };
+
+  useEffect(() => {
+    const handler = () => setFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
 
   // routeMode = using old direct-road TripRoute (only when no bus routeDisplay)
   const routeMode = !!(route?.origin && route?.destination && !routeDisplay);
@@ -734,7 +754,13 @@ export default function MapView() {
   };
 
   return (
-    <div style={{ position: 'relative', flex: 1, overflow: 'hidden', height: '100%' }}>
+    <div ref={mapWrapRef} style={{
+      position: fullscreen ? 'fixed' : 'relative',
+      inset: fullscreen ? 0 : undefined,
+      zIndex: fullscreen ? 9999 : undefined,
+      flex: 1, overflow: 'hidden', height: '100%',
+      background: '#e8eaf0',
+    }}>
 
       {/* Loading indicator */}
       {!routeMode && loadingCount > 0 && (
@@ -800,6 +826,19 @@ export default function MapView() {
       {routeDisplay && (
         <DraggableTimeline routeDisplay={routeDisplay} />
       )}
+
+      {/* Fullscreen button */}
+      <button onClick={toggleFullscreen} title={fullscreen ? 'Quitter plein écran' : 'Plein écran'}
+        className="absolute z-[900] w-12 h-12 rounded-xl shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+        style={{
+          bottom: 72, right: 16,
+          background: fullscreen ? 'rgba(37,99,235,.9)' : 'rgba(15,23,42,.9)',
+          backdropFilter: 'blur(8px)',
+          border: fullscreen ? '1px solid rgba(96,165,250,.5)' : '1px solid rgba(255,255,255,.1)',
+          fontSize: 18,
+        }}>
+        {fullscreen ? '⊡' : '⤢'}
+      </button>
 
       {/* Geolocate button */}
       <button onClick={handleLocate} title="Ma position"
