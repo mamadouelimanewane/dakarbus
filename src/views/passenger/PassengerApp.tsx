@@ -175,11 +175,6 @@ export default function PassengerApp() {
                 <span style={{ color: jColor }}>En cours</span>
               </button>
             )}
-            <button onClick={() => setVoyagerOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl font-black text-sm text-white transition-all hover:scale-105 active:scale-95"
-              style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 4px 18px rgba(220,38,38,.45)' }}>
-              🚀 Voyager
-            </button>
             <button onClick={() => dispatch(logout())}
               className="w-9 h-9 rounded-xl flex items-center justify-center text-sm transition-colors"
               style={{ background: 'rgba(255,255,255,.06)', border: '1px solid var(--c-border)', color: '#64748b' }}
@@ -197,13 +192,6 @@ export default function PassengerApp() {
           <nav className="hidden lg:flex flex-col flex-shrink-0 z-40"
             style={{ width: 68, background: 'rgba(10,15,30,.97)', backdropFilter: 'blur(24px)', borderRight: '1px solid var(--c-border)' }}>
             <div className="flex-1 flex flex-col items-center py-3 gap-1">
-              <button onClick={() => setVoyagerOpen(true)} title="Voyager"
-                className="w-12 h-12 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-110 active:scale-90 mb-2"
-                style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 4px 16px rgba(220,38,38,.5)' }}>
-                <span className="text-xl">🚀</span>
-                <span className="text-[7px] font-black text-white">Go</span>
-              </button>
-              <div className="w-8 h-px mb-2" style={{ background: 'rgba(255,255,255,.08)' }} />
               {activeJourney && (
                 <button onClick={() => setJourneyPanelOpen(o => !o)} title="Trajet en cours"
                   className="relative w-12 h-12 rounded-xl flex items-center justify-center mb-1 transition-all active:scale-90"
