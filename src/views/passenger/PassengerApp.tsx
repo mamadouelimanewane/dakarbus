@@ -15,6 +15,7 @@ import ActiveJourneyPage from '@/pages/ActiveJourneyPage';
 import OperatorFilter from '@/components/OperatorFilter';
 import ChatBot from '@/components/ChatBot';
 import VoyagerWizard from '@/components/VoyagerWizard';
+import OnboardingModal from '@/components/OnboardingModal';
 
 // ── Types ──────────────────────────────────────────────────────
 type Tab = 'plan' | 'lines' | 'stops' | 'alerts' | 'tickets' | 'profile';
@@ -122,6 +123,9 @@ export default function PassengerApp() {
       <ToastContainer />
       <JourneyEndModal />
       <ChatBot />
+
+      {/* ── Onboarding (1re visite) ─────────────────────────── */}
+      <OnboardingModal />
 
       {/* ── Wizard Voyager ──────────────────────────────────── */}
       {voyagerOpen && (

@@ -1,6 +1,31 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addReport, upvoteReport, acknowledgeReport, showToast } from '@/store/store';
+
+// Expiry countdown (30 min)
+function ExpiryBar({ timestamp }: { timestamp: number }) {
+  const LIFE = 30 * 60 * 1000;
+  const [pct, setPct] = useState(() => Math.max(0, 100 - (Date.now() - timestamp) / LIFE * 100));
+  useEffect(() => {
+    const id = setInterval(() => {
+      setPct(Math.max(0, 100 - (Date.now() - timestamp) / LIFE * 100));
+    }, 10_000);
+    return () => clearInterval(id);
+  }, [timestamp]);
+  const minLeft = Math.max(0, Math.round((LIFE - (Date.now() - timestamp)) / 60000));
+  const color = pct > 50 ? '#dc2626' : pct > 20 ? '#f59e0b' : '#334155';
+  return (
+    <div className="flex items-center gap-2 mt-1.5">
+      <div className="flex-1 rounded-full overflow-hidden" style={{ height: 3, background: 'rgba(255,255,255,.06)' }}>
+        <div className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${pct}%`, background: color }} />
+      </div>
+      <span className="text-[9px] font-bold flex-shrink-0" style={{ color }}>
+        {pct > 1 ? `expire dans ${minLeft}m` : 'expiré'}
+      </span>
+    </div>
+  );
+}
 
 function fireNotif(type: string, desc: string) {
   if (Notification.permission !== 'granted') return;
@@ -51,6 +76,7 @@ export default function AlertsPage() {
   const [type, setType] = useState<CrowdsourceReport['type']>('delay');
   const [voted, setVoted] = useState(new Set<string>());
   const [filter, setFilter] = useState<typeof FILTER_OPTS[number]>('Tous');
+  const [hasPhoto, setHasPhoto] = useState(false);
 
   const filtered = useMemo(() => {
     let r = [...reports];
@@ -88,8 +114,8 @@ export default function AlertsPage() {
       timestamp: Date.now(), upvotes: 0,
     }));
     fireNotif(type, t);
-    dispatch(showToast({ type: 'success', message: 'Signalement envoyé, merci !' }));
-    setShowForm(false); setDesc('');
+    dispatch(showToast({ type: 'success', message: `Signalement envoyé${hasPhoto ? ' avec photo' : ''}, merci !` }));
+    setShowForm(false); setDesc(''); setHasPhoto(false);
   };
 
   const upvote = (id: string) => {
@@ -167,9 +193,17 @@ export default function AlertsPage() {
               <span className="text-[10px]" style={{ color: '#334155' }}>{desc.length}/200</span>
               {userLocation && <span className="text-[10px]" style={{ color: 'rgba(52,211,153,.6)' }}>📡 GPS détecté</span>}
             </div>
+            {/* Photo simulation */}
+            <button onClick={() => { setHasPhoto(h => !h); dispatch(showToast({ type: 'info', message: hasPhoto ? 'Photo retirée' : '📷 Photo simulée ajoutée !' })); }}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl mb-3 text-xs font-bold transition-all active:scale-95"
+              style={hasPhoto
+                ? { background: 'rgba(5,150,105,.15)', border: '1px solid rgba(5,150,105,.3)', color: '#34d399' }
+                : { background: 'rgba(255,255,255,.04)', border: '1px dashed rgba(255,255,255,.12)', color: '#64748b' }}>
+              {hasPhoto ? '✅ Photo jointe' : '📷 Ajouter une photo (optionnel)'}
+            </button>
             <div className="flex gap-2">
               <button onClick={submit} className="btn btn-primary flex-1">Envoyer</button>
-              <button onClick={() => { setShowForm(false); setDesc(''); }} className="btn btn-ghost px-5">Annuler</button>
+              <button onClick={() => { setShowForm(false); setDesc(''); setHasPhoto(false); }} className="btn btn-ghost px-5">Annuler</button>
             </div>
           </div>
         )}
@@ -230,6 +264,18 @@ export default function AlertsPage() {
                 <p className="text-xs pl-12 leading-relaxed" style={{ color: 'rgba(241,245,249,.7)' }}>
                   {r.description}
                 </p>
+                <div className="pl-12">
+                  <ExpiryBar timestamp={r.timestamp} />
+                </div>
+                {r.upvotes >= 5 && (
+                  <div className="pl-12 mt-1.5">
+                    <button onClick={() => dispatch(acknowledgeReport(r.id))}
+                      className="text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all active:scale-95"
+                      style={{ background: 'rgba(255,255,255,.04)', color: '#334155', border: '1px solid rgba(255,255,255,.06)' }}>
+                      ✕ Marquer résolu
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}

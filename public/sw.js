@@ -1,43 +1,103 @@
-const CACHE = 'sunubus-v6';
-const PRECACHE = [
+// SunuBus Service Worker — Offline-first avec cache intelligent
+const CACHE_VERSION = 'sunubus-v8';
+const STATIC_CACHE  = `${CACHE_VERSION}-static`;
+const API_CACHE     = `${CACHE_VERSION}-api`;
+
+const PRECACHE_URLS = [
   '/',
   '/index.html',
+  '/manifest.json',
 ];
 
-self.addEventListener('install', e => {
+// ── Install ───────────────────────────────────────────────────
+self.addEventListener('install', event => {
   self.skipWaiting();
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE)));
+  event.waitUntil(
+    caches.open(STATIC_CACHE).then(cache => cache.addAll(PRECACHE_URLS))
+  );
 });
 
-self.addEventListener('activate', e => {
-  e.waitUntil(
+// ── Activate ──────────────────────────────────────────────────
+self.addEventListener('activate', event => {
+  event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      Promise.all(
+        keys
+          .filter(k => k !== STATIC_CACHE && k !== API_CACHE)
+          .map(k => caches.delete(k))
+      )
     ).then(() => self.clients.claim())
   );
 });
 
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  const url = new URL(e.request.url);
-  // Network-first for API calls
+// ── Fetch strategies ──────────────────────────────────────────
+self.addEventListener('fetch', event => {
+  const { request } = event;
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+
+  // OSRM / external API → Network first, fallback offline page
   if (url.hostname !== self.location.hostname) {
-    e.respondWith(
-      fetch(e.request).catch(() => caches.match(e.request))
+    event.respondWith(
+      fetch(request)
+        .then(res => {
+          // Cache OSRM walking/driving results for 10 min
+          if (url.hostname.includes('osrm') || url.hostname.includes('router.project-osrm')) {
+            const clone = res.clone();
+            caches.open(API_CACHE).then(c => c.put(request, clone));
+          }
+          return res;
+        })
+        .catch(() => caches.match(request))
     );
     return;
   }
-  // Cache-first for local assets
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      const fresh = fetch(e.request).then(res => {
+
+  // App shell & assets → Stale-while-revalidate
+  event.respondWith(
+    caches.match(request).then(cached => {
+      const fetchPromise = fetch(request).then(res => {
         if (res.ok) {
-          const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
+          caches.open(STATIC_CACHE).then(c => c.put(request, res.clone()));
         }
         return res;
-      });
-      return cached || fresh;
+      }).catch(() => cached); // network failed → serve cache
+
+      // Return cached immediately if available, update in background
+      return cached || fetchPromise;
+    })
+  );
+});
+
+// ── Background sync (future) ──────────────────────────────────
+self.addEventListener('sync', event => {
+  if (event.tag === 'sync-reports') {
+    // future: send queued reports to backend
+    console.log('[SW] Background sync: reports');
+  }
+});
+
+// ── Push notifications ────────────────────────────────────────
+self.addEventListener('push', event => {
+  if (!event.data) return;
+  const data = event.data.json();
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'SunuBus', {
+      body: data.body || '',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: 'sunubus-alert',
+    })
+  );
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then(wClients => {
+      if (wClients.length > 0) { wClients[0].focus(); return; }
+      clients.openWindow('/');
     })
   );
 });

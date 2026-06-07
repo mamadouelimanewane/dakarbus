@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { toggleFavStop, toggleFavLine, logout, setRouteOrigin, setRouteDestination, setActiveTab, toggleDarkMode, setAutoTheme, setNotifEnabled } from '@/store/store';
+import { toggleFavStop, toggleFavLine, logout, setRouteOrigin, setRouteDestination, setActiveTab, toggleDarkMode, setAutoTheme, setNotifEnabled, setLang } from '@/store/store';
 import { STOPS, LINES, OPERATORS } from '@/data/transportData';
+import type { Lang } from '@/types';
 
 // ── Toggle switch ──────────────────────────────────────────────
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
@@ -21,7 +22,7 @@ export default function ProfilePage() {
   const { myTickets } = useAppSelector(s => s.tickets);
   const { name } = useAppSelector(s => s.auth);
   const { history } = useAppSelector(s => s.journey);
-  const { darkMode, autoTheme, notifEnabled } = useAppSelector(s => s.ui);
+  const { darkMode, autoTheme, notifEnabled, lang } = useAppSelector(s => s.ui);
   const [tab, setTab] = useState<'stats' | 'history' | 'favs' | 'settings'>('stats');
 
   const handleNotifToggle = async (v: boolean) => {
@@ -288,16 +289,34 @@ export default function ProfilePage() {
             {/* Language */}
             <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
               <div className="px-4 pt-3 pb-1">
-                <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Langue</p>
+                <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Langue / Làkk</p>
               </div>
-              {[['fr','🇫🇷 Français'], ['wo','🇸🇳 Wolof'], ['en','🇬🇧 English']].map(([id, label]) => (
-                <div key={id} className="px-4 py-3 flex items-center justify-between"
-                  style={{ borderTop: '1px solid var(--c-border)' }}>
-                  <span className="text-sm font-semibold" style={{ color: 'var(--c-text)' }}>{label}</span>
-                  <div className="w-4 h-4 rounded-full border-2"
-                    style={{ borderColor: '#2563eb', background: id === 'fr' ? '#2563eb' : 'transparent' }} />
-                </div>
+              {([['fr','🇫🇷 Français'], ['wo','🇸🇳 Wolof'], ['en','🇬🇧 English']] as [Lang, string][]).map(([id, label]) => (
+                <button key={id} onClick={() => dispatch(setLang(id))}
+                  className="w-full px-4 py-3 flex items-center justify-between transition-all"
+                  style={{ borderTop: '1px solid var(--c-border)', background: lang === id ? 'rgba(37,99,235,.08)' : 'transparent' }}>
+                  <span className="text-sm font-semibold" style={{ color: lang === id ? '#60a5fa' : 'var(--c-text)' }}>{label}</span>
+                  <div className="w-4 h-4 rounded-full border-2 transition-all"
+                    style={{ borderColor: '#2563eb', background: lang === id ? '#2563eb' : 'transparent' }} />
+                </button>
               ))}
+            </div>
+
+            {/* Driver simulation */}
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+              <div className="px-4 pt-3 pb-1">
+                <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Simulation chauffeur</p>
+              </div>
+              <div className="px-4 py-3" style={{ borderTop: '1px solid var(--c-border)' }}>
+                <p className="text-xs mb-2" style={{ color: 'var(--c-muted)' }}>
+                  Basculer en mode chauffeur pour tester le scanner QR et la déclaration d'incidents.
+                </p>
+                <button onClick={() => { dispatch(logout()); }}
+                  className="w-full py-2.5 rounded-xl text-sm font-black transition-all active:scale-95"
+                  style={{ background: 'rgba(14,165,233,.1)', color: '#38bdf8', border: '1px solid rgba(14,165,233,.2)' }}>
+                  👨‍✈️ Accéder au mode Chauffeur (PIN : 1234)
+                </button>
+              </div>
             </div>
 
             {/* About */}
