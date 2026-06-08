@@ -67,8 +67,8 @@ function LineCard({ line, busCount, isFav, isRecent, onSelect, onFav }: {
             </div>
           )}
           <button onClick={e => { e.stopPropagation(); onFav(); }}
-            className="text-base transition-all hover:scale-125 active:scale-90"
-            style={{ color: isFav ? '#f87171' : '#1e293b' }}>
+            className="flex items-center justify-center text-lg transition-all active:scale-90 flex-shrink-0"
+            style={{ color: isFav ? '#f87171' : '#64748b', minWidth: 40, minHeight: 40 }}>
             {isFav ? '❤️' : '🤍'}
           </button>
         </div>
@@ -371,7 +371,7 @@ export default function LinesPage({ onShowMap }: { onShowMap?: () => void } = {}
             className="input pl-9" />
           {search && (
             <button onClick={() => setSearch('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center text-xs"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-sm"
               style={{ background: 'rgba(255,255,255,.1)', color: '#64748b' }}>✕</button>
           )}
         </div>
@@ -381,17 +381,17 @@ export default function LinesPage({ onShowMap }: { onShowMap?: () => void } = {}
           {/* Search mode toggle */}
           <div className="flex gap-0.5 p-0.5 rounded-xl flex-shrink-0" style={{ background: 'var(--c-surface)' }}>
             <button onClick={() => setSearchMode('line')}
-              className="px-2.5 py-1 rounded-lg text-[10px] font-black transition-all"
+              className="px-3 py-2 rounded-lg text-xs font-black transition-all"
               style={searchMode === 'line'
-                ? { background: '#2563eb', color: 'white' }
-                : { color: '#475569' }}>
+                ? { background: '#2563eb', color: 'white', minHeight: 36 }
+                : { color: '#475569', minHeight: 36 }}>
               Par ligne
             </button>
             <button onClick={() => setSearchMode('stop')}
-              className="px-2.5 py-1 rounded-lg text-[10px] font-black transition-all"
+              className="px-3 py-2 rounded-lg text-xs font-black transition-all"
               style={searchMode === 'stop'
-                ? { background: '#059669', color: 'white' }
-                : { color: '#475569' }}>
+                ? { background: '#059669', color: 'white', minHeight: 36 }
+                : { color: '#475569', minHeight: 36 }}>
               Par arrêt
             </button>
           </div>
@@ -399,10 +399,10 @@ export default function LinesPage({ onShowMap }: { onShowMap?: () => void } = {}
           <div className="flex-1" />
 
           <button onClick={() => setFavsOnly(!favsOnly)}
-            className="text-[10px] font-bold px-3 py-1.5 rounded-xl transition-all"
+            className="text-xs font-bold px-3 py-2 rounded-xl transition-all"
             style={favsOnly
-              ? { background: 'rgba(239,68,68,.1)', color: '#f87171', border: '1px solid rgba(239,68,68,.2)' }
-              : { color: '#475569' }}>
+              ? { background: 'rgba(239,68,68,.1)', color: '#f87171', border: '1px solid rgba(239,68,68,.2)', minHeight: 40 }
+              : { color: '#475569', minHeight: 40 }}>
             {favsOnly ? '❤️' : '🤍'} Favoris
           </button>
         </div>

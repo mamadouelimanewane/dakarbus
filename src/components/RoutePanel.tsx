@@ -503,9 +503,9 @@ export default function RoutePanel() {
         </button>
         {options.length > 0 && (
           <button onClick={handleShare}
-            className="w-11 rounded-xl flex items-center justify-center text-lg transition-all active:scale-90"
-            style={{ background: 'rgba(255,255,255,.06)', border: '1px solid var(--c-border)' }}
-            title="Partager cet itinéraire">🔗</button>
+            className="rounded-xl flex items-center gap-1.5 px-3 text-xs font-bold transition-all active:scale-90"
+            style={{ background: 'rgba(255,255,255,.06)', border: '1px solid var(--c-border)', color: '#94a3b8', minHeight: 44 }}
+            title="Partager cet itinéraire">🔗 <span>Partager</span></button>
         )}
         {(route.origin || route.destination) && (
           <button onClick={() => { dispatch(clearRoute()); dispatch(setRouteDisplay(null)); setOptions([]); setSelected(null); setNoRoute(false); setNearestInfo(null); }}

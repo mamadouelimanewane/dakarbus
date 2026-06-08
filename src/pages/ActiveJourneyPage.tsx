@@ -330,7 +330,7 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
               <p className="text-xs" style={{ color: '#64748b' }}>Valide · #{ticket.id}</p>
             </div>
             <button onClick={() => dispatch(setActiveTab('tickets'))}
-              className="btn btn-primary" style={{ padding: '5px 12px', fontSize: 11 }}>
+              className="btn btn-primary" style={{ padding: '9px 16px', fontSize: 13, minHeight: 40 }}>
               Voir QR
             </button>
           </div>
@@ -343,8 +343,8 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
           <span className="text-xl">🎫</span>
           <p className="text-xs text-white flex-1">Pas encore de billet pour ce trajet.</p>
           <button onClick={() => dispatch(setActiveTab('tickets'))}
-            className="btn btn-primary flex-shrink-0" style={{ padding: '5px 12px', fontSize: 11 }}>
-            Acheter
+            className="btn btn-primary flex-shrink-0" style={{ padding: '10px 18px', fontSize: 14, minHeight: 44 }}>
+            🎫 Acheter
           </button>
         </div>
       )}

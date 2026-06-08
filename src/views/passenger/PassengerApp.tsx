@@ -541,7 +541,7 @@ export default function PassengerApp() {
                   {activeJourney && journeyPanelOpen ? (
                     <>
                       <button onClick={() => setJourneyPanelOpen(false)}
-                        className="w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90"
+                        className="w-11 h-11 rounded-xl flex items-center justify-center transition-all active:scale-90"
                         style={{ background: 'rgba(255,255,255,.07)', color: '#94a3b8' }}>‹</button>
                       <span className="text-sm font-black text-white">Mon trajet</span>
                     </>

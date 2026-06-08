@@ -60,7 +60,7 @@ export function AdBanner({ ad, onClose }: AdProps) {
 
         {/* Dismiss toujours visible */}
         <button onClick={onClose ?? (() => {})}
-          className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] transition-all active:scale-90"
+          className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all active:scale-90"
           style={{ background: 'rgba(255,255,255,.05)', color: '#475569' }}>
           ✕
         </button>
@@ -97,7 +97,7 @@ export function AdCard({ ad, onClose }: AdProps) {
         <span className="text-sm leading-none opacity-75">{ad.logo}</span>
         <span className="text-[11px] font-semibold flex-shrink-0" style={{ color: '#64748b' }}>{ad.advertiser}</span>
         <button onClick={handleClose}
-          className="ml-auto w-5 h-5 rounded-full flex items-center justify-center text-[10px] flex-shrink-0"
+          className="ml-auto w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0"
           style={{ background: 'rgba(255,255,255,.05)', color: '#475569' }}>
           ✕
         </button>

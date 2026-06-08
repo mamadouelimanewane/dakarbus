@@ -185,7 +185,7 @@ export default function SearchBar({ placeholder = 'Rechercher un arrêt ou un li
         />
         {(value || query) ? (
           <button onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center text-xs transition-all hover:scale-110"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all active:scale-90"
             style={{ background: 'rgba(255,255,255,.1)', color: '#94a3b8' }}>✕</button>
         ) : (
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style={{ color: '#475569' }}>🔍</span>
