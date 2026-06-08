@@ -555,8 +555,8 @@ export default function FleetManagerApp({ operator }: { operator: 'DDD' | 'AFTU'
           <div className="flex items-center justify-between mb-2">
             <div className="text-xs font-black" style={{ color: '#64748b' }}>ALERTES NON TRAITÉES</div>
             <button onClick={() => setTab('alerts')}
-              className="text-[10px] font-black px-2 py-0.5 rounded-full"
-              style={{ background: 'rgba(239,68,68,.15)', color: '#f87171' }}>
+              className="text-xs font-black px-3 py-1.5 rounded-full"
+              style={{ background: 'rgba(239,68,68,.15)', color: '#f87171', minHeight: 32 }}>
               Voir tout →
             </button>
           </div>
@@ -574,8 +574,8 @@ export default function FleetManagerApp({ operator }: { operator: 'DDD' | 'AFTU'
                   </div>
                 </div>
                 <button onClick={() => ackIncident(inc.id)}
-                  className="text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0"
-                  style={{ background: 'rgba(255,255,255,.1)', color: '#94a3b8' }}>
+                  className="text-xs font-black px-2 py-1.5 rounded-full flex-shrink-0"
+                  style={{ background: 'rgba(255,255,255,.1)', color: '#94a3b8', minHeight: 32 }}>
                   ✓
                 </button>
               </div>
@@ -698,10 +698,10 @@ export default function FleetManagerApp({ operator }: { operator: 'DDD' | 'AFTU'
           {(['all', ...Object.keys(STATUS_CFG)] as ('all' | VehicleStatus)[]).map(s => (
             <button key={s}
               onClick={() => setFleetStatusFilter(s)}
-              className="flex-shrink-0 px-3 py-1 rounded-full text-[10px] font-black transition-all"
+              className="flex-shrink-0 px-3 py-2 rounded-full text-xs font-black transition-all"
               style={fleetStatusFilter === s
                 ? { background: s === 'all' ? cfg.color : STATUS_CFG[s as VehicleStatus]?.color ?? cfg.color, color: '#fff' }
-                : { background: 'rgba(255,255,255,.05)', color: '#475569', border: '1px solid var(--c-border)' }}>
+                : { background: 'rgba(255,255,255,.05)', color: '#475569', border: '1px solid var(--c-border)', minHeight: 36 }}>
               {s === 'all' ? `Tous (${fleet.length})` : `${STATUS_CFG[s as VehicleStatus].emoji} ${STATUS_CFG[s as VehicleStatus].label} (${fleet.filter(v => v.status === s).length})`}
             </button>
           ))}
@@ -801,15 +801,15 @@ export default function FleetManagerApp({ operator }: { operator: 'DDD' | 'AFTU'
                       <div className="flex gap-1">
                         <button
                           onClick={() => { setFleetStatusFilter('all'); setFleetSearch(lh.line.id); setTab('fleet'); }}
-                          className="px-2 py-1 rounded-lg text-[10px] font-black transition-all active:scale-90"
-                          style={{ background: 'rgba(37,99,235,.15)', color: '#60a5fa' }}>
+                          className="px-3 py-1.5 rounded-lg text-xs font-black transition-all active:scale-90"
+                          style={{ background: 'rgba(37,99,235,.15)', color: '#60a5fa', minHeight: 36 }}>
                           🚌 Bus
                         </button>
                         {lh.hasIncident && (
                           <button
                             onClick={() => { setAlertFilter('pending'); setTab('alerts'); }}
-                            className="px-2 py-1 rounded-lg text-[10px] font-black transition-all active:scale-90"
-                            style={{ background: 'rgba(239,68,68,.15)', color: '#f87171' }}>
+                            className="px-3 py-1.5 rounded-lg text-xs font-black transition-all active:scale-90"
+                            style={{ background: 'rgba(239,68,68,.15)', color: '#f87171', minHeight: 36 }}>
                             ⚠️
                           </button>
                         )}
@@ -832,7 +832,7 @@ export default function FleetManagerApp({ operator }: { operator: 'DDD' | 'AFTU'
         {(['all', 'pending', 'critique'] as const).map(f => (
           <button key={f}
             onClick={() => setAlertFilter(f)}
-            className="flex-1 py-1.5 rounded-xl text-[10px] font-black transition-all"
+            className="flex-1 py-2 rounded-xl text-xs font-black transition-all"
             style={alertFilter === f
               ? { background: f === 'critique' ? '#ef4444' : cfg.color, color: '#fff' }
               : { background: 'rgba(255,255,255,.04)', color: '#475569', border: '1px solid var(--c-border)' }}>
@@ -943,8 +943,8 @@ export default function FleetManagerApp({ operator }: { operator: 'DDD' | 'AFTU'
           <span className="text-[11px] font-black" style={{ color: '#34d399' }}>LIVE</span>
         </div>
         <button onClick={() => dispatch(logoutFleetManager())}
-          className="ml-1 w-8 h-8 rounded-xl flex items-center justify-center text-sm transition-all active:scale-90"
-          style={{ background: 'rgba(239,68,68,.12)', color: '#f87171', border: '1px solid rgba(239,68,68,.2)' }}
+          className="ml-1 rounded-xl flex items-center justify-center text-sm transition-all active:scale-90"
+          style={{ minWidth: 40, minHeight: 40, background: 'rgba(239,68,68,.12)', color: '#f87171', border: '1px solid rgba(239,68,68,.2)' }}
           title="Déconnexion">
           ⏏
         </button>
