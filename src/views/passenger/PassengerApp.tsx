@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { setActiveTab, logout, clearFocusedLine, setMapCenter, setMapZoom } from '@/store/store';
+import { setActiveTab, logout, clearFocusedLine, setMapCenter, setMapZoom, setRouteDisplay } from '@/store/store';
 import MapView from '@/components/MapView';
 import GeolocGate from '@/components/GeolocGate';
 import ToastContainer from '@/components/ToastContainer';
@@ -164,6 +164,8 @@ export default function PassengerApp() {
     // Empiler l'onglet courant AVANT de changer
     navStack.current.push(tab);
     dispatch(setActiveTab(tab));
+    // Effacer l'itinéraire affiché quand on quitte vers un onglet non-plan
+    if (tab !== 'plan') dispatch(setRouteDisplay(null));
     setJourneyPanelOpen(false);
     if (TABS.find(t => t.id === tab)?.mapRelevant) setSheetState('peek');
   }, [activeTab, dispatch]);
