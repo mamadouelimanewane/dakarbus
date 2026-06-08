@@ -31,17 +31,15 @@ function LiveCountdown({ seconds }: { seconds: number }) {
 }
 
 // Mini step-by-step directions panel
-function TurnByTurnPanel({ steps, currentStatus }: { steps: RouteStep[]; currentStatus: JourneyStatus }) {
-  const busSteps = steps.filter(s => s.type === 'bus');
-  const currentStepIdx = currentStatus === 'walking' ? -1
-    : currentStatus === 'waiting' ? 0
-    : currentStatus === 'on_bus'  ? 0
-    : busSteps.length;
-
+function TurnByTurnPanel({ steps, currentStatus, walkingStopName }: {
+  steps: RouteStep[];
+  currentStatus: JourneyStatus;
+  walkingStopName: string;
+}) {
   return (
     <div className="mx-4 mb-3 card rounded-2xl overflow-hidden">
-      <div className="px-4 pt-3 pb-2">
-        <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>
+      <div className="px-4 pt-3 pb-2 border-b" style={{ borderColor: 'var(--c-border)' }}>
+        <p className="text-xs font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>
           Itinéraire détaillé
         </p>
       </div>
@@ -49,47 +47,66 @@ function TurnByTurnPanel({ steps, currentStatus }: { steps: RouteStep[]; current
         const stopFrom = step.fromStopId ? STOPS.find(s => s.id === step.fromStopId) : null;
         const stopTo   = step.toStopId   ? STOPS.find(s => s.id === step.toStopId)   : null;
         const line     = step.lineId     ? LINES.find(l => l.id === step.lineId)      : null;
+        const stepColor = step.color || (step.type === 'walk' ? '#059669' : '#2563eb');
         const isCurrent = (step.type === 'walk' && currentStatus === 'walking')
           || (step.type === 'bus' && (currentStatus === 'waiting' || currentStatus === 'on_bus'))
           || (step.type === 'transfer');
+
+        // Libellé principal
+        let label = '';
+        if (step.type === 'walk') {
+          label = `🚶 Marcher vers ${walkingStopName}`;
+        } else if (step.type === 'transfer') {
+          label = `🔄 Correspondance${stopFrom ? ` à ${stopFrom.name}` : ''}`;
+        } else {
+          const lineName = line?.name || step.label?.split('·')[0]?.trim() || 'Bus';
+          label = `🚌 Prendre ${lineName}`;
+        }
+
+        // Sous-libellé pour les étapes bus
+        let sublabel = '';
+        if (step.type === 'bus') {
+          const from = stopFrom?.name || (step.fromStopId ? `Arrêt ${step.fromStopId}` : null);
+          const to   = stopTo?.name   || (step.toStopId   ? `Arrêt ${step.toStopId}`   : null);
+          if (from && to)      sublabel = `${from} → ${to}`;
+          else if (from)       sublabel = `Depuis ${from}`;
+          else if (line?.route) sublabel = line.route;
+        }
+
         return (
-          <div key={i} className="flex items-start gap-3 px-4 py-3 transition-all"
+          <div key={i} className="flex items-start gap-3 px-4 py-3"
             style={{
               borderTop: i > 0 ? '1px solid var(--c-border)' : 'none',
-              background: isCurrent ? 'rgba(37,99,235,.06)' : 'transparent',
+              background: isCurrent ? stepColor + '10' : 'transparent',
             }}>
-            {/* Timeline dot */}
-            <div className="flex flex-col items-center gap-0.5 flex-shrink-0 mt-1">
-              <div className="w-7 h-7 rounded-xl flex items-center justify-center text-sm"
-                style={step.type === 'transfer'
-                  ? { background: 'rgba(255,255,255,.05)', border: '1px solid var(--c-border)' }
-                  : { background: step.color + '22', border: isCurrent ? `1px solid ${step.color}55` : 'none' }}>
-                {step.type === 'walk' ? '🚶'
-                 : step.type === 'transfer' ? '🔄'
-                 : line?.operator === 'TER' ? '🚆'
-                 : line?.operator === 'BRT' ? '🚍'
-                 : '🚌'}
+            {/* Dot + vertical line */}
+            <div className="flex flex-col items-center gap-0.5 flex-shrink-0 mt-0.5">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center text-base"
+                style={{ background: stepColor + '22', border: `1.5px solid ${isCurrent ? stepColor : 'transparent'}` }}>
+                {step.type === 'walk' ? '🚶' : step.type === 'transfer' ? '🔄' : line?.operator === 'TER' ? '🚆' : line?.operator === 'BRT' ? '🚍' : '🚌'}
               </div>
               {i < steps.length - 1 && (
-                <div className="w-0.5 h-4 rounded-full" style={{ background: 'var(--c-border)' }} />
+                <div className="w-0.5 flex-1 rounded-full mt-0.5" style={{ minHeight: 12, background: 'var(--c-border)' }} />
               )}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold" style={{ color: isCurrent ? 'white' : '#94a3b8' }}>
-                {step.type === 'walk'
-                  ? `Marcher vers ${stopFrom?.name || 'l\'arrêt'}`
-                  : step.type === 'transfer'
-                  ? `Correspondance — ${stopFrom?.name || ''}`
-                  : `Prendre ${line?.name || step.label.split('·')[0].trim()}`}
+
+            <div className="flex-1 min-w-0 py-0.5">
+              <p className="text-sm font-bold leading-snug" style={{ color: isCurrent ? 'white' : '#94a3b8' }}>
+                {label}
               </p>
-              {step.type === 'bus' && stopFrom && stopTo && (
-                <p className="text-[10px] mt-0.5" style={{ color: '#475569' }}>
-                  {stopFrom.name} → {stopTo.name}
-                </p>
+              {sublabel && (
+                <p className="text-xs mt-0.5 leading-snug" style={{ color: '#475569' }}>{sublabel}</p>
+              )}
+              {step.type === 'bus' && line && (
+                <span className="inline-block text-[10px] font-black px-2 py-0.5 rounded-lg mt-1 text-white"
+                  style={{ background: stepColor }}>
+                  {line.name} · {line.tarif} FCFA
+                </span>
               )}
             </div>
-            <span className="text-xs font-black flex-shrink-0"
-              style={{ color: isCurrent ? step.color || '#60a5fa' : '#334155' }}>
+
+            <span className="text-xs font-black flex-shrink-0 mt-1"
+              style={{ color: isCurrent ? stepColor : '#334155' }}>
               {step.durationMin} min
             </span>
           </div>
@@ -287,9 +304,13 @@ export default function ActiveJourneyPage() {
         )}
       </div>
 
-      {/* Turn-by-turn directions (if steps available) */}
+      {/* Turn-by-turn directions */}
       {active.steps && active.steps.length > 0 && (
-        <TurnByTurnPanel steps={active.steps} currentStatus={active.status} />
+        <TurnByTurnPanel
+          steps={active.steps}
+          currentStatus={active.status}
+          walkingStopName={active.walkingStop.name}
+        />
       )}
 
       {/* Ticket */}
@@ -323,42 +344,50 @@ export default function ActiveJourneyPage() {
         </div>
       )}
 
-      {/* Map shortcut — walking phase: ouvre guidage piéton OSRM */}
-      {active.status === 'walking' && userLocation ? (
+      {/* Bouton carte — walking: navigation piétonne, sinon: ligne bus */}
+      {active.status === 'walking' ? (
         <button onClick={() => setShowWalkGuide(true)}
           className="mx-4 mb-3 flex items-center gap-3 p-4 rounded-2xl transition-all active:scale-[.98]"
-          style={{ background: 'rgba(5,150,105,.1)', border: '1px solid rgba(5,150,105,.3)' }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-            style={{ background: 'rgba(5,150,105,.2)' }}>🚶</div>
+          style={{ background: 'rgba(5,150,105,.12)', border: '1px solid rgba(5,150,105,.35)' }}>
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+            style={{ background: 'rgba(5,150,105,.25)' }}>🗺️</div>
           <div className="text-left flex-1">
             <p className="font-bold text-white text-sm">Voir le chemin sur la carte</p>
             <p className="text-xs mt-0.5" style={{ color: '#34d399' }}>
-              Navigation piétonne → {active.walkingStop.name}
+              Navigation piétonne vers {active.walkingStop.name}
             </p>
           </div>
-          <span className="text-sm font-black" style={{ color: '#34d399' }}>→</span>
+          <span className="text-base font-black" style={{ color: '#34d399' }}>→</span>
         </button>
       ) : (
         <button onClick={focusMap}
           className="mx-4 mb-3 flex items-center gap-3 p-4 rounded-2xl transition-all active:scale-[.98]"
           style={{ background: 'rgba(37,99,235,.08)', border: '1px solid rgba(37,99,235,.2)' }}>
-          <span className="text-xl">🗺️</span>
-          <div className="text-left">
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+            style={{ background: 'rgba(37,99,235,.15)' }}>🗺️</div>
+          <div className="text-left flex-1">
             <p className="font-bold text-white text-sm">Voir sur la carte</p>
-            <p className="text-xs" style={{ color: '#64748b' }}>Suivre la ligne {active.lineName}</p>
+            <p className="text-xs mt-0.5" style={{ color: '#60a5fa' }}>Suivre la ligne {active.lineName}</p>
           </div>
-          <span className="ml-auto" style={{ color: '#475569' }}>→</span>
+          <span className="text-base font-black" style={{ color: '#475569' }}>→</span>
         </button>
       )}
 
-      {/* Guidage piéton plein écran (OSRM) */}
-      {showWalkGuide && userLocation && (
-        <WalkToStopGuide
-          stop={active.walkingStop}
-          initialPos={userLocation}
-          onClose={() => setShowWalkGuide(false)}
-        />
-      )}
+      {/* Guidage piéton plein écran OSRM — fallback si pas GPS */}
+      {showWalkGuide && (() => {
+        // Si GPS dispo, utilise la vraie position ; sinon, simule à 400m de l'arrêt
+        const startPos: [number, number] = userLocation ?? [
+          active.walkingStop.lat - 0.0035,
+          active.walkingStop.lng - 0.0035,
+        ];
+        return (
+          <WalkToStopGuide
+            stop={active.walkingStop}
+            initialPos={startPos}
+            onClose={() => setShowWalkGuide(false)}
+          />
+        );
+      })()}
 
       {/* Cancel */}
       {active.status !== 'arrived' && (
