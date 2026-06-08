@@ -168,6 +168,7 @@ export default function AdminApp() {
 
   const [activeTab, setActiveTab] = useState<'map'|'fleet'|'routes'|'alerts'|'finance'|'ads'>('map');
   const [selectedLine, setSelectedLine] = useState<string|null>(null);
+  const [mapSidebarOpen, setMapSidebarOpen] = useState(false);
   const [fleet, setFleet]         = useState<FleetBus[]>(INITIAL_FLEET);
   const [showAdd, setShowAdd]     = useState(false);
   const [newBus, setNewBus]       = useState({ plate:'', operator:'DDD', lineId:'L8', driver:'', driverPhone:'' });
@@ -264,11 +265,12 @@ export default function AdminApp() {
       <div className="flex-shrink-0 flex" style={{background:'rgba(10,15,30,.9)',borderBottom:'1px solid var(--c-border)'}}>
         {tabs.map(t=>(
           <button key={t.id} onClick={()=>setActiveTab(t.id)}
-            className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-black uppercase tracking-widest transition-colors"
-            style={{color:activeTab===t.id?'#a78bfa':'#475569',borderBottom:activeTab===t.id?'2px solid #7c3aed':'2px solid transparent'}}>
-            <span className="text-sm">{t.icon}</span><span>{t.label}</span>
+            className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors"
+            style={{color:activeTab===t.id?'#a78bfa':'#475569',borderBottom:activeTab===t.id?'2px solid #7c3aed':'2px solid transparent',minHeight:48}}>
+            <span className="text-base">{t.icon}</span>
+            <span className="text-[10px] font-black">{t.label}</span>
             {t.badge!=null&&t.badge>0&&(
-              <span className="absolute top-1 right-1/4 w-4 h-4 rounded-full text-white text-[8px] font-black flex items-center justify-center"
+              <span className="absolute top-1 right-1/4 w-4 h-4 rounded-full text-white text-xs font-black flex items-center justify-center"
                 style={{background:'#dc2626',boxShadow:'0 2px 8px rgba(220,38,38,.5)'}}>
                 {t.badge>9?'9+':t.badge}
               </span>
@@ -281,38 +283,47 @@ export default function AdminApp() {
 
         {/* ── MAP ── */}
         {activeTab==='map'&&(
-          <div className="flex-1 flex overflow-hidden">
-            <aside className="w-60 flex flex-col overflow-hidden flex-shrink-0"
-              style={{background:'var(--c-surface)',borderRight:'1px solid var(--c-border)'}}>
-              <div className="p-3 flex-shrink-0" style={{borderBottom:'1px solid var(--c-border)'}}>
+          <div className="flex-1 flex overflow-hidden relative">
+            {/* Sidebar — masquée sur mobile, visible sur md+ */}
+            <aside className={`flex-col overflow-hidden flex-shrink-0 transition-all ${mapSidebarOpen ? 'flex absolute inset-0 z-[200] md:relative md:inset-auto' : 'hidden md:flex'}`}
+              style={{background:'var(--c-surface)',borderRight:'1px solid var(--c-border)',width: mapSidebarOpen ? '100%' : 240}}>
+              <div className="p-3 flex-shrink-0 flex items-center gap-2" style={{borderBottom:'1px solid var(--c-border)'}}>
                 <button onClick={()=>setSelectedLine(null)}
-                  className="w-full text-left px-3 py-2 rounded-xl text-xs font-black transition-all"
+                  className="flex-1 text-left px-3 py-2 rounded-xl text-xs font-black transition-all"
                   style={!selectedLine?{background:'rgba(124,58,237,.2)',color:'#c4b5fd',border:'1px solid rgba(124,58,237,.3)'}:{color:'#64748b'}}>
                   🌐 Toutes · {busPositions.length} bus
                 </button>
+                {/* Fermer sur mobile */}
+                <button onClick={()=>setMapSidebarOpen(false)} className="md:hidden w-9 h-9 rounded-xl flex items-center justify-center btn btn-ghost text-base">✕</button>
               </div>
               <div className="flex-1 overflow-y-auto p-2">
                 {LINES.map(line=>{
                   const n=busPositions.filter((b:BusPosition)=>b.lineId===line.id).length;
                   const a=selectedLine===line.id;
                   return(
-                    <button key={line.id} onClick={()=>setSelectedLine(a?null:line.id)}
-                      className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl mb-0.5 text-left transition-all"
-                      style={{background:a?'rgba(255,255,255,.07)':'transparent'}}
+                    <button key={line.id} onClick={()=>{ setSelectedLine(a?null:line.id); setMapSidebarOpen(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-3 rounded-xl mb-1 text-left transition-all active:scale-95"
+                      style={{background:a?'rgba(255,255,255,.07)':'transparent',minHeight:44}}
                       onMouseEnter={e=>{if(!a)e.currentTarget.style.background='rgba(255,255,255,.04)'}}
                       onMouseLeave={e=>{if(!a)e.currentTarget.style.background='transparent'}}>
                       <span className="w-1.5 h-6 rounded-full flex-shrink-0" style={{background:line.color}}/>
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs font-bold text-white truncate">{line.name}</div>
-                        <div className="text-[9px] truncate" style={{color:'#475569'}}>{line.operator}</div>
+                        <div className="text-sm font-bold text-white truncate">{line.name}</div>
+                        <div className="text-xs truncate" style={{color:'#475569'}}>{line.operator}</div>
                       </div>
-                      {n>0&&<span className="text-[10px] font-black px-1.5 py-0.5 rounded-md flex-shrink-0" style={{background:'rgba(74,222,128,.15)',color:'#4ade80'}}>{n}</span>}
+                      {n>0&&<span className="text-xs font-black px-2 py-1 rounded-md flex-shrink-0" style={{background:'rgba(74,222,128,.15)',color:'#4ade80'}}>{n}</span>}
                     </button>
                   );
                 })}
               </div>
             </aside>
-            <div className="flex-1">
+            <div className="flex-1 relative">
+              {/* Bouton toggle lignes sur mobile */}
+              <button onClick={()=>setMapSidebarOpen(true)}
+                className="md:hidden absolute z-[100] flex items-center gap-2 px-3 py-2 rounded-xl shadow-xl"
+                style={{top:12,left:12,background:'rgba(10,15,30,.9)',backdropFilter:'blur(12px)',border:'1px solid rgba(255,255,255,.15)',color:'white',fontSize:13,fontWeight:800}}>
+                📋 {selectedLine ? LINES.find(l=>l.id===selectedLine)?.name : 'Lignes'}
+              </button>
               <MapContainer center={[14.7167,-17.4677]} zoom={12} style={{width:'100%',height:'100%'}}>
                 <TileLayer url={darkMode ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"} attribution="" />
                 {busPositions.map((bus:BusPosition,i:number)=>{
@@ -347,16 +358,16 @@ export default function AdminApp() {
           <div className="flex-1 flex flex-col overflow-hidden">
 
             {/* Stats bar */}
-            <div className="flex-shrink-0 grid grid-cols-4 gap-0 p-3" style={{borderBottom:'1px solid var(--c-border)',background:'rgba(255,255,255,.01)'}}>
+            <div className="flex-shrink-0 grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-3" style={{borderBottom:'1px solid var(--c-border)',background:'rgba(255,255,255,.01)'}}>
               {(Object.entries(fleetStats) as [BusStatus, number][]).map(([key, count]) => {
                 const cfg = STATUS_CONFIG[key];
                 return (
                   <button key={key}
                     onClick={() => setStatusFilter(statusFilter === key ? 'all' : key)}
-                    className="flex flex-col items-center py-2 rounded-xl mx-0.5 transition-all active:scale-95"
-                    style={statusFilter===key?{background:cfg.bg,border:`1px solid ${cfg.color}40`}:{border:'1px solid transparent'}}>
-                    <div className="text-xl font-black text-white">{count}</div>
-                    <div className="text-[9px] font-bold" style={{color:cfg.color}}>{cfg.label}</div>
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all active:scale-95"
+                    style={{minHeight:44,background:statusFilter===key?cfg.bg:'rgba(255,255,255,.03)',border:statusFilter===key?`1px solid ${cfg.color}40`:'1px solid var(--c-border)'}}>
+                    <div className="text-lg font-black text-white">{count}</div>
+                    <div className="text-xs font-bold leading-tight" style={{color:cfg.color}}>{cfg.emoji} {cfg.label}</div>
                   </button>
                 );
               })}
@@ -418,9 +429,9 @@ export default function AdminApp() {
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5 mb-1">
                           <span className="font-black text-white text-sm">{bus.plate}</span>
-                          <span className="badge text-white" style={{background:opColor(bus.operator),fontSize:9}}>{bus.operator}</span>
-                          <span className="badge" style={{background:cfg.bg,color:cfg.color,fontSize:9}}>{cfg.emoji} {cfg.label}</span>
-                          {isLive&&<span className="badge" style={{background:'rgba(74,222,128,.1)',color:'#4ade80',fontSize:9}}>● Live</span>}
+                          <span className="badge text-white" style={{background:opColor(bus.operator),fontSize:11}}>{bus.operator}</span>
+                          <span className="badge" style={{background:cfg.bg,color:cfg.color,fontSize:11}}>{cfg.emoji} {cfg.label}</span>
+                          {isLive&&<span className="badge" style={{background:'rgba(74,222,128,.1)',color:'#4ade80',fontSize:11}}>● Live</span>}
                         </div>
                         <div className="flex flex-wrap gap-3 text-xs" style={{color:'#64748b'}}>
                           <span>👤 {bus.driver}</span>
@@ -463,11 +474,11 @@ export default function AdminApp() {
                         <div className="flex-1 min-w-0">
                           <div className="font-bold text-white text-sm">{line.name}</div>
                           <div className="text-xs truncate" style={{color:'#64748b'}}>{line.route}</div>
-                          <div className="text-[9px] mt-0.5" style={{color:'#334155'}}>{line.stops.length} arrêts · {line.freq} · {line.tarif} FCFA</div>
+                          <div className="text-xs mt-0.5" style={{color:'#334155'}}>{line.stops.length} arrêts · {line.freq} · {line.tarif} FCFA</div>
                         </div>
                         <div className="text-right flex-shrink-0">
                           <div className="text-lg font-black" style={{color:n>0?'#4ade80':'#1e293b'}}>{n}</div>
-                          <div className="text-[9px]" style={{color:'#334155'}}>bus</div>
+                          <div className="text-xs" style={{color:'#334155'}}>bus</div>
                         </div>
                       </div>
                     );
@@ -501,8 +512,8 @@ export default function AdminApp() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-black text-white text-sm">{meta.l}</span>
-                            <span className="badge" style={{background:meta.c+'25',color:'white',fontSize:9}}>Il y a {min<1?'<1':min} min</span>
-                            <span className="badge" style={{background:'rgba(255,255,255,.05)',color:'#475569',fontSize:9}}>👍 {r.upvotes}</span>
+                            <span className="badge" style={{background:meta.c+'25',color:'white',fontSize:11}}>Il y a {min<1?'<1':min} min</span>
+                            <span className="badge" style={{background:'rgba(255,255,255,.05)',color:'#475569',fontSize:11}}>👍 {r.upvotes}</span>
                           </div>
                           <p className="text-xs mt-1.5 leading-relaxed" style={{color:'#94a3b8'}}>{r.description}</p>
                         </div>
