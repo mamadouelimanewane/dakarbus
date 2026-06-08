@@ -189,7 +189,7 @@ export default function AlertsPage() {
       <div className="px-4 mb-3 flex gap-1.5 overflow-x-auto pb-1">
         {FILTER_OPTS.map(f => (
           <button key={f} onClick={() => setFilter(f)}
-            className="flex-shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-xl transition-all"
+            className="flex-shrink-0 text-[11px] font-bold px-3 py-2 rounded-xl transition-all"
             style={filter === f
               ? { background: 'rgba(37,99,235,.3)', color: '#60a5fa', border: '1px solid rgba(37,99,235,.4)' }
               : { background: 'rgba(255,255,255,.04)', color: '#64748b', border: '1px solid var(--c-border)' }}>
@@ -197,8 +197,8 @@ export default function AlertsPage() {
           </button>
         ))}
         <button onClick={() => setShowForm(true)}
-          className="flex-shrink-0 text-[11px] font-black px-3 py-1.5 rounded-xl ml-auto transition-all active:scale-95"
-          style={{ background: 'rgba(220,38,38,.12)', color: '#f87171', border: '1px solid rgba(220,38,38,.25)' }}>
+          className="flex-shrink-0 text-[11px] font-black px-3 py-2 rounded-xl ml-auto transition-all active:scale-95"
+          style={{ background: 'rgba(220,38,38,.12)', color: '#f87171', border: '1px solid rgba(220,38,38,.25)', minHeight: 40 }}>
           + Signaler
         </button>
       </div>
@@ -314,7 +314,7 @@ export default function AlertsPage() {
                     <p className="text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,.3)' }}>Il y a {relTime(r.timestamp)}</p>
                   </div>
                   <button onClick={() => upvote(r.id)} disabled={hasVoted}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-90"
+                    className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-90"
                     style={hasVoted
                       ? { background: 'rgba(37,99,235,.2)', color: '#60a5fa', cursor: 'default' }
                       : { background: 'rgba(255,255,255,.08)', color: '#94a3b8' }}>
@@ -330,8 +330,8 @@ export default function AlertsPage() {
                 {r.upvotes >= 5 && (
                   <div className="pl-12 mt-1.5">
                     <button onClick={() => dispatch(acknowledgeReport(r.id))}
-                      className="text-[10px] font-bold px-2.5 py-1 rounded-lg transition-all active:scale-95"
-                      style={{ background: 'rgba(255,255,255,.04)', color: '#334155', border: '1px solid rgba(255,255,255,.06)' }}>
+                      className="text-[10px] font-bold px-2.5 py-2 rounded-lg transition-all active:scale-95"
+                      style={{ background: 'rgba(255,255,255,.04)', color: '#334155', border: '1px solid rgba(255,255,255,.06)', minHeight: 40 }}>
                       ✕ Marquer résolu
                     </button>
                   </div>

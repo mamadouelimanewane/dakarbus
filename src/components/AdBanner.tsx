@@ -53,8 +53,8 @@ export function AdBanner({ ad, onClose }: AdProps) {
         {/* CTA sobre */}
         <button
           onClick={() => trackClick(ad)}
-          className="flex-shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-all active:scale-90"
-          style={{ background: `${ad.accentColor}18`, color: ad.accentColor, border: `1px solid ${ad.accentColor}25` }}>
+          className="flex-shrink-0 px-2.5 py-2 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-all active:scale-90"
+          style={{ background: `${ad.accentColor}18`, color: ad.accentColor, border: `1px solid ${ad.accentColor}25`, minHeight: 40 }}>
           {ad.ctaLabel}
         </button>
 
