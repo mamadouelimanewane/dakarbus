@@ -200,7 +200,7 @@ export default function PassengerApp() {
   const isFullPageForBack = !(activeTab === 'plan' || activeTab === 'stops') && activeTab !== 'lines';
   usePopBack(useCallback(() => setJourneyPanelOpen(false), []), journeyPanelOpen && isFullPageForBack);
   usePopBack(useCallback(() => setMapFullscreen(false),    []), mapFullscreen);
-  usePopBack(useCallback(() => setLinesMapView(false),     []), linesMapView);
+  usePopBack(useCallback(() => { setLinesMapView(false); dispatch(clearFocusedLine()); }, [dispatch]), linesMapView);
 
   useSmartAlerts();
 
@@ -506,7 +506,7 @@ export default function PassengerApp() {
               {/* Vue carte ligne */}
               {linesMapView && (
                 <div className="flex-1 relative overflow-hidden">
-                  <button onClick={() => setLinesMapView(false)}
+                  <button onClick={() => { setLinesMapView(false); dispatch(clearFocusedLine()); }}
                     className="absolute z-[1000] flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-2xl transition-all active:scale-95"
                     style={{
                       bottom: 90, left: 12,
@@ -613,7 +613,7 @@ export default function PassengerApp() {
             )}
             {isLinesTab && linesMapView && (
               <main className="flex-1 relative overflow-hidden">
-                <button onClick={() => setLinesMapView(false)}
+                <button onClick={() => { setLinesMapView(false); dispatch(clearFocusedLine()); }}
                   className="absolute z-[1000] flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-2xl transition-all active:scale-95"
                   style={{ bottom: 24, left: 16, background: 'rgba(8,12,24,.95)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,.15)', color: 'white', fontSize: 13, fontWeight: 800 }}>
                   ← Retour à la liste

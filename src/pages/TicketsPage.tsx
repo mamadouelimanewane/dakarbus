@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { buyTicket, useTicket, showToast } from '@/store/store';
+import { usePopBack } from '@/hooks/usePopBack';
 import { QRCodeSVG } from 'qrcode.react';
 
 const OPS = [
@@ -23,6 +24,9 @@ export default function TicketsPage() {
   const [selOp, setSelOp]     = useState<typeof OPS[number]['op']>('DDD');
   const [expanded, setExpanded]= useState<string|null>(null);
   const [confirming, setConfirming] = useState<string|null>(null);
+  // Retour Android : ferme la confirmation avant de quitter la page
+  usePopBack(() => setConfirming(null), !!confirming);
+  usePopBack(() => setExpanded(null),   !!expanded && !confirming);
   const op = OPS.find(o=>o.op===selOp)!;
   const validCount = myTickets.filter(t=>t.status==='valid').length;
 
