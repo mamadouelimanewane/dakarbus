@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { usePopBack } from '@/hooks/usePopBack';
 
 // QR Code SVG minimaliste (matrice 21x21 type QR v1)
 // Encode une URL dans un QR code simplifié via une matrice pseudo-aléatoire déterministe
@@ -50,6 +51,7 @@ interface Props {
 }
 
 export default function QRCodeStop({ stopId, stopName, onClose }: Props) {
+  usePopBack(onClose);
   const url = `${window.location.origin}?stop=${stopId}`;
   const svg = useMemo(() => simpleQR(url, 200), [url]);
 

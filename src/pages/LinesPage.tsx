@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import LineChatPanel from '@/components/LineChatPanel';
+import { usePopBack } from '@/hooks/usePopBack';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   setFocusedLine, clearFocusedLine, setActiveTab,
@@ -311,6 +312,9 @@ export default function LinesPage({ onShowMap }: { onShowMap?: () => void } = {}
   const [searchMode, setSearchMode] = useState<SearchMode>('line');
   const [favsOnly, setFavsOnly]     = useState(false);
   const [selectedLine, setSelectedLine] = useState<string | null>(null);
+
+  // Retour depuis le détail de ligne → retour à la liste
+  usePopBack(() => { setSelectedLine(null); dispatch(clearFocusedLine()); }, !!selectedLine);
 
   // Direct line search
   const directLines = useMemo(() => {

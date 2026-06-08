@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { usePopBack } from '@/hooks/usePopBack';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addReport, upvoteReport, acknowledgeReport, showToast, addPoints, earnBadge } from '@/store/store';
 
@@ -79,6 +80,9 @@ export default function AlertsPage() {
   const [hasPhoto, setHasPhoto] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
+
+  // Retour depuis le formulaire de signalement
+  usePopBack(() => { setShowForm(false); setDesc(''); setHasPhoto(false); setPhotoPreview(null); }, showForm);
   const [refreshing, setRefreshing] = useState(false);
   const [pullY, setPullY] = useState(0);
   const pullStart = useRef<number | null>(null);

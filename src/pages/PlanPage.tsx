@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { usePopBack } from '@/hooks/usePopBack';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setActiveTab, clearRoute, setRouteOrigin, setRouteDestination } from '@/store/store';
 import RoutePanel from '@/components/RoutePanel';
@@ -151,6 +152,9 @@ export default function PlanPage() {
   const [hwSetup, setHwSetup] = useState(false);
   const [carpoolOpen, setCarpoolOpen] = useState(false);
   const [tariffOpen, setTariffOpen] = useState(false);
+
+  // Retour depuis le calculateur de tarif (fermeture accordion)
+  usePopBack(() => setTariffOpen(false), tariffOpen);
 
   return (
     <div className="flex flex-col h-full">

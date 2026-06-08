@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '@/store/hooks';
 import { t } from '@/i18n';
+import { usePopBack } from '@/hooks/usePopBack';
 
 const SLIDES = [
   {
@@ -50,6 +51,12 @@ export default function OnboardingModal() {
     if (slide < SLIDES.length - 1) setSlide(s => s + 1);
     else dismiss();
   };
+
+  // Retour depuis l'onboarding : revenir au slide précédent ou fermer
+  usePopBack(() => {
+    if (slide > 0) setSlide(s => s - 1);
+    else dismiss();
+  }, visible);
 
   if (!visible) return null;
 

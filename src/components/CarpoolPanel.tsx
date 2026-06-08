@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { usePopBack } from '@/hooks/usePopBack';
 import { addCarpoolRequest, removeCarpoolRequest, addPoints, earnBadge } from '@/store/store';
 import { STOPS } from '@/data/transportData';
 import { haptic } from '@/utils/haptic';
@@ -22,6 +23,7 @@ function relTime(ts: number) {
 interface Props { onClose: () => void; }
 
 export default function CarpoolPanel({ onClose }: Props) {
+  usePopBack(onClose);
   const dispatch = useAppDispatch();
   const { carpoolRequests } = useAppSelector(s => s.gamif);
   const [fromId, setFromId] = useState('');

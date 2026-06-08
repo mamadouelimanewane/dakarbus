@@ -7,6 +7,7 @@
  *  4. Résultat  — tracé sur carte
  */
 import React, { useState, useEffect, useRef } from 'react';
+import { usePopBack } from '@/hooks/usePopBack';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   setUserLocation, setRouteOrigin, setRouteDestination,
@@ -192,7 +193,10 @@ export default function VoyagerWizard({ onClose }: { onClose: () => void }) {
   const goBack = () => {
     const idx = STEPS.indexOf(step);
     if (idx > 0) setStep(STEPS[idx - 1]);
+    else onClose();
   };
+  // Bouton retour hardware : navigue dans les étapes ou ferme le wizard
+  usePopBack(goBack);
 
   // ── Calcul itinéraire (étape 4) ────────────────────────────
   useEffect(() => {

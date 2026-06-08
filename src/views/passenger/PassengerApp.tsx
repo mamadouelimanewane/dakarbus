@@ -19,6 +19,7 @@ import OnboardingModal from '@/components/OnboardingModal';
 import GlobalSearch from '@/components/GlobalSearch';
 import { haptic } from '@/utils/haptic';
 import { useSmartAlerts } from '@/hooks/useSmartAlerts';
+import { usePopBack } from '@/hooks/usePopBack';
 
 const LAST_TAB_KEY = 'sunubus_last_tab';
 
@@ -66,6 +67,11 @@ export default function PassengerApp() {
   const [mapFullscreen, setMapFullscreen] = useState(false);
 
   const sheetRef = useRef<HTMLDivElement>(null);
+
+  // ── Pile de navigation onglets ────────────────────────────
+  // Stocke l'historique des onglets visités pour que "back" revienne
+  // à l'onglet précédent (et non à l'accueil/login)
+  const navStack = useRef<Tab[]>([activeTab as Tab]);
 
   // ── Sauvegarde/restaure le dernier onglet ─────────────────
   useEffect(() => {
@@ -153,10 +159,39 @@ export default function PassengerApp() {
     setTransitionDir(toIdx > fromIdx ? 'right' : 'left');
     setTransitionKey(k => k + 1);
     setPrevTab(activeTab as Tab);
+    // Empiler l'onglet courant AVANT de changer
+    navStack.current.push(tab);
     dispatch(setActiveTab(tab));
     setJourneyPanelOpen(false);
     if (TABS.find(t => t.id === tab)?.mapRelevant) setSheetState('peek');
   }, [activeTab, dispatch]);
+
+  // ── Bouton retour : handlers par ordre de priorité ────────
+  // Les modales / sous-vues (priorité haute) sont empilées PAR-DESSUS
+  // le handler d'onglet (priorité basse) grâce à usePopBack.
+
+  // Retour sur l'onglet précédent (toujours actif — couche de base)
+  usePopBack(useCallback(() => {
+    if (navStack.current.length > 1) {
+      navStack.current.pop(); // retire l'onglet courant
+      const prev = navStack.current[navStack.current.length - 1];
+      const fromIdx = TAB_ORDER.indexOf(activeTab as Tab);
+      const toIdx   = TAB_ORDER.indexOf(prev);
+      setTransitionDir(toIdx < fromIdx ? 'left' : 'right');
+      setTransitionKey(k => k + 1);
+      setPrevTab(activeTab as Tab);
+      dispatch(setActiveTab(prev));
+      setJourneyPanelOpen(false);
+    }
+    // Si pile vide : on reste sur l'onglet courant (pas de sortie de l'app)
+  }, [activeTab, dispatch]));
+
+  // Sous-vues / états dans PassengerApp (priorité variable, s'empilent)
+  // isFullPage = !(plan|stops) && !lines — recopié ici pour éviter la référence avant déclaration
+  const isFullPageForBack = !(activeTab === 'plan' || activeTab === 'stops') && activeTab !== 'lines';
+  usePopBack(useCallback(() => setJourneyPanelOpen(false), []), journeyPanelOpen && isFullPageForBack);
+  usePopBack(useCallback(() => setMapFullscreen(false),    []), mapFullscreen);
+  usePopBack(useCallback(() => setLinesMapView(false),     []), linesMapView);
 
   useSmartAlerts();
 

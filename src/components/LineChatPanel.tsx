@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { haptic } from '@/utils/haptic';
+import { usePopBack } from '@/hooks/usePopBack';
 
 interface Msg { id: string; author: string; text: string; ts: number; self: boolean; }
 
@@ -28,6 +29,7 @@ const BOT_REPLIES = [
 interface Props { lineId: string; lineName: string; onClose: () => void; }
 
 export default function LineChatPanel({ lineId, lineName, onClose }: Props) {
+  usePopBack(onClose);
   const myPseudo = useRef(getMyPseudo());
   const [msgs, setMsgs] = useState<Msg[]>(() => {
     try {

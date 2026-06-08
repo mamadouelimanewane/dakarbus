@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { usePopBack } from '@/hooks/usePopBack';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setActiveTab, setSelectedStop, setMapCenter, setMapZoom, setFocusedLine } from '@/store/store';
 import { STOPS, LINES, OPERATORS } from '@/data/transportData';
@@ -25,6 +26,7 @@ export default function GlobalSearch({ onClose }: { onClose: () => void }) {
   const recognitionRef = useRef<any>(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
+  usePopBack(onClose);
 
   const startVoice = useCallback(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
