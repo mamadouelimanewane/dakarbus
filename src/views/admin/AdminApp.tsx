@@ -257,7 +257,7 @@ export default function AdminApp() {
             style={{background:'rgba(5,150,105,.1)',color:'#34d399',border:'1px solid rgba(5,150,105,.2)'}}>
             {busPositions.filter(b=>b.lineId).length} actifs
           </div>
-          <button onClick={()=>{ if(window.confirm('Se déconnecter ?')) dispatch(logout()); }} className="btn btn-danger" style={{padding:'5px 10px',fontSize:11}}>Déco.</button>
+          <button onClick={()=>{ if(window.confirm('Se déconnecter ?')) dispatch(logout()); }} className="btn btn-danger" style={{padding:'8px 14px',fontSize:12,minHeight:40}}>Déco.</button>
         </div>
       </header>
 
@@ -377,7 +377,7 @@ export default function AdminApp() {
             <div className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5" style={{borderBottom:'1px solid var(--c-border)'}}>
               <input value={searchQ} onChange={e=>setSearchQ(e.target.value)}
                 placeholder="🔍 Plaque, chauffeur, ligne…" className="input flex-1" style={{fontSize:12,padding:'6px 12px'}} />
-              <button onClick={()=>setShowAdd(true)} className="btn btn-primary flex-shrink-0" style={{padding:'6px 14px',fontSize:12}}>+ Ajouter</button>
+              <button onClick={()=>setShowAdd(true)} className="btn btn-primary flex-shrink-0" style={{padding:'8px 14px',fontSize:12,minHeight:40}}>+ Ajouter</button>
             </div>
 
             {/* Add form */}
@@ -519,8 +519,8 @@ export default function AdminApp() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={()=>dispatch(acknowledgeReport(r.id))} className="btn" style={{padding:'5px 12px',fontSize:11,background:'rgba(74,222,128,.1)',color:'#4ade80',border:'1px solid rgba(74,222,128,.2)'}}>✓ Acquitter</button>
-                        <button className="btn" style={{padding:'5px 12px',fontSize:11,background:'rgba(124,58,237,.1)',color:'#a78bfa',border:'1px solid rgba(124,58,237,.2)'}}>📞 Contacter</button>
+                        <button onClick={()=>dispatch(acknowledgeReport(r.id))} className="btn" style={{padding:'8px 14px',fontSize:12,minHeight:40,background:'rgba(74,222,128,.1)',color:'#4ade80',border:'1px solid rgba(74,222,128,.2)'}}>✓ Acquitter</button>
+                        <button className="btn" style={{padding:'8px 14px',fontSize:12,minHeight:40,background:'rgba(124,58,237,.1)',color:'#a78bfa',border:'1px solid rgba(124,58,237,.2)'}}>📞 Contacter</button>
                       </div>
                     </div>
                   );
@@ -566,7 +566,7 @@ export default function AdminApp() {
             <div className="card rounded-2xl p-4">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xs font-black uppercase tracking-widest" style={{color:'#475569'}}>Transactions récentes</h3>
-                <button onClick={exportCSV} className="btn" style={{padding:'5px 10px',fontSize:11,background:'rgba(5,150,105,.15)',color:'#34d399',border:'1px solid rgba(5,150,105,.2)'}}>⬇ CSV</button>
+                <button onClick={exportCSV} className="btn" style={{padding:'8px 14px',fontSize:12,minHeight:40,background:'rgba(5,150,105,.15)',color:'#34d399',border:'1px solid rgba(5,150,105,.2)'}}>⬇ CSV</button>
               </div>
               <div className="space-y-2">
                 {[{id:'T-8F9A',op:'BRT',p:300,t:"À l'instant",m:'Wave'},{id:'T-2B4C',op:'DDD',p:200,t:'Il y a 2 min',m:'Orange Money'},{id:'T-9D1E',op:'AFTU',p:150,t:'Il y a 5 min',m:'Wave'},{id:'T-5C7F',op:'TER',p:500,t:'Il y a 8 min',m:'Free Money'}].map((tx,i)=>(
