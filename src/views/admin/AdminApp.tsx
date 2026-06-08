@@ -256,7 +256,7 @@ export default function AdminApp() {
             style={{background:'rgba(5,150,105,.1)',color:'#34d399',border:'1px solid rgba(5,150,105,.2)'}}>
             {busPositions.filter(b=>b.lineId).length} actifs
           </div>
-          <button onClick={()=>dispatch(logout())} className="btn btn-danger" style={{padding:'5px 10px',fontSize:11}}>Déco.</button>
+          <button onClick={()=>{ if(window.confirm('Se déconnecter ?')) dispatch(logout()); }} className="btn btn-danger" style={{padding:'5px 10px',fontSize:11}}>Déco.</button>
         </div>
       </header>
 

@@ -231,7 +231,7 @@ export default function DriverApp() {
               En service
             </div>
           )}
-          <button onClick={() => dispatch(logout())} className="btn btn-danger" style={{ padding: '5px 12px', fontSize: 11 }}>
+          <button onClick={() => { if (window.confirm('Se déconnecter ?')) dispatch(logout()); }} className="btn btn-danger" style={{ padding: '5px 12px', fontSize: 11 }}>
             Déconn.
           </button>
         </div>

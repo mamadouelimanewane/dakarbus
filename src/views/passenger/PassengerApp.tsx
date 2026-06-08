@@ -311,7 +311,9 @@ export default function PassengerApp() {
                 <span style={{ color: jColor }}>En cours</span>
               </button>
             )}
-            <button onClick={() => dispatch(logout())}
+            <button
+              title="Changer de rôle"
+              onClick={() => { if (window.confirm('Quitter et changer de rôle ?')) dispatch(logout()); }}
               className="w-9 h-9 rounded-xl flex items-center justify-center text-sm transition-colors"
               style={{ background: 'rgba(255,255,255,.06)', border: '1px solid var(--c-border)', color: '#64748b' }}
               onMouseEnter={e => (e.currentTarget.style.color = '#f87171')}
@@ -393,7 +395,9 @@ export default function PassengerApp() {
                         <span style={{ color: jColor }}>Trajet</span>
                       </button>
                     )}
-                    <button onClick={() => dispatch(logout())}
+                    <button
+                      title="Changer de rôle"
+                      onClick={() => { if (window.confirm('Quitter et changer de rôle ?')) dispatch(logout()); }}
                       className="w-11 h-11 rounded-xl flex items-center justify-center text-lg"
                       style={{ background: 'rgba(10,15,30,.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.1)', color: '#64748b' }}>↩</button>
                   </div>
