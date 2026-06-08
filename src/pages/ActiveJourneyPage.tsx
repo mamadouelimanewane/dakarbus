@@ -106,6 +106,45 @@ export default function ActiveJourneyPage() {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const prevStatus = useRef<JourneyStatus | null>(null);
 
+  // ── All effects BEFORE early return (Rules of Hooks) ──────
+  // Vibrate on status change
+  useEffect(() => {
+    if (!active) return;
+    if (prevStatus.current && prevStatus.current !== active.status) {
+      if ('vibrate' in navigator) navigator.vibrate([100, 50, 100]);
+      const cfg = STATUS_CONFIG[active.status];
+      dispatch(showToast({ type: 'info', message: `${cfg.emoji} ${cfg.label}` }));
+    }
+    prevStatus.current = active.status;
+  }, [active?.status]);
+
+  // Auto-advance status
+  useEffect(() => {
+    if (!active || active.status === 'arrived') return;
+    const walkMin2 = walkingMinutes(active.walkingMeters);
+    const departures2 = getNextDepartures(active.walkingStop.id);
+    const nextBus2 = departures2.find(d => d.lineId === active.lineId) ?? departures2[0];
+    const currentIdx2 = STATUS_ORDER.indexOf(active.status);
+    const delays: Record<JourneyStatus, number> = {
+      walking: (active.walkingMeters > 60 ? walkMin2 : 1) * 60 * 1000,
+      waiting: (nextBus2?.waitMin ?? 5) * 60 * 1000,
+      on_bus:  active.estimatedDuration * 60 * 1000 * 0.7,
+      arrived: 0,
+    };
+    const t = setTimeout(() => {
+      const next = STATUS_ORDER[currentIdx2 + 1];
+      if (next) dispatch(updateJourneyStatus(next));
+    }, delays[active.status]);
+    return () => clearTimeout(t);
+  }, [active?.status]);
+
+  useEffect(() => {
+    if (!active) return;
+    const t = setInterval(() => setElapsed(Math.floor((Date.now() - active.startedAt) / 1000)), 1000);
+    return () => clearInterval(t);
+  }, [active?.startedAt]);
+
+  // ── Early return after ALL hooks ──────────────────────────
   if (!active) return null;
 
   const departures  = getNextDepartures(active.walkingStop.id);
@@ -117,37 +156,6 @@ export default function ActiveJourneyPage() {
 
   const ticket = myTickets.find(t => t.id === active.ticketId)
     ?? (() => { const v = myTickets.filter(t => t.operator === active.operator && t.status === 'valid'); return v[v.length - 1]; })();
-
-  // Vibrate on status change
-  useEffect(() => {
-    if (prevStatus.current && prevStatus.current !== active.status) {
-      if ('vibrate' in navigator) navigator.vibrate([100, 50, 100]);
-      const cfg = STATUS_CONFIG[active.status];
-      dispatch(showToast({ type: 'info', message: `${cfg.emoji} ${cfg.label}` }));
-    }
-    prevStatus.current = active.status;
-  }, [active.status]);
-
-  // Auto-advance status
-  useEffect(() => {
-    if (active.status === 'arrived') return;
-    const delays: Record<JourneyStatus, number> = {
-      walking: (active.walkingMeters > 60 ? walkMin : 1) * 60 * 1000,
-      waiting: (nextBus?.waitMin ?? 5) * 60 * 1000,
-      on_bus:  active.estimatedDuration * 60 * 1000 * 0.7,
-      arrived: 0,
-    };
-    const t = setTimeout(() => {
-      const next = STATUS_ORDER[currentIdx + 1];
-      if (next) dispatch(updateJourneyStatus(next));
-    }, delays[active.status]);
-    return () => clearTimeout(t);
-  }, [active.status]);
-
-  useEffect(() => {
-    const t = setInterval(() => setElapsed(Math.floor((Date.now() - active.startedAt) / 1000)), 1000);
-    return () => clearInterval(t);
-  }, [active.startedAt]);
 
   const focusMap = () => {
     dispatch(setFocusedLine(active.lineId));

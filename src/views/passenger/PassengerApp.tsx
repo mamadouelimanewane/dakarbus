@@ -14,7 +14,6 @@ import ProfilePage from '@/pages/ProfilePage';
 import ActiveJourneyPage from '@/pages/ActiveJourneyPage';
 import OperatorFilter from '@/components/OperatorFilter';
 import ChatBot from '@/components/ChatBot';
-import VoyagerWizard from '@/components/VoyagerWizard';
 import OnboardingModal from '@/components/OnboardingModal';
 import GlobalSearch from '@/components/GlobalSearch';
 import WalkToStopGuide from '@/components/WalkToStopGuide';
@@ -61,8 +60,6 @@ export default function PassengerApp() {
   const [journeyPanelOpen, setJourneyPanelOpen] = useState(false);
   const [sheetState, setSheetState] = useState<'peek' | 'half' | 'full'>('peek');
   const [linesMapView, setLinesMapView] = useState(false);
-  const [voyagerOpen, setVoyagerOpen] = useState(false);
-  const [voyagerRouteActive, setVoyagerRouteActive] = useState(false);
   const [prevTab, setPrevTab] = useState<Tab>(activeTab as Tab);
   const [transitionDir, setTransitionDir] = useState<'right' | 'left'>('right');
   const [transitionKey, setTransitionKey] = useState(0);
@@ -213,12 +210,6 @@ export default function PassengerApp() {
   }, [!!activeJourney]);
 
   React.useEffect(() => {
-    const handler = () => setVoyagerOpen(true);
-    window.addEventListener('open-voyager', handler);
-    return () => window.removeEventListener('open-voyager', handler);
-  }, []);
-
-  React.useEffect(() => {
     const handler = (e: Event) => {
       const stop = (e as CustomEvent).detail as Stop;
       setWalkGuideStop(stop);
@@ -290,31 +281,6 @@ export default function PassengerApp() {
           initialPos={userLocation}
           onClose={() => setWalkGuideStop(null)}
         />
-      )}
-
-      {/* ── Wizard Voyager ──────────────────────────────────── */}
-      {voyagerOpen && (
-        <VoyagerWizard onClose={() => {
-          setVoyagerOpen(false);
-          setVoyagerRouteActive(true);
-        }} />
-      )}
-
-      {/* ── Bouton flottant retour Voyager ───────────────────── */}
-      {voyagerRouteActive && !voyagerOpen && routeDisplay && (
-        <div className="fixed z-[8900]"
-          style={{ bottom: 90, left: '50%', transform: 'translateX(-50%)', pointerEvents: 'auto' }}>
-          <button
-            onClick={() => setVoyagerOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full text-white font-black text-sm whitespace-nowrap"
-            style={{
-              background: 'linear-gradient(135deg,#dc2626,#b91c1c)',
-              boxShadow: '0 6px 28px rgba(220,38,38,.6)',
-              border: '2px solid rgba(255,255,255,.2)',
-            }}>
-            🚀 <span>Modifier le trajet</span>
-          </button>
-        </div>
       )}
 
       {/* ── MAIN CONTENT ────────────────────────────────────── */}
@@ -551,7 +517,7 @@ export default function PassengerApp() {
           {isFullPage && (
             <div className="flex-1 flex flex-col overflow-hidden lg:hidden">
 
-              {/* Header mobile avec nom de la page + bouton Voyager */}
+              {/* Header mobile avec nom de la page */}
               <div className="flex-shrink-0 flex items-center justify-between px-4 pt-safe"
                 style={{
                   background: 'rgba(8,12,24,.97)',
@@ -625,22 +591,6 @@ export default function PassengerApp() {
                 {journeyPanelOpen ? <ActiveJourneyPage /> : <Page />}
               </div>
 
-              {/* Voyager pinned bottom */}
-              {activeTab === 'plan' && !journeyPanelOpen && (
-                <div className="flex-shrink-0 p-3"
-                  style={{ borderTop: '1px solid rgba(255,255,255,.07)', background: 'rgba(8,12,24,.99)' }}>
-                  <button onClick={() => setVoyagerOpen(true)}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all hover:scale-[1.01] active:scale-[.98]"
-                    style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 4px 20px rgba(220,38,38,.4)' }}>
-                    <span className="text-xl">🚀</span>
-                    <div className="flex-1 text-left">
-                      <div className="text-sm font-black text-white">Voyager avec le GPS</div>
-                      <div className="text-[10px]" style={{ color: 'rgba(255,255,255,.6)' }}>Trajet guidé · opérateur · tarif · temps réel</div>
-                    </div>
-                    <span className="text-white opacity-60">›</span>
-                  </button>
-                </div>
-              )}
             </aside>
 
             {/* Carte desktop */}
@@ -695,58 +645,8 @@ export default function PassengerApp() {
               </button>
             )}
 
-            {/* Gauche : Planifier + Lignes */}
-            {TABS.slice(0, 2).map(tab => {
-              const active = activeTab === tab.id && !journeyPanelOpen;
-              const badge  = getBadge(tab.id);
-              const color  = TAB_COLORS[tab.id];
-              return (
-                <button key={tab.id}
-                  onClick={() => goTab(tab.id)}
-                  className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 relative transition-all active:scale-90"
-                  style={{ color: active ? color : '#4b5563' }}>
-                  {/* Active indicator top bar */}
-                  {active && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full"
-                      style={{ background: color }} />
-                  )}
-                  {/* Icon with subtle background on active */}
-                  <div className="relative w-8 h-8 flex items-center justify-center rounded-xl transition-all"
-                    style={{ background: active ? color + '18' : 'transparent' }}>
-                    <span className="text-xl leading-none">{tab.icon}</span>
-                    {badge !== null && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-[8px] font-black flex items-center justify-center"
-                        style={{ background: '#dc2626' }}>
-                        {badge > 9 ? '9+' : badge}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[9px] font-bold tracking-wide">{tab.label}</span>
-                </button>
-              );
-            })}
-
-            {/* Centre : FAB Voyager surélevé */}
-            <div className="flex flex-col items-center justify-end relative"
-              style={{ minWidth: 72, paddingBottom: 4 }}>
-              <button onClick={() => setVoyagerOpen(true)}
-                className="flex flex-col items-center justify-center transition-all active:scale-90"
-                style={{
-                  width: 60, height: 60,
-                  borderRadius: 20,
-                  background: 'linear-gradient(135deg,#dc2626,#991b1b)',
-                  boxShadow: '0 -6px 24px rgba(220,38,38,.55), 0 4px 16px rgba(0,0,0,.4)',
-                  border: '3px solid rgba(6,10,20,.98)',
-                  position: 'absolute',
-                  bottom: 6,
-                }}>
-                <span className="text-2xl leading-none">🚀</span>
-              </button>
-              <span className="text-[9px] font-black" style={{ color: '#ef4444', paddingTop: 46 }}>Voyager</span>
-            </div>
-
-            {/* Droite : Arrêts + Alertes + Billets + Profil */}
-            {TABS.slice(2).map(tab => {
+            {/* Tous les onglets à largeur égale */}
+            {TABS.map(tab => {
               const active = activeTab === tab.id && !journeyPanelOpen;
               const badge  = getBadge(tab.id);
               const color  = TAB_COLORS[tab.id];
