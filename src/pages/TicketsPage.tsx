@@ -239,7 +239,7 @@ export default function TicketsPage() {
           ].map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id as any)}
               className="flex-1 py-2.5 rounded-xl text-xs font-black transition-all"
-              style={tab===t.id?{background:t.a,color:'white',boxShadow:`0 4px 16px ${t.a}40`}:{color:'#475569'}}>
+              style={tab===t.id?{background:t.a,color:'white',boxShadow:`0 4px 16px ${t.a}40`,minHeight:40}:{color:'#475569',minHeight:40}}>
               {t.l}
             </button>
           ))}
