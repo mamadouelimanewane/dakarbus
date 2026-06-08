@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAppSelector, useAppDispatch } from './store/hooks';
 import { loginPassenger, loginDriver, loginAdmin, loginFleetManager, setRouteOrigin, setRouteDestination, setAutoTheme } from './store/store';
 import { STOPS } from './data/transportData';
@@ -34,23 +34,23 @@ function PinModal({ role, onClose, onSuccess }: {
   onSuccess: (pin: string) => void;
 }) {
   const [pin, setPin] = useState('');
-  const [shake, setShake]   = useState(false);
+  const [shake, setShake] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const isDriver = role === 'driver';
   const accent   = isDriver ? '#2563eb' : '#7c3aed';
   const hint     = isDriver ? '1234 · 5678 · 0000' : 'admin · 9999';
 
+  const trySubmit = (p: string) => {
+    const ok = isDriver ? DRIVER_PINS[p] : ADMIN_PINS[p];
+    if (ok) { onSuccess(p); return; }
+    setShake(true);
+    setTimeout(() => { setShake(false); setPin(''); if (inputRef.current) inputRef.current.value = ''; }, 520);
+  };
+
   const handleKey = (k: string) => {
     if (shake) return;
     if (k === 'DEL') { setPin(p => p.slice(0, -1)); return; }
-    if (k === 'OK') {
-      const ok = isDriver ? DRIVER_PINS[pin] : ADMIN_PINS[pin];
-      if (ok) { onSuccess(pin); }
-      else {
-        setShake(true);
-        setTimeout(() => { setShake(false); setPin(''); }, 520);
-      }
-      return;
-    }
+    if (k === 'OK') { trySubmit(pin); return; }
     if (pin.length < 6) setPin(p => p + k);
   };
 
@@ -70,20 +70,35 @@ function PinModal({ role, onClose, onSuccess }: {
           <p className="text-xs mt-1 font-medium" style={{ color: accent + 'cc' }}>Code : {hint}</p>
         </div>
 
-        {/* PIN dots */}
-        <div className="flex justify-center gap-3 pt-5 pb-2 px-6"
+        {/* Input clavier natif */}
+        <div className="px-5 pt-4 pb-2"
           style={{ animation: shake ? 'shake .5s cubic-bezier(.36,.07,.19,.97)' : 'none' }}>
-          {Array.from({ length: Math.max(4, pin.length) }).map((_, i) => (
-            <div key={i} className="rounded-full transition-all duration-200"
-              style={{
-                width: i < pin.length ? 14 : 10,
-                height: i < pin.length ? 14 : 10,
-                background: i < pin.length ? accent : 'rgba(255,255,255,.12)',
-                boxShadow: i < pin.length ? `0 0 12px ${accent}88` : 'none',
-              }} />
-          ))}
+          <input
+            ref={inputRef}
+            type="text"
+            autoFocus
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            placeholder="Tapez votre code…"
+            value={pin}
+            onChange={e => { if (!shake) setPin(e.target.value.slice(0, 6)); }}
+            onKeyDown={e => { if (e.key === 'Enter') trySubmit(pin); }}
+            className="w-full rounded-xl px-4 text-center font-mono font-black text-lg tracking-widest outline-none"
+            style={{
+              height: 52,
+              background: 'rgba(255,255,255,.06)',
+              border: `1.5px solid ${shake ? '#f87171' : accent + '55'}`,
+              color: pin.length > 0 ? accent : '#475569',
+              caretColor: accent,
+            }}
+          />
+          {shake && <p className="text-center text-xs text-red-400 font-bold pt-1">Code incorrect</p>}
+          {!shake && <p className="text-center text-[10px] pt-1" style={{ color: '#475569' }}>
+            Tapez ici ou utilisez le pavé
+          </p>}
         </div>
-        {shake && <p className="text-center text-xs text-red-400 font-bold pb-1">Code incorrect</p>}
 
         {/* Keypad */}
         <div className="grid grid-cols-3 gap-2 p-4">
@@ -154,33 +169,23 @@ function FleetPinModal({ operator, onClose, onSuccess }: {
 }) {
   const [pin, setPin] = useState('');
   const [shake, setShake] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const accent = operator === 'DDD' ? '#2563eb' : '#f59e0b';
   const hint   = operator === 'DDD' ? 'ddd1 · ddd2' : 'aftu1 · aftu2';
   const PINS   = operator === 'DDD' ? FLEET_DDD_PINS : FLEET_AFTU_PINS;
 
+  const trySubmit = (p: string) => {
+    if (PINS[p]) { onSuccess(p); return; }
+    setShake(true);
+    setTimeout(() => { setShake(false); setPin(''); if (inputRef.current) inputRef.current.value = ''; }, 520);
+  };
+
   const handleKey = (k: string) => {
     if (shake) return;
     if (k === 'DEL') { setPin(p => p.slice(0, -1)); return; }
-    if (k === 'OK') {
-      if (PINS[pin]) { onSuccess(pin); return; }
-      setShake(true);
-      setTimeout(() => { setShake(false); setPin(''); }, 520);
-      return;
-    }
+    if (k === 'OK') { trySubmit(pin); return; }
     if (pin.length < 8) setPin(p => p + k);
   };
-
-  // Keyboard support
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Backspace') handleKey('DEL');
-      else if (e.key === 'Enter') handleKey('OK');
-      else if (e.key.length === 1) handleKey(e.key);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pin, shake]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
@@ -194,24 +199,36 @@ function FleetPinModal({ operator, onClose, onSuccess }: {
           <h2 className="text-base font-black text-white">Gestionnaire {operator}</h2>
           <p className="text-xs mt-1 font-medium" style={{ color: accent + 'cc' }}>Code : {hint}</p>
         </div>
-        {/* PIN display */}
-        <div className="flex justify-center gap-2 pt-5 pb-2 px-6 flex-wrap"
+        {/* Input clavier natif + affichage */}
+        <div className="px-5 pt-4 pb-2"
           style={{ animation: shake ? 'shake .5s cubic-bezier(.36,.07,.19,.97)' : 'none' }}>
-          {Array.from({ length: Math.max(5, pin.length) }).map((_, i) => (
-            <div key={i} className="rounded-full transition-all duration-200"
-              style={{
-                width: i < pin.length ? 12 : 8, height: i < pin.length ? 12 : 8,
-                background: i < pin.length ? accent : 'rgba(255,255,255,.12)',
-                boxShadow: i < pin.length ? `0 0 10px ${accent}88` : 'none',
-              }} />
-          ))}
+          <input
+            ref={inputRef}
+            type="text"
+            autoFocus
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            placeholder="Tapez votre code…"
+            value={pin}
+            onChange={e => { if (!shake) setPin(e.target.value.slice(0, 8)); }}
+            onKeyDown={e => { if (e.key === 'Enter') trySubmit(pin); }}
+            className="w-full rounded-xl px-4 text-center font-mono font-black text-lg tracking-widest outline-none"
+            style={{
+              height: 52,
+              background: 'rgba(255,255,255,.06)',
+              border: `1.5px solid ${shake ? '#f87171' : accent + '55'}`,
+              color: pin.length > 0 ? accent : '#475569',
+              letterSpacing: '0.2em',
+              caretColor: accent,
+            }}
+          />
+          {shake && <p className="text-center text-xs text-red-400 font-bold pt-1">Code incorrect</p>}
+          {!shake && <p className="text-center text-[10px] pt-1" style={{ color: '#475569' }}>
+            Tapez ici ou utilisez le pavé
+          </p>}
         </div>
-        {pin.length > 0 && (
-          <div className="text-center text-xs font-mono font-bold pb-1" style={{ color: accent + 'cc' }}>
-            {pin.replace(/./g, '•')}
-          </div>
-        )}
-        {shake && <p className="text-center text-xs text-red-400 font-bold pb-1">Code incorrect</p>}
         <div className="grid grid-cols-3 gap-2 p-4">
           {['1','2','3','4','5','6','7','8','9','DEL','0','OK'].map(k => (
             <button key={k} onClick={() => handleKey(k)}
@@ -224,11 +241,6 @@ function FleetPinModal({ operator, onClose, onSuccess }: {
               {k === 'DEL' ? '⌫' : k === 'OK' ? '✓' : k}
             </button>
           ))}
-        </div>
-        <div className="px-4 pb-4">
-          <p className="text-center text-[10px]" style={{ color: '#334155' }}>
-            Saisissez le code texte sur votre clavier ou utilisez le pavé ci-dessus
-          </p>
         </div>
         <button onClick={onClose}
           className="w-full py-4 text-xs font-bold transition-colors"
