@@ -278,6 +278,64 @@ export const STOPS: Stop[] = [
   { id:'ba1', name:'Bambilor',                    zone:'Bambilor',   lat:14.8500, lng:-17.2500, operators:['AFTU'],             lines:['A73','A80'] },
   { id:'jx1', name:'Jaxaay',                      zone:'Jaxaay',     lat:14.7900, lng:-17.2200, operators:['AFTU'],             lines:['A51','A56','A65'] },
 
+  // ── CICES / FOIRE / MERMOZ ───────────────────────────────
+  { id:'ci1', name:'CICES Foire Internationale', zone:'CICES',        lat:14.7339, lng:-17.4688, operators:['DDD','AFTU'],  lines:['L53','L60','A91'] },
+  { id:'ci2', name:'CICES Stade',               zone:'CICES',        lat:14.7358, lng:-17.4672, operators:['AFTU'],         lines:['A91'] },
+  { id:'mn1', name:'Mermoz Pyrotechnie',         zone:'Mermoz',       lat:14.7094, lng:-17.4750, operators:['DDD','AFTU'],  lines:['L61','A97'] },
+  { id:'mn2', name:'Sotrac Mermoz',              zone:'Mermoz',       lat:14.7078, lng:-17.4728, operators:['DDD','AFTU'],  lines:['L61','A97'] },
+  { id:'mn3', name:'Mermoz Nouveau',             zone:'Mermoz',       lat:14.7058, lng:-17.4708, operators:['AFTU'],         lines:['A97'] },
+
+  // ── CASTORS / PATTE D'OIE EXTENSION ──────────────────────
+  { id:'ca1', name:'Castors',                    zone:'Castors',      lat:14.7128, lng:-17.4778, operators:['DDD','AFTU'],  lines:['L59','A91','A94'] },
+  { id:'ca2', name:'Castors Terminus',           zone:'Castors',      lat:14.7153, lng:-17.4800, operators:['DDD','AFTU'],  lines:['L59','A94'] },
+  { id:'po2', name:'Patte d\'Oie Résidence',     zone:'Patte d\'Oie', lat:14.7219, lng:-17.4744, operators:['DDD','AFTU'],  lines:['L60','A91'] },
+  { id:'wk1', name:'Wakam',                      zone:'Patte d\'Oie', lat:14.7258, lng:-17.4769, operators:['AFTU'],         lines:['A94'] },
+
+  // ── OUEST FOIRE ──────────────────────────────────────────
+  { id:'of1', name:'Ouest Foire',                zone:'Ouest Foire',  lat:14.7353, lng:-17.4836, operators:['DDD','AFTU'],  lines:['L60','A94'] },
+  { id:'of2', name:'Ouest Foire Résidence',      zone:'Ouest Foire',  lat:14.7378, lng:-17.4864, operators:['AFTU'],         lines:['A94','A95B'] },
+
+  // ── KHAR YALLA / SAM SAM ─────────────────────────────────
+  { id:'ky1', name:'Khar Yalla',                 zone:'Khar Yalla',   lat:14.7503, lng:-17.4225, operators:['DDD','AFTU'],  lines:['L55','L56','A87','A90','A98'] },
+  { id:'ky2', name:'Khar Yalla Marché',          zone:'Khar Yalla',   lat:14.7531, lng:-17.4200, operators:['AFTU'],         lines:['A90','A98'] },
+  { id:'ss1', name:'Sam Sam 1',                  zone:'Sam Sam',      lat:14.7603, lng:-17.4178, operators:['DDD','AFTU'],  lines:['L55','A87','A98'] },
+  { id:'ss2', name:'Sam Sam 2',                  zone:'Sam Sam',      lat:14.7653, lng:-17.4142, operators:['DDD','AFTU'],  lines:['L55','A87'] },
+  { id:'ss3', name:'Sam Sam 3',                  zone:'Sam Sam',      lat:14.7628, lng:-17.4122, operators:['AFTU'],         lines:['A87'] },
+
+  // ── TIVAOUANE PEUL ────────────────────────────────────────
+  { id:'tp1', name:'Tivaouane Peul',             zone:'Tivaouane Peul', lat:14.7786, lng:-17.4403, operators:['DDD','AFTU'], lines:['L54','A88'] },
+  { id:'tp2', name:'Tivaouane Peul Marché',      zone:'Tivaouane Peul', lat:14.7819, lng:-17.4358, operators:['AFTU'],        lines:['A88','A96'] },
+
+  // ── GUINAW RAILS ─────────────────────────────────────────
+  { id:'gr1', name:'Guinaw Rails Nord',          zone:'Guinaw Rails', lat:14.7419, lng:-17.3808, operators:['DDD','AFTU'],  lines:['L57','A89'] },
+  { id:'gr2', name:'Guinaw Rails Sud',           zone:'Guinaw Rails', lat:14.7383, lng:-17.3797, operators:['DDD','AFTU'],  lines:['L57','A89'] },
+  { id:'dl2', name:'Dalifort Terminus',          zone:'Pikine',       lat:14.7572, lng:-17.3639, operators:['DDD','AFTU'],  lines:['L57','A89'] },
+
+  // ── DIAMNIADIO / PÉRIURBAIN ──────────────────────────────
+  { id:'di1', name:'Diamniadio Centre',          zone:'Diamniadio',   lat:14.7289, lng:-17.1747, operators:['DDD','AFTU'],  lines:['L52','A92'] },
+  { id:'di2', name:'Diamniadio Technopole',      zone:'Diamniadio',   lat:14.7347, lng:-17.1639, operators:['DDD','AFTU'],  lines:['L52','A93'] },
+  { id:'di3', name:'Diamniadio Gare Routière',   zone:'Diamniadio',   lat:14.7272, lng:-17.1764, operators:['DDD','AFTU'],  lines:['L52','A92','A93'] },
+
+  // ── BARGNY / SÉBIKOTANE ──────────────────────────────────
+  { id:'bg1', name:'Bargny Centre',              zone:'Bargny',       lat:14.6964, lng:-17.2272, operators:['DDD','AFTU'],  lines:['L58','A95'] },
+  { id:'bg2', name:'Bargny Marché',              zone:'Bargny',       lat:14.6978, lng:-17.2244, operators:['AFTU'],         lines:['A95'] },
+  { id:'se1', name:'Sébikotane Centre',          zone:'Sébikotane',   lat:14.7403, lng:-17.0958, operators:['DDD','AFTU'],  lines:['L52','A93'] },
+
+  // ── HANN PÊCHEURS / ZI SUD ───────────────────────────────
+  { id:'hr1', name:'Hann Pêcheurs',              zone:'Hann',         lat:14.7136, lng:-17.4069, operators:['DDD','AFTU'],  lines:['L61','A86'] },
+  { id:'hr2', name:'Zone Industrielle Sud',      zone:'Hann',         lat:14.7158, lng:-17.4042, operators:['DDD'],          lines:['L61','L45'] },
+
+  // ── MALIKA EXTENSIONS ────────────────────────────────────
+  { id:'ma2', name:'Malika Plage',               zone:'Malika',       lat:14.8047, lng:-17.3592, operators:['AFTU'],         lines:['A96'] },
+  { id:'ma3', name:'Malika Cité',                zone:'Malika',       lat:14.7989, lng:-17.3528, operators:['DDD','AFTU'],  lines:['A96','L54'] },
+
+  // ── KEUR MASSAR NORD / EXTENSIONS ────────────────────────
+  { id:'kn1', name:'Keur Massar Nord',           zone:'Keur Massar',  lat:14.7953, lng:-17.3086, operators:['DDD','AFTU'],  lines:['L54','A99'] },
+  { id:'kn2', name:'Keur Massar Cité SICAP',     zone:'Keur Massar',  lat:14.7906, lng:-17.3058, operators:['AFTU'],         lines:['A99'] },
+
+  // ── ZONE DE RECASEMENT ───────────────────────────────────
+  { id:'zr1', name:'Zone de Recasement',         zone:'Parcelles',    lat:14.7533, lng:-17.4156, operators:['DDD','AFTU'],  lines:['L55','A98'] },
+
   // ── BRT DÉDIÉS ───────────────────────────────────────────
   { id:'b01', name:'Petersen (BRT)',              zone:'Plateau',    lat:14.6811, lng:-17.4464, operators:['BRT'],              lines:['BRT-L1'] },
   { id:'b02', name:'Colobane (BRT)',              zone:'Médina',     lat:14.6908, lng:-17.4478, operators:['BRT'],              lines:['BRT-L1'] },
@@ -356,6 +414,21 @@ const DDD_LINES: Line[] = [
   { id:'L49',  name:'Ligne 49',  operator:'DDD', route:'Keur Massar ↔ Leclerc Express',        color:'#1d4ed8', freq:'25 min', tarif:300, stops:['km1','km4','km5','ye1','ye3','pk8','gd1','lb5','lc1'] },
   { id:'L50',  name:'Ligne 50',  operator:'DDD', route:'Diamaguène ↔ Thiaroye sur Mer ↔ Palais', color:'#1e40af', freq:'20 min', tarif:250, stops:['dg4','dg3','dg1','dg2','dg5','tsm3','tsm1','tsm2','th3','th1','pk1','ha2','p01'] },
   { id:'L51',  name:'Ligne 51',  operator:'DDD', route:'Diamaguène ↔ Pikine ↔ Grand Yoff',       color:'#2563eb', freq:'20 min', tarif:200, stops:['dg5','dg1','dg2','pk10','pk11','pk1','gd3','gy1'] },
+  // ── Nouvelles lignes DDD — maillage complet ───────────────
+  { id:'L52',  name:'Ligne 52',  operator:'DDD', route:'Diamniadio ↔ Rufisque ↔ Palais Express',  color:'#1a56db', freq:'25 min', tarif:400, stops:['se1','di2','di1','di3','t05','bg1','rf1','pk1','ha2','p03','p01'] },
+  { id:'L53',  name:'Ligne 53',  operator:'DDD', route:'CICES ↔ Liberté 5 ↔ Palais',             color:'#2563eb', freq:'12 min', tarif:200, stops:['ci1','ci2','nf1','gy4','gy1','lb5','p03','p01'] },
+  { id:'L54',  name:'Ligne 54',  operator:'DDD', route:'Keur Massar Nord ↔ Tivaouane ↔ Guédiawaye', color:'#1e3a8a', freq:'20 min', tarif:250, stops:['kn1','km1','km4','tp1','tp2','gd5','gd2','gd1','lb5','p01'] },
+  { id:'L55',  name:'Ligne 55',  operator:'DDD', route:'Sam Sam ↔ Khar Yalla ↔ Parcelles ↔ Palais', color:'#3b82f6', freq:'15 min', tarif:200, stops:['ss2','ss1','ky1','zr1','pa1','pa4','pa12','cb1','lb5','p03','p01'] },
+  { id:'L56',  name:'Ligne 56',  operator:'DDD', route:'Khar Yalla ↔ Liberté 6 ↔ Palais',        color:'#60a5fa', freq:'12 min', tarif:200, stops:['ky1','ky2','pa1','pa3','lb6','p04','p03','p01'] },
+  { id:'L57',  name:'Ligne 57',  operator:'DDD', route:'Guinaw Rails ↔ Dalifort ↔ Pikine',       color:'#1d4ed8', freq:'15 min', tarif:200, stops:['dl2','gr1','gr2','pk3','pk1','pk5','ha4','ha2','lb6'] },
+  { id:'L58',  name:'Ligne 58',  operator:'DDD', route:'Bargny ↔ Rufisque ↔ Mbao Express',       color:'#1e40af', freq:'30 min', tarif:300, stops:['bg2','bg1','rf1','rf2','rf3','mb4','mb1','mb3','pk3','pk1'] },
+  { id:'L59',  name:'Ligne 59',  operator:'DDD', route:'Castors ↔ Sacré-Cœur ↔ Leclerc',         color:'#2563eb', freq:'15 min', tarif:200, stops:['ca2','ca1','mn1','mn2','sc3','sc4','si1','sc2','lb1','lc1'] },
+  { id:'L60',  name:'Ligne 60',  operator:'DDD', route:'Ouest Foire ↔ CICES ↔ Patte d\'Oie ↔ Palais', color:'#1a56db', freq:'15 min', tarif:200, stops:['of1','ci1','ci2','po2','po1','lb5','p03','p01'] },
+  { id:'L61',  name:'Ligne 61',  operator:'DDD', route:'Hann Pêcheurs ↔ Mermoz ↔ Plateau',       color:'#3b82f6', freq:'12 min', tarif:200, stops:['hr1','hr2','ha2','mn2','mn1','ca1','sc3','si3','p07','p14','p06','p02','p01'] },
+  { id:'L62',  name:'Ligne 62',  operator:'DDD', route:'Tivaouane Peul ↔ Cambérène ↔ Parcelles', color:'#1d4ed8', freq:'20 min', tarif:200, stops:['tp1','tp2','ma3','ml1','cb3','cb1','pa4','pa1','lb5'] },
+  { id:'L63',  name:'Ligne 63',  operator:'DDD', route:'Sam Sam ↔ Guédiawaye ↔ Pikine',          color:'#1e3a8a', freq:'15 min', tarif:200, stops:['ss2','ss1','ky1','gd10','gd1','gd8','gd3','pk1'] },
+  { id:'L64',  name:'Ligne 64',  operator:'DDD', route:'Diamniadio ↔ Guédiawaye ↔ Leclerc',      color:'#2563eb', freq:'30 min', tarif:350, stops:['di3','di1','rf1','pk1','pk5','gd3','gd1','lb5','lc1'] },
+  { id:'L65',  name:'Ligne 65',  operator:'DDD', route:'Ouest Foire ↔ Ouakam ↔ Ngor ↔ Yoff',    color:'#60a5fa', freq:'20 min', tarif:200, stops:['of2','of1','wk1','po2','ok1','ok3','ng1','ng2','al1','yf1'] },
 ];
 
 const AFTU_COLORS = ['#e11d48','#f43f5e','#be123c'];
@@ -418,6 +491,26 @@ const AFTU_LINES: Line[] = [
   { id:'A84',  name:'AFTU 84',  operator:'AFTU', route:'Diamaguène ↔ Guédiawaye',                color:AFTU_COLORS[2], freq:'15 min', tarif:150, stops:['dg4','dg3','dg1','dg2','dg5','pk9','pk1','gd9','gd8','gd1'] },
   { id:'A85',  name:'AFTU 85',  operator:'AFTU', route:'Diamaguène ↔ Liberté 6',                 color:AFTU_COLORS[0], freq:'20 min', tarif:150, stops:['dg4','dg3','dg1','dg2','pk10','pk1','ha2','lb6'] },
   { id:'A86',  name:'AFTU 86',  operator:'AFTU', route:'Hann Maristes ↔ Palais',                 color:AFTU_COLORS[1], freq:'15 min', tarif:150, stops:['ha7','ha6','ha8','ha5','ha3','ha2','bm1','p09','p02'] },
+  // ── Nouvelles lignes AFTU — maillage banlieue ─────────────
+  { id:'A87',  name:'AFTU 87',  operator:'AFTU', route:'Sam Sam ↔ Guédiawaye ↔ Liberté 6',      color:AFTU_COLORS[2], freq:'12 min', tarif:150, stops:['ss3','ss2','ss1','ky1','pa1','cb1','gd12','gd1','lb6'] },
+  { id:'A88',  name:'AFTU 88',  operator:'AFTU', route:'Tivaouane Peul ↔ Pikine ↔ Thiaroye',   color:AFTU_COLORS[0], freq:'15 min', tarif:150, stops:['tp2','tp1','gd5','gd12','gd2','gd1','pk8','pk1','th3','th1'] },
+  { id:'A89',  name:'AFTU 89',  operator:'AFTU', route:'Guinaw Rails ↔ Dalifort ↔ Thiaroye',   color:AFTU_COLORS[1], freq:'15 min', tarif:150, stops:['dl2','gr1','gr2','pk3','pk2','pk9','th5','th3','th1'] },
+  { id:'A90',  name:'AFTU 90',  operator:'AFTU', route:'Khar Yalla ↔ Sam Sam ↔ Cambérène',     color:AFTU_COLORS[2], freq:'12 min', tarif:150, stops:['ky2','ky1','zr1','ss1','ss2','pa1','cb1','cb4','cb3'] },
+  { id:'A91',  name:'AFTU 91',  operator:'AFTU', route:'CICES ↔ Castors ↔ Ouakam ↔ Almadies', color:AFTU_COLORS[0], freq:'15 min', tarif:150, stops:['ci2','ci1','po2','ca1','ca2','mn1','sc3','ok1','ng1','al1'] },
+  { id:'A92',  name:'AFTU 92',  operator:'AFTU', route:'Diamniadio ↔ Rufisque ↔ Pikine',       color:AFTU_COLORS[1], freq:'20 min', tarif:250, stops:['di3','di1','di2','bg1','rf1','rf2','mb4','mb1','pk1'] },
+  { id:'A93',  name:'AFTU 93',  operator:'AFTU', route:'Sébikotane ↔ Diamniadio ↔ Rufisque',  color:AFTU_COLORS[2], freq:'30 min', tarif:300, stops:['se1','di2','di1','di3','bg2','bg1','rf1'] },
+  { id:'A94',  name:'AFTU 94',  operator:'AFTU', route:'Almadies ↔ Ouest Foire ↔ Ngor ↔ Patte d\'Oie', color:AFTU_COLORS[0], freq:'15 min', tarif:150, stops:['al1','ng2','ng1','of2','of1','wk1','po2','ca1','ok1','po1'] },
+  { id:'A95',  name:'AFTU 95',  operator:'AFTU', route:'Bargny ↔ Mbao ↔ Pikine',               color:AFTU_COLORS[1], freq:'25 min', tarif:200, stops:['bg2','bg1','rf5','rf1','mb2','mb4','mb1','pk1'] },
+  { id:'A96',  name:'AFTU 96',  operator:'AFTU', route:'Malika Nord ↔ Tivaouane ↔ Cambérène', color:AFTU_COLORS[2], freq:'20 min', tarif:200, stops:['ma2','ma3','ml1','tp2','tp1','cb3','cb1','nf1','gy4','po1'] },
+  { id:'A97',  name:'AFTU 97',  operator:'AFTU', route:'Mermoz ↔ Sotrac ↔ Plateau',           color:AFTU_COLORS[0], freq:'10 min', tarif:150, stops:['mn3','mn2','mn1','ca1','sc4','si3','sc3','p14','p07','p13','p02'] },
+  { id:'A98',  name:'AFTU 98',  operator:'AFTU', route:'Zone Recasement ↔ Khar Yalla ↔ Parcelles', color:AFTU_COLORS[1], freq:'10 min', tarif:150, stops:['zr1','ky2','ky1','pa5','pa3','pa1','lb5','lb6'] },
+  { id:'A99',  name:'AFTU 99',  operator:'AFTU', route:'Keur Massar Nord ↔ Médina ↔ Plateau', color:AFTU_COLORS[2], freq:'20 min', tarif:250, stops:['kn2','kn1','km4','km1','km6','km3','ye3','pk1','ha2','p04','p02'] },
+  { id:'A100', name:'AFTU 100', operator:'AFTU', route:'Guinaw Rails ↔ Yeumbeul ↔ Keur Massar', color:AFTU_COLORS[0], freq:'15 min', tarif:150, stops:['gr1','gr2','pk4','pk2','ye2','ye1','km2','km6','km1'] },
+  { id:'A101', name:'AFTU 101', operator:'AFTU', route:'Sam Sam ↔ Daroukhane ↔ Guédiawaye',  color:AFTU_COLORS[1], freq:'20 min', tarif:150, stops:['ss2','ss1','ky1','tp1','dk3','dk1','gd5','gd2','gd1'] },
+  { id:'A102', name:'AFTU 102', operator:'AFTU', route:'Castors ↔ Liberté 5 ↔ HLM',          color:AFTU_COLORS[2], freq:'15 min', tarif:150, stops:['ca2','ca1','mn2','mn1','sc2','si1','lb5','hlm3','hlm2','hlm1'] },
+  { id:'A103', name:'AFTU 103', operator:'AFTU', route:'Diamniadio ↔ Keur Massar ↔ Pikine',  color:AFTU_COLORS[0], freq:'25 min', tarif:250, stops:['di3','di1','bg1','rf1','mb1','pk1','gd3','km6','km1'] },
+  { id:'A104', name:'AFTU 104', operator:'AFTU', route:'Tivaouane Peul ↔ Daroukhane ↔ Malika', color:AFTU_COLORS[1], freq:'20 min', tarif:150, stops:['tp2','tp1','dk3','dk1','dk2','ma3','ml1','cb3'] },
+  { id:'A105', name:'AFTU 105', operator:'AFTU', route:'CICES ↔ Yoff ↔ Ngor ↔ Almadies',    color:AFTU_COLORS[2], freq:'15 min', tarif:150, stops:['ci1','nf1','gy4','yf2','yf1','yf5','ng1','ng2','al1'] },
 ];
 
 const BRT_LINES: Line[] = [
