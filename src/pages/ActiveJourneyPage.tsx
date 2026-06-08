@@ -116,7 +116,7 @@ function TurnByTurnPanel({ steps, currentStatus, walkingStopName }: {
   );
 }
 
-export default function ActiveJourneyPage() {
+export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => void } = {}) {
   const dispatch = useAppDispatch();
   const { active } = useAppSelector(s => s.journey);
   const { myTickets } = useAppSelector(s => s.tickets);
@@ -181,7 +181,12 @@ export default function ActiveJourneyPage() {
     dispatch(setFocusedLine(active.lineId));
     dispatch(setMapCenter([active.walkingStop.lat, active.walkingStop.lng]));
     dispatch(setMapZoom(14));
-    dispatch(setActiveTab('plan'));
+    if (onGoToMap) {
+      // Ferme le panel trajet et ouvre la vue carte Lignes
+      onGoToMap();
+    } else {
+      dispatch(setActiveTab('lines'));
+    }
   };
 
   const statusCfg  = STATUS_CONFIG[active.status];

@@ -575,7 +575,13 @@ export default function PassengerApp() {
                 key={`${activeTab}-${transitionKey}`}
                 className={`flex-1 overflow-y-auto ${transitionDir === 'right' ? 'page-enter-right' : 'page-enter-left'}`}
                 style={{ scrollbarWidth: 'none' }}>
-                {journeyPanelOpen ? <ActiveJourneyPage /> : <Page />}
+                {journeyPanelOpen ? (
+                  <ActiveJourneyPage onGoToMap={() => {
+                    setJourneyPanelOpen(false);
+                    dispatch(setActiveTab('lines'));
+                    setLinesMapView(true);
+                  }} />
+                ) : <Page />}
               </div>
             </div>
           )}
@@ -600,7 +606,13 @@ export default function PassengerApp() {
                 key={`desktop-${activeTab}-${transitionKey}`}
                 className={`flex-1 overflow-y-auto ${transitionDir === 'right' ? 'page-enter-right' : 'page-enter-left'}`}
                 style={{ scrollbarWidth: 'none' }}>
-                {journeyPanelOpen ? <ActiveJourneyPage /> : <Page />}
+                {journeyPanelOpen ? (
+                  <ActiveJourneyPage onGoToMap={() => {
+                    setJourneyPanelOpen(false);
+                    dispatch(setActiveTab('lines'));
+                    setLinesMapView(true);
+                  }} />
+                ) : <Page />}
               </div>
 
             </aside>
