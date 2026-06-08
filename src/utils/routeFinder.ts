@@ -69,27 +69,30 @@ export interface RouteOption {
   walkingStop: Stop;
 }
 
-export function findRoutes(
+/**
+ * Renvoie les lignes qui desservent réellement un arrêt
+ * (source authoritative = line.stops, pas stop.lines qui peut être désynchronisé)
+ */
+function linesThrough(stopId: string): Line[] {
+  return LINES.filter(l => l.stops.includes(stopId));
+}
+
+function findRoutesFromOrigin(
   origin: Stop,
   dest: Stop,
-  userLat?: number,
-  userLng?: number
+  walkMin: number,
+  walkMeters: number,
 ): RouteOption[] {
-  if (origin.id === dest.id) return [];
-
-  const walkMeters = userLat != null
-    ? Math.round(hav(userLat, userLng!, origin.lat, origin.lng))
-    : 0;
-  const walkMin = walkMeters > 80 ? Math.ceil(walkMeters / WALK_MPM) : 0;
-
   const options: RouteOption[] = [];
   const seen = new Set<string>();
 
+  const originLines = linesThrough(origin.id);
+  const destLines   = linesThrough(dest.id);
+  const destLineIds = new Set(destLines.map(l => l.id));
+
   // ── PHASE 1: Direct ──────────────────────────────────────────
-  for (const lineId of origin.lines) {
-    if (!dest.lines.includes(lineId)) continue;
-    const line = LINES.find(l => l.id === lineId);
-    if (!line) continue;
+  for (const line of originLines) {
+    if (!destLineIds.has(line.id)) continue;
     const ride = rideMinutes(line, origin.id, dest.id);
     if (ride >= 999) continue;
 
@@ -98,7 +101,7 @@ export function findRoutes(
     steps.push({ type: 'bus', label: `${line.name}  ·  ${origin.name} → ${dest.name}`, color: line.color, durationMin: ride, lineId: line.id, lineColor: line.color, fromStopId: origin.id, toStopId: dest.id });
 
     options.push({
-      id: `d-${lineId}`,
+      id: `d-${line.id}`,
       kind: 'direct',
       label: 'Direct', labelColor: '#059669',
       totalMin: walkMin + ride,
@@ -116,26 +119,22 @@ export function findRoutes(
   }
 
   // ── PHASE 2: 1 transfer ───────────────────────────────────────
-  for (const oId of origin.lines) {
-    const oLine = LINES.find(l => l.id === oId);
-    if (!oLine) continue;
-
+  for (const oLine of originLines) {
     for (const midStopId of oLine.stops) {
       if (midStopId === origin.id) continue;
       const mid = STOPS.find(s => s.id === midStopId);
       if (!mid) continue;
 
-      for (const dId of mid.lines) {
-        if (dId === oId) continue;
-        if (!dest.lines.includes(dId)) continue;
-        const dLine = LINES.find(l => l.id === dId);
-        if (!dLine) continue;
+      const midLines = linesThrough(midStopId);
+      for (const dLine of midLines) {
+        if (dLine.id === oLine.id) continue;
+        if (!destLineIds.has(dLine.id)) continue;
 
         const seg1 = rideMinutes(oLine, origin.id, midStopId);
         const seg2 = rideMinutes(dLine, midStopId, dest.id);
         if (seg1 >= 120 || seg2 >= 120) continue;
 
-        const key = `${oId}|${midStopId}|${dId}`;
+        const key = `${oLine.id}|${midStopId}|${dLine.id}`;
         if (seen.has(key)) continue;
         seen.add(key);
 
@@ -167,6 +166,51 @@ export function findRoutes(
       if (options.filter(o => o.kind === 'transfer1').length >= 4) break;
     }
     if (options.filter(o => o.kind === 'transfer1').length >= 4) break;
+  }
+
+  return options;
+}
+
+export function findRoutes(
+  origin: Stop,
+  dest: Stop,
+  userLat?: number,
+  userLng?: number
+): RouteOption[] {
+  if (origin.id === dest.id) return [];
+
+  const walkMeters = userLat != null
+    ? Math.round(hav(userLat, userLng!, origin.lat, origin.lng))
+    : 0;
+  const walkMin = walkMeters > 80 ? Math.ceil(walkMeters / WALK_MPM) : 0;
+
+  // Essai direct depuis l'arrêt d'origine
+  let options = findRoutesFromOrigin(origin, dest, walkMin, walkMeters);
+
+  // ── Fallback: arrêts proches si aucun résultat ──────────────
+  // Si l'arrêt sélectionné n'a pas de lignes actives, on cherche
+  // dans un rayon de 700m autour du point GPS (ou de l'arrêt lui-même)
+  if (options.length === 0) {
+    const refLat = userLat ?? origin.lat;
+    const refLng = userLng ?? origin.lng;
+    const FALLBACK_RADIUS = 700; // metres
+
+    const nearby = STOPS
+      .filter(s => s.id !== origin.id && s.id !== dest.id)
+      .map(s => ({ stop: s, dist: hav(refLat, refLng, s.lat, s.lng) }))
+      .filter(x => x.dist <= FALLBACK_RADIUS && linesThrough(x.stop.id).length > 0)
+      .sort((a, b) => a.dist - b.dist)
+      .slice(0, 5);
+
+    for (const { stop: alt, dist: altMeters } of nearby) {
+      const altWalkMin  = Math.ceil(altMeters / WALK_MPM);
+      const altWalkMet  = Math.round(altMeters);
+      const altOptions  = findRoutesFromOrigin(alt, dest, altWalkMin, altWalkMet);
+      if (altOptions.length > 0) {
+        options = altOptions;
+        break;
+      }
+    }
   }
 
   if (options.length === 0) return [];

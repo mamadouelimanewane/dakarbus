@@ -57,6 +57,7 @@ export default function PassengerApp() {
   const { active: activeJourney } = useAppSelector(s => s.journey);
 
   const [geoReady, setGeoReady] = useState(false);
+  const handleGeoReady = useCallback(() => setGeoReady(true), []);
   const [journeyPanelOpen, setJourneyPanelOpen] = useState(false);
   const [sheetState, setSheetState] = useState<'peek' | 'half' | 'full'>('peek');
   const [linesMapView, setLinesMapView] = useState(false);
@@ -263,7 +264,7 @@ export default function PassengerApp() {
       style={{ background: 'var(--c-bg)' }}
       onTouchStart={onSwipeStart}
       onTouchEnd={onSwipeEnd}>
-      {!geoReady && <GeolocGate onDone={() => setGeoReady(true)} />}
+      {!geoReady && <GeolocGate onDone={handleGeoReady} />}
       <ToastContainer />
       <JourneyEndModal />
       <ChatBot />

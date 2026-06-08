@@ -179,7 +179,8 @@ function FleetPinModal({ operator, onClose, onSuccess }: {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pin, shake]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
