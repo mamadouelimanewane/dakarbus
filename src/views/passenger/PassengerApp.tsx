@@ -166,6 +166,8 @@ export default function PassengerApp() {
     dispatch(setActiveTab(tab));
     // Effacer l'itinéraire affiché quand on quitte vers un onglet non-plan
     if (tab !== 'plan') dispatch(setRouteDisplay(null));
+    // Effacer la ligne focalisée quand on quitte l'onglet Lignes
+    if (activeTab === 'lines' && tab !== 'lines') dispatch(clearFocusedLine());
     setJourneyPanelOpen(false);
     if (TABS.find(t => t.id === tab)?.mapRelevant) setSheetState('peek');
   }, [activeTab, dispatch]);
@@ -185,6 +187,9 @@ export default function PassengerApp() {
       setTransitionKey(k => k + 1);
       setPrevTab(activeTab as Tab);
       dispatch(setActiveTab(prev));
+      // Nettoyage des états carte lors du retour
+      if (prev !== 'plan') dispatch(setRouteDisplay(null));
+      if (activeTab === 'lines' && prev !== 'lines') dispatch(clearFocusedLine());
       setJourneyPanelOpen(false);
     }
     // Si pile vide : on reste sur l'onglet courant (pas de sortie de l'app)
