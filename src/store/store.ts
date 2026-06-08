@@ -341,6 +341,24 @@ const gamifSlice = createSlice({
   },
 });
 
+// ── Fleet Slice ───────────────────────────────────────────────
+// Stocke l'opérateur connecté en tant que gestionnaire de flotte
+interface FleetState {
+  operator: 'DDD' | 'AFTU' | null;
+  managerName: string;
+}
+const fleetSlice = createSlice({
+  name: 'fleet',
+  initialState: { operator: null, managerName: '' } as FleetState,
+  reducers: {
+    loginFleetManager: (s, a: PayloadAction<{ operator: 'DDD' | 'AFTU'; name: string }>) => {
+      s.operator = a.payload.operator;
+      s.managerName = a.payload.name;
+    },
+    logoutFleetManager: (s) => { s.operator = null; s.managerName = ''; },
+  },
+});
+
 // ── Store ─────────────────────────────────────────────────────
 export const store = configureStore({
   reducer: {
@@ -352,6 +370,7 @@ export const store = configureStore({
     toasts: toastSlice.reducer,
     journey: journeySlice.reducer,
     gamif: gamifSlice.reducer,
+    fleet: fleetSlice.reducer,
   },
 });
 
@@ -372,4 +391,5 @@ export const { toggleFavStop, toggleFavLine, recordTrip, visitLine } = favSlice.
 export const { showToast, dismissToast } = toastSlice.actions;
 export const { startJourney, updateJourneyStatus, attachTicketToJourney, finishJourney, cancelJourney, dismissEndModal } = journeySlice.actions;
 export const { addPoints, earnBadge, addCarpoolRequest, removeCarpoolRequest, addRecurringTrip, removeRecurringTrip } = gamifSlice.actions;
+export const { loginFleetManager, logoutFleetManager } = fleetSlice.actions;
 export { BADGES_DEF };
