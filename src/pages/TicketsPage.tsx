@@ -153,7 +153,7 @@ function PassSection() {
 
         {passTab === 'acheter' && buying && (
           <div className="space-y-4 animate-fade-up">
-            <button onClick={() => setBuying(null)} className="text-sm font-bold" style={{ color:'#60a5fa' }}>← Retour</button>
+            <button onClick={() => setBuying(null)} className="text-sm font-bold px-2 rounded-xl" style={{ color:'#60a5fa', minHeight: 40 }}>← Retour</button>
             <div className="rounded-2xl p-4" style={{ background:`${PASS_CATALOG[buying].color}15`, border:`1.5px solid ${PASS_CATALOG[buying].color}35` }}>
               <div className="flex items-center gap-3 mb-2">
                 <span className="text-3xl">{PASS_CATALOG[buying].emoji}</span>
