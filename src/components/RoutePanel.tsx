@@ -478,7 +478,7 @@ export default function RoutePanel() {
       {route.origin && route.destination && (
         <div className="flex justify-center -my-1">
           <button onClick={() => { dispatch(setRouteOrigin(route.destination)); dispatch(setRouteDestination(route.origin)); setOptions([]); setSelected(null); }}
-            className="w-8 h-8 rounded-xl flex items-center justify-center text-sm transition-all active:scale-90 hover:scale-110"
+            className="w-11 h-11 rounded-xl flex items-center justify-center text-sm transition-all active:scale-90 hover:scale-110"
             style={{ background: 'rgba(255,255,255,.06)', border: '1px solid var(--c-border)', color: '#94a3b8' }}>⇅</button>
         </div>
       )}

@@ -124,7 +124,7 @@ export default function GlobalSearch({ onClose }: { onClose: () => void }) {
           {listening ? <span style={{ color: '#f87171', animation: 'live-pulse 1s infinite' }}>🎤</span> : '🎙️'}
         </button>
         <button onClick={onClose}
-          className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-black transition-all active:scale-90"
+          className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-black transition-all active:scale-90"
           style={{ background: 'rgba(255,255,255,.1)', color: '#94a3b8' }}>✕</button>
       </div>
 

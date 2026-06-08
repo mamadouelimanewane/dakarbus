@@ -60,7 +60,7 @@ export function AdBanner({ ad, onClose }: AdProps) {
 
         {/* Dismiss toujours visible */}
         <button onClick={onClose ?? (() => {})}
-          className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all active:scale-90"
+          className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm transition-all active:scale-90"
           style={{ background: 'rgba(255,255,255,.05)', color: '#475569' }}>
           ✕
         </button>

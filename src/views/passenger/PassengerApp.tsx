@@ -396,8 +396,8 @@ export default function PassengerApp() {
                       style={{ background: 'rgba(10,15,30,.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.1)' }}>🔍</button>
                     {activeJourney && (
                       <button onClick={() => setJourneyPanelOpen(true)}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-black"
-                        style={{ background: `${jColor}22`, backdropFilter: 'blur(12px)', border: `1px solid ${jColor}50`, color: 'white' }}>
+                        className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-black"
+                        style={{ background: `${jColor}22`, backdropFilter: 'blur(12px)', border: `1px solid ${jColor}50`, color: 'white', minHeight: 40 }}>
                         <span className="w-2 h-2 rounded-full" style={{ background: jColor, animation: 'live-pulse 2s infinite' }} />
                         <span style={{ color: jColor }}>Trajet</span>
                       </button>
@@ -561,8 +561,8 @@ export default function PassengerApp() {
                   {/* Indicateur trajet en cours */}
                   {activeJourney && !journeyPanelOpen && (
                     <button onClick={() => setJourneyPanelOpen(true)}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-black"
-                      style={{ background: `${jColor}20`, border: `1px solid ${jColor}40`, color: 'white' }}>
+                      className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-black"
+                      style={{ background: `${jColor}20`, border: `1px solid ${jColor}40`, color: 'white', minHeight: 40 }}>
                       <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: jColor, animation: 'live-pulse 2s infinite' }} />
                       <span style={{ color: jColor }}>En cours</span>
                     </button>

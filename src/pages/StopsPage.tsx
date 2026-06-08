@@ -224,7 +224,7 @@ export default function StopsPage() {
           />
           {search && (
             <button onClick={() => setSearch('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-sm"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-sm"
               style={{ background: 'rgba(255,255,255,.1)', color: '#64748b' }}>✕</button>
           )}
         </div>
