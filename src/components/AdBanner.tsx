@@ -206,7 +206,7 @@ export function AdSlot({ context, format, className }: AdSlotProps) {
     const selected = selectAd({ ...context, format });
     setAd(selected);
     setDismissed(false);
-  }, [format, context.zone, context.lineId]);
+  }, [format, context.zone, context.lineId, context.operator]);
 
   const dismiss = useCallback(() => setDismissed(true), []);
 

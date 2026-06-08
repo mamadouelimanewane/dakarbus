@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { usePopBack } from '@/hooks/usePopBack';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addReport, upvoteReport, acknowledgeReport, showToast, addPoints, earnBadge } from '@/store/store';
+import { AdSlot } from '@/components/AdBanner';
 
 // Expiry countdown (30 min)
 function ExpiryBar({ timestamp }: { timestamp: number }) {
@@ -155,6 +156,9 @@ export default function AlertsPage() {
 
   return (
     <div className="flex flex-col h-full">
+
+      {/* Publicité contextuelle */}
+      <AdSlot format="banner" context={{}} className="mt-3" />
 
       {/* Network status banner */}
       <div className="mx-4 mt-4 mb-2 p-3.5 rounded-2xl flex gap-3"

@@ -3,6 +3,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { buyTicket, useTicket, showToast } from '@/store/store';
 import { usePopBack } from '@/hooks/usePopBack';
 import { QRCodeSVG } from 'qrcode.react';
+import { AdSlot } from '@/components/AdBanner';
 
 const OPS = [
   { op:'DDD'  as const, p:200, c:'#2563eb', e:'🚌', l:'Bus Urbain',    s:'Dakar Dem Dikk' },
@@ -54,6 +55,9 @@ export default function TicketsPage() {
           ))}
         </div>
       </div>
+
+      {/* Pub contextuelle — opérateur sélectionné */}
+      <AdSlot format="card" context={{ operator: selOp as 'DDD'|'AFTU' }} className="px-4 pt-3" />
 
       <div className="flex-1 overflow-y-auto p-4">
         {/* WALLET */}
