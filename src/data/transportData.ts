@@ -168,8 +168,10 @@ export const STOPS: Stop[] = [
   // ── Yoff / Mbao / Rufisque (DDD) ─────────────────────────
   { id:'yf1', name:'Yoff Village',               zone:'Yoff',        lat:14.7467, lng:-17.4903, operators:['DDD'],              lines:['L8','L25','L40','L65'] },
   { id:'yf2', name:'Yoff Aéroport (ancien)',     zone:'Yoff',        lat:14.7403, lng:-17.4914, operators:['DDD'],              lines:['L8','L25'] },
-  { id:'mb1', name:'Grand Mbao',                 zone:'Mbao',        lat:14.7500, lng:-17.2917, operators:['DDD'],              lines:['L39','L45','L48','L58'] },
-  { id:'mb3', name:'Petit Mbao',                 zone:'Mbao',        lat:14.7472, lng:-17.3052, operators:['DDD'],              lines:['L39','L48'] },
+  { id:'mb1', name:'Grand Mbao',                 zone:'Mbao',        lat:14.7500, lng:-17.2917, operators:['DDD'],              lines:['L39','L45','L48','L58','L49'] },
+  { id:'mb3', name:'Petit Mbao',                 zone:'Mbao',        lat:14.7472, lng:-17.3052, operators:['DDD'],              lines:['L39','L48','L49'] },
+  // ── Village de Mbao (nouveaux arrêts) ──────────────────────────
+  { id:'vmb1',name:'Village de Mbao',            zone:'Mbao',        lat:14.7455, lng:-17.3145, operators:['DDD'],              lines:['L49'] },
   { id:'rf2', name:'Rufisque Centre',            zone:'Rufisque',    lat:14.7167, lng:-17.2783, operators:['DDD'],              lines:['L15','L47'] },
 
   // ── Keur Massar / Périurbain (DDD) ───────────────────────
@@ -294,14 +296,14 @@ export const STOPS: Stop[] = [
   { id:'pk9', name:'Pikine Village',             zone:'Pikine',      lat:14.7480, lng:-17.3703, operators:['AFTU'],             lines:['A52','A9','A68'] },
   { id:'pk10',name:'Tally Icotaf',               zone:'Pikine',      lat:14.7412, lng:-17.3778, operators:['AFTU'],             lines:['A9','A85'] },
   { id:'dl2', name:'Dalifort Terminus',          zone:'Pikine',      lat:14.7572, lng:-17.3639, operators:['AFTU'],             lines:['A89'] },
-  { id:'dg1', name:'Diamaguène',                 zone:'Diamaguène',  lat:14.7453, lng:-17.3558, operators:['AFTU'],             lines:['A84','A85'] },
-  { id:'dg2', name:'Diamaguène Marché',          zone:'Diamaguène',  lat:14.7428, lng:-17.3528, operators:['AFTU'],             lines:['A84','A85'] },
+  { id:'dg1', name:'Diamaguène',                 zone:'Diamaguène',  lat:14.7453, lng:-17.3558, operators:['DDD','AFTU'],      lines:['A84','A85','L49'] },
+  { id:'dg2', name:'Diamaguène Marché',          zone:'Diamaguène',  lat:14.7428, lng:-17.3528, operators:['DDD','AFTU'],      lines:['A84','A85','L49'] },
   { id:'dg3', name:'Diamaguène HLM',             zone:'Diamaguène',  lat:14.7472, lng:-17.3583, operators:['AFTU'],             lines:['A84'] },
   { id:'dg4', name:'Diamaguène Cité Tamba',      zone:'Diamaguène',  lat:14.7502, lng:-17.3608, operators:['AFTU'],             lines:['A84','A85'] },
   { id:'dg5', name:'Diamaguène Cité Soprim',     zone:'Diamaguène',  lat:14.7418, lng:-17.3498, operators:['AFTU'],             lines:['A85'] },
 
   // ── Thiaroye Azur / Thiaroye sur Mer (AFTU) ───────────────
-  { id:'th2', name:'Thiaroye sur Mer',           zone:'Thiaroye',    lat:14.7283, lng:-17.3508, operators:['AFTU'],             lines:['A57','A68','A83'] },
+  { id:'th2', name:'Thiaroye sur Mer',           zone:'Thiaroye',    lat:14.7283, lng:-17.3508, operators:['DDD','AFTU'],      lines:['A57','A68','A83','L49'] },
   { id:'th4', name:'Thiaroye Kao',               zone:'Thiaroye',    lat:14.7380, lng:-17.3422, operators:['AFTU'],             lines:['A68','A57'] },
   { id:'th5', name:'Thiaroye Aviation',          zone:'Thiaroye',    lat:14.7282, lng:-17.3470, operators:['AFTU'],             lines:['A68','A57','A83'] },
   { id:'taz1',name:'Thiaroye Azur',              zone:'Thiaroye',    lat:14.7183, lng:-17.3392, operators:['AFTU'],             lines:['A57','A68','A82','A83'] },
@@ -338,10 +340,12 @@ export const STOPS: Stop[] = [
   // ── Hann internes (AFTU) ──────────────────────────────────
   { id:'ha3', name:'Hann Bel-Air',               zone:'Hann',        lat:14.7225, lng:-17.4100, operators:['AFTU'],             lines:['A51','A86'] },
   { id:'ha5', name:'Hann Marché',                zone:'Hann',        lat:14.7248, lng:-17.4050, operators:['AFTU'],             lines:['A86'] },
-  { id:'ha6', name:'Hann Maristes',              zone:'Hann',        lat:14.7308, lng:-17.4133, operators:['AFTU'],             lines:['A86'] },
-  { id:'ha7', name:'Hann Maristes Cité',         zone:'Hann',        lat:14.7335, lng:-17.4108, operators:['AFTU'],             lines:['A86'] },
+  { id:'ha6', name:'Hann Maristes',              zone:'Hann',        lat:14.7308, lng:-17.4133, operators:['DDD','AFTU'],      lines:['A86','L49'] },
+  { id:'ha7', name:'Hann Maristes Cité',         zone:'Hann',        lat:14.7335, lng:-17.4108, operators:['DDD','AFTU'],      lines:['A86','L49'] },
   { id:'ha8', name:'Hann Maristes Carrefour',    zone:'Hann',        lat:14.7282, lng:-17.4158, operators:['AFTU'],             lines:['A86'] },
   { id:'hr1', name:'Hann Pêcheurs',              zone:'Hann',        lat:14.7136, lng:-17.4069, operators:['AFTU'],             lines:['A86'] },
+  // ── Hann Mariste — arrêt carrefour Route Nationale ────────────
+  { id:'hm1', name:'Hann Mariste Carrefour RN',  zone:'Hann',        lat:14.7327, lng:-17.4015, operators:['DDD'],             lines:['L49'] },
 
   // ════════════════════════════════════════════════════════════
   //  NOUVEAUX ARRÊTS — Densification (< 500 m de marche)
@@ -576,6 +580,7 @@ const DDD_LINES: Line[] = [
   { id:'L46',  name:'Ligne 46',  operator:'DDD', route:'Thiaroye ↔ Palais',                    color:'#1e40af', freq:'20 min', tarif:250, stops:['th1','th3','pk1','rn5','rn1','ha4','ha2','p16','p03','p01'] },
   { id:'L47',  name:'Ligne 47',  operator:'DDD', route:'Rufisque ↔ Grand Yoff',                color:'#1a56db', freq:'30 min', tarif:300, stops:['rf1','rf2','mb1','pk1','ha2','gy1'] },
   { id:'L48',  name:'Ligne 48',  operator:'DDD', route:'Mbao ↔ Palais Express',                color:'#2563eb', freq:'25 min', tarif:300, stops:['mb1','mb3','pk1','ha4','ha2','p03','p01'] },
+  { id:'L49',  name:'Ligne 49',  operator:'DDD', route:'Hann Mariste ↔ Diamaguène ↔ TSM ↔ Mbao', color:'#0369a1', freq:'20 min', tarif:300, stops:['ha7','ha6','hm1','rn3','rn4','rn5','pk1','dg2','dg1','th2','mb3','vmb1','mb1'] },
 
   // ── Axe VDN / Guédiawaye / Parcelles ─────────────────────
   { id:'L11',  name:'Ligne 11',  operator:'DDD', route:'Keur Massar ↔ Leclerc',                color:'#1e3a8a', freq:'15 min', tarif:250, stops:['km1','km6','gd3','gd1','po1','lb5','lc1'] },

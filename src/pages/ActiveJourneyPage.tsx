@@ -7,6 +7,7 @@ import {
 import { walkingMinutes } from '@/utils/nearest';
 import { getNextDepartures } from '@/data/transportData';
 import { STOPS, LINES } from '@/data/transportData';
+import WalkToStopGuide from '@/components/WalkToStopGuide';
 import type { JourneyStatus } from '@/types';
 import type { RouteStep } from '@/utils/routeFinder';
 
@@ -102,8 +103,10 @@ export default function ActiveJourneyPage() {
   const dispatch = useAppDispatch();
   const { active } = useAppSelector(s => s.journey);
   const { myTickets } = useAppSelector(s => s.tickets);
+  const { userLocation } = useAppSelector(s => s.mobility);
   const [elapsed, setElapsed] = useState(0);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showWalkGuide, setShowWalkGuide] = useState(false);
   const prevStatus = useRef<JourneyStatus | null>(null);
 
   // ── All effects BEFORE early return (Rules of Hooks) ──────
@@ -320,17 +323,42 @@ export default function ActiveJourneyPage() {
         </div>
       )}
 
-      {/* Map shortcut */}
-      <button onClick={focusMap}
-        className="mx-4 mb-3 flex items-center gap-3 p-4 rounded-2xl transition-all active:scale-[.98]"
-        style={{ background: 'rgba(37,99,235,.08)', border: '1px solid rgba(37,99,235,.2)' }}>
-        <span className="text-xl">🗺️</span>
-        <div className="text-left">
-          <p className="font-bold text-white text-sm">Voir sur la carte</p>
-          <p className="text-xs" style={{ color: '#64748b' }}>Suivre la ligne {active.lineName}</p>
-        </div>
-        <span className="ml-auto" style={{ color: '#475569' }}>→</span>
-      </button>
+      {/* Map shortcut — walking phase: ouvre guidage piéton OSRM */}
+      {active.status === 'walking' && userLocation ? (
+        <button onClick={() => setShowWalkGuide(true)}
+          className="mx-4 mb-3 flex items-center gap-3 p-4 rounded-2xl transition-all active:scale-[.98]"
+          style={{ background: 'rgba(5,150,105,.1)', border: '1px solid rgba(5,150,105,.3)' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+            style={{ background: 'rgba(5,150,105,.2)' }}>🚶</div>
+          <div className="text-left flex-1">
+            <p className="font-bold text-white text-sm">Voir le chemin sur la carte</p>
+            <p className="text-xs mt-0.5" style={{ color: '#34d399' }}>
+              Navigation piétonne → {active.walkingStop.name}
+            </p>
+          </div>
+          <span className="text-sm font-black" style={{ color: '#34d399' }}>→</span>
+        </button>
+      ) : (
+        <button onClick={focusMap}
+          className="mx-4 mb-3 flex items-center gap-3 p-4 rounded-2xl transition-all active:scale-[.98]"
+          style={{ background: 'rgba(37,99,235,.08)', border: '1px solid rgba(37,99,235,.2)' }}>
+          <span className="text-xl">🗺️</span>
+          <div className="text-left">
+            <p className="font-bold text-white text-sm">Voir sur la carte</p>
+            <p className="text-xs" style={{ color: '#64748b' }}>Suivre la ligne {active.lineName}</p>
+          </div>
+          <span className="ml-auto" style={{ color: '#475569' }}>→</span>
+        </button>
+      )}
+
+      {/* Guidage piéton plein écran (OSRM) */}
+      {showWalkGuide && userLocation && (
+        <WalkToStopGuide
+          stop={active.walkingStop}
+          initialPos={userLocation}
+          onClose={() => setShowWalkGuide(false)}
+        />
+      )}
 
       {/* Cancel */}
       {active.status !== 'arrived' && (
