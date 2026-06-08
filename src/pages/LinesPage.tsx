@@ -383,15 +383,15 @@ export default function LinesPage({ onShowMap }: { onShowMap?: () => void } = {}
             <button onClick={() => setSearchMode('line')}
               className="px-3 py-2 rounded-lg text-xs font-black transition-all"
               style={searchMode === 'line'
-                ? { background: '#2563eb', color: 'white', minHeight: 36 }
-                : { color: '#475569', minHeight: 36 }}>
+                ? { background: '#2563eb', color: 'white', minHeight: 40 }
+                : { color: '#475569', minHeight: 40 }}>
               Par ligne
             </button>
             <button onClick={() => setSearchMode('stop')}
               className="px-3 py-2 rounded-lg text-xs font-black transition-all"
               style={searchMode === 'stop'
-                ? { background: '#059669', color: 'white', minHeight: 36 }
-                : { color: '#475569', minHeight: 36 }}>
+                ? { background: '#059669', color: 'white', minHeight: 40 }
+                : { color: '#475569', minHeight: 40 }}>
               Par arrêt
             </button>
           </div>

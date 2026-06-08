@@ -77,14 +77,14 @@ function StopCard({ stop, isFav, onClick, onFav, showAllDeps = false, onGuide }:
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <button onClick={e => { e.stopPropagation(); setQrOpen(true); }}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-sm transition-all active:scale-90"
+            className="w-10 h-10 rounded-lg flex items-center justify-center text-sm transition-all active:scale-90"
             style={{ background: 'rgba(255,255,255,.06)', color: '#475569' }}
             title="QR Code arrêt">
             ⬛
           </button>
           <button onClick={onFav}
-            className="text-lg transition-all hover:scale-125 active:scale-90"
-            style={{ color: isFav ? '#facc15' : '#1e293b' }}>
+            className="flex items-center justify-center text-lg transition-all hover:scale-125 active:scale-90"
+            style={{ color: isFav ? '#facc15' : '#1e293b', minWidth: 40, minHeight: 40 }}>
             {isFav ? '⭐' : '☆'}
           </button>
         </div>
@@ -95,8 +95,8 @@ function StopCard({ stop, isFav, onClick, onFav, showAllDeps = false, onGuide }:
       {onGuide && (
         <button
           onClick={e => { e.stopPropagation(); onGuide(stop); }}
-          className="w-full mt-2 mb-1 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all active:scale-95"
-          style={{ background: `${opColor}18`, border: `1px solid ${opColor}30`, color: opColor }}>
+          className="w-full mt-2 mb-1 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all active:scale-95"
+          style={{ minHeight: 40, background: `${opColor}18`, border: `1px solid ${opColor}30`, color: opColor }}>
           🚶 M'y guider
         </button>
       )}
@@ -235,8 +235,8 @@ export default function StopsPage() {
             <button key={tab.id} onClick={() => setView(tab.id)}
               className="flex-1 py-2.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5"
               style={view === tab.id
-                ? { background: '#2563eb', color: 'white', boxShadow: '0 2px 10px rgba(37,99,235,.4)' }
-                : { color: '#475569' }}>
+                ? { background: '#2563eb', color: 'white', boxShadow: '0 2px 10px rgba(37,99,235,.4)', minHeight: 40 }
+                : { color: '#475569', minHeight: 40 }}>
               {tab.icon} {tab.label}
             </button>
           ))}
