@@ -468,8 +468,8 @@ export default function PassengerApp() {
                   onTouchStart={onSheetTouchStart}
                   onTouchMove={onSheetTouchMove}
                   onTouchEnd={onSheetTouchEnd}
-                  className="flex-shrink-0 w-full flex justify-center items-center pt-3 pb-2"
-                  style={{ touchAction: 'none' }}>
+                  className="flex-shrink-0 w-full flex justify-center items-center pt-4 pb-3"
+                  style={{ touchAction: 'none', minHeight: 44 }}>
                   <div style={{ width: 44, height: 4, borderRadius: 3, background: 'rgba(255,255,255,.22)' }} />
                 </button>
 

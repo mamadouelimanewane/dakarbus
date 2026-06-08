@@ -54,7 +54,8 @@ export default function RecurringTripWidget() {
           📅 Trajets récurrents
         </p>
         <button onClick={() => setOpen(o => !o)}
-          className="text-[10px] font-black px-3 py-1 rounded-xl transition-all active:scale-95"
+          className="text-[10px] font-black px-3 py-2 rounded-xl transition-all active:scale-95"
+          style={{ minHeight: 40 }}
           style={{ background: 'rgba(37,99,235,.12)', color: '#60a5fa' }}>
           {open ? '✕ Fermer' : '+ Ajouter'}
         </button>
