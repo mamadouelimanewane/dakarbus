@@ -110,6 +110,7 @@ const makeArrowIcon = (deg: number, color: string) => L.divIcon({
 
 // ── Carte déplaçable : tarif + marche ────────────────────────
 function DraggableInfoBar({ routeDisplay }: { routeDisplay: NonNullable<ReturnType<typeof useAppSelector<any>>> }) {
+  const isMobile = window.innerWidth < 640;
   const { pos, onMouseDown, onTouchStart, onTouchMove, onTouchEnd } = useDraggable({ x: 12, y: -80 });
 
   const origin = STOPS.find((s: Stop) => s.id === routeDisplay.originStopId);
@@ -142,16 +143,16 @@ function DraggableInfoBar({ routeDisplay }: { routeDisplay: NonNullable<ReturnTy
       {/* Marche à pied */}
       {routeDisplay.walkFrom && origin && (
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '8px 12px', borderRadius: 16,
+          display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 8,
+          padding: isMobile ? '6px 10px' : '8px 12px', borderRadius: 14,
           background: 'rgba(10,15,30,.92)', backdropFilter: 'blur(16px)',
           border: '1px solid rgba(5,150,105,.4)', boxShadow: '0 6px 24px rgba(0,0,0,.4)',
         }}>
-          <span style={{ fontSize: 18 }}>🚶</span>
+          <span style={{ fontSize: isMobile ? 14 : 18 }}>🚶</span>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 800, color: '#34d399', textTransform: 'uppercase', letterSpacing: '.05em' }}>À pied</div>
-            <div style={{ fontSize: 12, fontWeight: 900, color: 'white', maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{origin.name}</div>
-            {walkMin && <div style={{ fontSize: 10, color: '#64748b' }}>~{walkDist}m · {walkMin}min</div>}
+            <div style={{ fontSize: 9, fontWeight: 800, color: '#34d399', textTransform: 'uppercase', letterSpacing: '.05em' }}>À pied</div>
+            <div style={{ fontSize: isMobile ? 10 : 12, fontWeight: 900, color: 'white', maxWidth: isMobile ? 80 : 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{origin.name}</div>
+            {walkMin && <div style={{ fontSize: 9, color: '#64748b' }}>~{walkDist}m · {walkMin}min</div>}
           </div>
         </div>
       )}
@@ -159,15 +160,15 @@ function DraggableInfoBar({ routeDisplay }: { routeDisplay: NonNullable<ReturnTy
       {/* Tarif */}
       {routeDisplay.fare && (
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '8px 12px', borderRadius: 16,
+          display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 8,
+          padding: isMobile ? '6px 10px' : '8px 12px', borderRadius: 14,
           background: 'rgba(10,15,30,.92)', backdropFilter: 'blur(16px)',
           border: '1px solid rgba(250,204,21,.4)', boxShadow: '0 6px 24px rgba(0,0,0,.4)',
         }}>
-          <span style={{ fontSize: 18 }}>🎫</span>
+          <span style={{ fontSize: isMobile ? 14 : 18 }}>🎫</span>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em' }}>Tarif</div>
-            <div style={{ fontSize: 14, fontWeight: 900, color: '#fbbf24' }}>{routeDisplay.fare} FCFA</div>
+            <div style={{ fontSize: 9, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em' }}>Tarif</div>
+            <div style={{ fontSize: isMobile ? 12 : 14, fontWeight: 900, color: '#fbbf24' }}>{routeDisplay.fare} FCFA</div>
           </div>
         </div>
       )}
@@ -183,8 +184,10 @@ function DraggableInfoBar({ routeDisplay }: { routeDisplay: NonNullable<ReturnTy
 
 // ── Carte déplaçable : timeline itinéraire ────────────────────
 function DraggableTimeline({ routeDisplay }: { routeDisplay: NonNullable<ReturnType<typeof useAppSelector<any>>> }) {
-  // Position initiale : bas-droit (valeurs négatives = depuis le bas/droite)
-  const { pos, onMouseDown, onTouchStart, onTouchMove, onTouchEnd } = useDraggable({ x: -244, y: -88 });
+  const isMobile = window.innerWidth < 640;
+  // Réduit par défaut sur mobile pour ne pas masquer la carte
+  const [collapsed, setCollapsed] = React.useState(isMobile);
+  const { pos, onMouseDown, onTouchStart, onTouchMove, onTouchEnd } = useDraggable({ x: -10, y: -88 });
 
   const origin = STOPS.find((s: Stop) => s.id === routeDisplay.originStopId);
   const dest   = STOPS.find((s: Stop) => s.id === routeDisplay.destStopId);
@@ -207,68 +210,83 @@ function DraggableTimeline({ routeDisplay }: { routeDisplay: NonNullable<ReturnT
   });
   nodes.push({ t: 'stop', name: dest.name, color: '#dc2626', label: 'B' });
 
-  // Calcul position : si x négatif → depuis droite
+  // Résumé : noms des lignes pour la vue réduite
+  const lineNames = routeDisplay.segments.map((s: any) => s.lineName).join(' → ');
+
+  // Calcul position : droite de la carte
   const style: React.CSSProperties = {
     position: 'absolute',
+    right: 10,
+    bottom: 88,
     zIndex: 900,
-    cursor: 'grab',
+    cursor: collapsed ? 'pointer' : 'grab',
     userSelect: 'none',
     touchAction: 'none',
     background: 'rgba(10,15,30,.93)',
     backdropFilter: 'blur(18px)',
     border: '1px solid rgba(255,255,255,.12)',
-    borderRadius: 16,
+    borderRadius: collapsed ? 12 : 16,
     boxShadow: '0 8px 32px rgba(0,0,0,.45)',
-    minWidth: 150,
-    maxWidth: 190,
+    transition: 'all .2s',
   };
-  if (pos.x < 0) { style.right  = -pos.x; } else { style.left   = pos.x; }
-  if (pos.y < 0) { style.bottom = -pos.y; } else { style.top    = pos.y; }
+
+  // Vue réduite : petite pilule cliquable
+  if (collapsed) {
+    return (
+      <div style={{ ...style, padding: '7px 11px', display: 'flex', alignItems: 'center', gap: 7 }}
+        onClick={() => setCollapsed(false)}>
+        <span style={{ fontSize: 14 }}>🗺️</span>
+        <span style={{ fontSize: 11, fontWeight: 900, color: 'white', maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lineNames || 'Itinéraire'}</span>
+        <span style={{ fontSize: 14, color: '#475569', marginLeft: 2 }}>›</span>
+      </div>
+    );
+  }
 
   return (
-    <div style={style}
+    <div style={{ ...style, minWidth: 150, maxWidth: isMobile ? 170 : 190 }}
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}>
 
-      {/* Poignée */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px 6px', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
+      {/* Header avec bouton réduire */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 10px 5px', borderBottom: '1px solid rgba(255,255,255,.07)', cursor: 'pointer' }}
+        onClick={() => setCollapsed(true)}>
         <span style={{ fontSize: 10, fontWeight: 900, color: '#475569', textTransform: 'uppercase', letterSpacing: '.08em' }}>Itinéraire</span>
-        <div style={{ width: 24, height: 3, borderRadius: 4, background: 'rgba(255,255,255,.18)' }} />
+        <span style={{ fontSize: 12, color: '#64748b', lineHeight: 1 }}>−</span>
       </div>
 
       {/* Nœuds */}
-      <div style={{ padding: '8px 12px' }}>
+      <div style={{ padding: '7px 10px' }}>
         {nodes.map((node, idx) => (
-          <div key={idx} style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 20, flexShrink: 0 }}>
+          <div key={idx} style={{ display: 'flex', gap: 7, alignItems: 'stretch' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 18, flexShrink: 0 }}>
               {node.t === 'stop' ? (
-                <div style={{ width: 20, height: 20, borderRadius: '50%', background: node.color, border: '1.5px solid rgba(255,255,255,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, color: 'white', flexShrink: 0 }}>
+                <div style={{ width: 18, height: 18, borderRadius: '50%', background: node.color, border: '1.5px solid rgba(255,255,255,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 900, color: 'white', flexShrink: 0 }}>
                   {node.label}
                 </div>
               ) : (
-                <div style={{ width: 20, height: 20, borderRadius: 6, background: node.color + 'cc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, flexShrink: 0 }}>
+                <div style={{ width: 18, height: 18, borderRadius: 5, background: node.color + 'cc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, flexShrink: 0 }}>
                   🚌
                 </div>
               )}
               {idx < nodes.length - 1 && (
-                <div style={{ flex: 1, width: 1, margin: '2px 0', minHeight: 10, background: node.t === 'segment' ? node.color + '80' : ((nodes[idx + 1] as any)?.color ?? '#fff') + '60' }} />
+                <div style={{ flex: 1, width: 1, margin: '2px 0', minHeight: 8, background: node.t === 'segment' ? node.color + '80' : ((nodes[idx + 1] as any)?.color ?? '#fff') + '60' }} />
               )}
             </div>
-            <div style={{ flex: 1, paddingBottom: 6, paddingTop: 2, minWidth: 0 }}>
+            <div style={{ flex: 1, paddingBottom: 5, paddingTop: 1, minWidth: 0 }}>
               {node.t === 'stop' && (
-                <span style={{ fontSize: 11, fontWeight: 900, color: node.color, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: 10, fontWeight: 900, color: node.color, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {node.name}
                 </span>
               )}
               {node.t === 'segment' && (
                 <div>
-                  <span style={{ fontSize: 11, fontWeight: 900, padding: '2px 6px', borderRadius: 6, background: node.color, color: 'white', display: 'inline-block' }}>
+                  <span style={{ fontSize: 10, fontWeight: 900, padding: '1px 5px', borderRadius: 5, background: node.color, color: 'white', display: 'inline-block' }}>
                     {node.lineName}
                   </span>
                   {node.from && node.to && (
-                    <p style={{ fontSize: 9, marginTop: 2, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <p style={{ fontSize: 8, marginTop: 1, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {node.from} → {node.to}
                     </p>
                   )}
