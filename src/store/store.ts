@@ -341,6 +341,29 @@ const gamifSlice = createSlice({
   },
 });
 
+// ── Ads Slice ─────────────────────────────────────────────────
+interface AdsState {
+  impressions: Record<string, number>;  // adId → count
+  clicks:      Record<string, number>;  // adId → count
+  // Surcharges admin (activer/désactiver une campagne en live)
+  overrides:   Record<string, 'active' | 'paused'>;
+}
+const adsSlice = createSlice({
+  name: 'ads',
+  initialState: { impressions: {}, clicks: {}, overrides: {} } as AdsState,
+  reducers: {
+    recordImpression: (s, a: PayloadAction<string>) => {
+      s.impressions[a.payload] = (s.impressions[a.payload] || 0) + 1;
+    },
+    recordClick: (s, a: PayloadAction<string>) => {
+      s.clicks[a.payload] = (s.clicks[a.payload] || 0) + 1;
+    },
+    setAdOverride: (s, a: PayloadAction<{ id: string; status: 'active' | 'paused' }>) => {
+      s.overrides[a.payload.id] = a.payload.status;
+    },
+  },
+});
+
 // ── Fleet Slice ───────────────────────────────────────────────
 // Stocke l'opérateur connecté en tant que gestionnaire de flotte
 interface FleetState {
@@ -362,6 +385,7 @@ const fleetSlice = createSlice({
 // ── Store ─────────────────────────────────────────────────────
 export const store = configureStore({
   reducer: {
+    ads:      adsSlice.reducer,
     mobility: mobilitySlice.reducer,
     auth: authSlice.reducer,
     ui: uiSlice.reducer,
@@ -392,4 +416,5 @@ export const { showToast, dismissToast } = toastSlice.actions;
 export const { startJourney, updateJourneyStatus, attachTicketToJourney, finishJourney, cancelJourney, dismissEndModal } = journeySlice.actions;
 export const { addPoints, earnBadge, addCarpoolRequest, removeCarpoolRequest, addRecurringTrip, removeRecurringTrip } = gamifSlice.actions;
 export const { loginFleetManager, logoutFleetManager } = fleetSlice.actions;
+export const { recordImpression, recordClick, setAdOverride } = adsSlice.actions;
 export { BADGES_DEF };

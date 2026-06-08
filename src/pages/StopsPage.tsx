@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import QRCodeStop from '@/components/QRCodeStop';
+import { AdCard } from '@/components/AdBanner';
+import { selectAd, trackImpression } from '@/services/adEngine';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setSelectedStop, toggleFavStop, setMapCenter, setMapZoom } from '@/store/store';
 import { STOPS, OPERATORS, LINES, getNextDepartures } from '@/data/transportData';
@@ -281,17 +283,27 @@ export default function StopsPage() {
               <p className="text-xs mt-1" style={{ color: '#475569' }}>Appuyez sur ☆ dans un arrêt pour l'ajouter</p>
             )}
           </div>
-        ) : stops.map(stop => (
-          <StopCard
-            key={stop.id}
-            stop={stop}
-            isFav={favIds.includes(stop.id)}
-            showAllDeps={expandedId === stop.id}
-            onClick={() => handleClick(stop)}
-            onFav={e => { e.stopPropagation(); dispatch(toggleFavStop(stop.id)); }}
-            onGuide={s => window.dispatchEvent(new CustomEvent('open-walk-guide', { detail: s }))}
-          />
-        ))}
+        ) : stops.flatMap((stop, idx) => {
+          const cards: React.ReactNode[] = [
+            <StopCard
+              key={stop.id}
+              stop={stop}
+              isFav={favIds.includes(stop.id)}
+              showAllDeps={expandedId === stop.id}
+              onClick={() => handleClick(stop)}
+              onFav={e => { e.stopPropagation(); dispatch(toggleFavStop(stop.id)); }}
+              onGuide={s => window.dispatchEvent(new CustomEvent('open-walk-guide', { detail: s }))}
+            />
+          ];
+          // Insère une AdCard après chaque 5e arrêt
+          if ((idx + 1) % 5 === 0) {
+            const ad = selectAd({ format: 'card', zone: stop.zone });
+            if (ad) cards.push(
+              <AdCard key={`ad_${idx}`} ad={ad} onClose={undefined} />
+            );
+          }
+          return cards;
+        })}
       </div>
     </div>
   );

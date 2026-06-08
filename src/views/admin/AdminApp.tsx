@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import AdManagerPage from './AdManagerPage';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout, acknowledgeReport, showToast } from '@/store/store';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -165,7 +166,7 @@ export default function AdminApp() {
   const { name }                  = useAppSelector(s => s.auth);
   const darkMode                  = useAppSelector(s => s.ui.darkMode);
 
-  const [activeTab, setActiveTab] = useState<'map'|'fleet'|'routes'|'alerts'|'finance'>('map');
+  const [activeTab, setActiveTab] = useState<'map'|'fleet'|'routes'|'alerts'|'finance'|'ads'>('map');
   const [selectedLine, setSelectedLine] = useState<string|null>(null);
   const [fleet, setFleet]         = useState<FleetBus[]>(INITIAL_FLEET);
   const [showAdd, setShowAdd]     = useState(false);
@@ -227,6 +228,7 @@ export default function AdminApp() {
     {id:'routes',  label:'Lignes',  icon:'🛤️'},
     {id:'alerts',  label:'Alertes', icon:'⚠️', badge:pendingAlerts},
     {id:'finance', label:'Revenus', icon:'💰'},
+    {id:'ads',     label:'Pub',     icon:'📢'},
   ];
 
   return (
@@ -568,6 +570,13 @@ export default function AdminApp() {
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ── PUBLICITÉ ── */}
+        {activeTab==='ads'&&(
+          <div className="flex-1 overflow-hidden">
+            <AdManagerPage />
           </div>
         )}
       </div>

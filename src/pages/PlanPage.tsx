@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { usePopBack } from '@/hooks/usePopBack';
+import { AdSlot } from '@/components/AdBanner';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setActiveTab, clearRoute, setRouteOrigin, setRouteDestination } from '@/store/store';
 import RoutePanel from '@/components/RoutePanel';
@@ -160,6 +161,9 @@ export default function PlanPage() {
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto pb-6">
         <RoutePanel />
+
+        {/* Bannière pub après le panneau de route */}
+        <AdSlot format="banner" context={{}} />
 
         {/* Dynamic home content — shown only when no route */}
         {!hasRoute && (

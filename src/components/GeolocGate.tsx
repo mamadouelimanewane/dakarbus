@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppDispatch } from '@/store/hooks';
 import { setUserLocation, setMapCenter } from '@/store/store';
+import { AdSlot } from '@/components/AdBanner';
 
 interface Props { onDone: () => void; }
 
@@ -58,7 +59,12 @@ export default function GeolocGate({ onDone }: Props) {
       </div>
 
       <h1 className="text-4xl font-black mb-1 gradient-text animate-fade-up" style={{ animationDelay: '.05s' }}>SunuBus</h1>
-      <p className="text-slate-400 text-sm mb-10 animate-fade-up" style={{ animationDelay: '.1s' }}>Transport intelligent · Dakar 🇸🇳</p>
+      <p className="text-slate-400 text-sm mb-6 animate-fade-up" style={{ animationDelay: '.1s' }}>Transport intelligent · Dakar 🇸🇳</p>
+
+      {/* Bannière pub pendant l'attente GPS */}
+      <div className="w-full max-w-sm mb-6 animate-fade-up" style={{ animationDelay: '.15s' }}>
+        <AdSlot format="banner" context={{}} />
+      </div>
 
       <div className="animate-fade-up" style={{ animationDelay: '.2s' }}>
         {status === 'asking' ? (
