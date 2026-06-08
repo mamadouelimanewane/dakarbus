@@ -86,7 +86,7 @@ function BusModal({ bus, busPositions, onClose, onUpdate }: {
                 </div>
               </div>
             </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center btn btn-ghost text-xs">✕</button>
+            <button onClick={onClose} className="w-11 h-11 rounded-xl flex items-center justify-center btn btn-ghost text-sm">✕</button>
           </div>
 
           {/* Live status */}
@@ -294,7 +294,7 @@ export default function AdminApp() {
                   🌐 Toutes · {busPositions.length} bus
                 </button>
                 {/* Fermer sur mobile */}
-                <button onClick={()=>setMapSidebarOpen(false)} className="md:hidden w-9 h-9 rounded-xl flex items-center justify-center btn btn-ghost text-base">✕</button>
+                <button onClick={()=>setMapSidebarOpen(false)} className="md:hidden w-11 h-11 rounded-xl flex items-center justify-center btn btn-ghost text-base">✕</button>
               </div>
               <div className="flex-1 overflow-y-auto p-2">
                 {LINES.map(line=>{
@@ -321,7 +321,7 @@ export default function AdminApp() {
               {/* Bouton toggle lignes sur mobile */}
               <button onClick={()=>setMapSidebarOpen(true)}
                 className="md:hidden absolute z-[100] flex items-center gap-2 px-3 py-2 rounded-xl shadow-xl"
-                style={{top:12,left:12,background:'rgba(10,15,30,.9)',backdropFilter:'blur(12px)',border:'1px solid rgba(255,255,255,.15)',color:'white',fontSize:13,fontWeight:800}}>
+                style={{top:12,left:12,background:'rgba(10,15,30,.9)',backdropFilter:'blur(12px)',border:'1px solid rgba(255,255,255,.15)',color:'white',fontSize:13,fontWeight:800,minHeight:40}}>
                 📋 {selectedLine ? LINES.find(l=>l.id===selectedLine)?.name : 'Lignes'}
               </button>
               <MapContainer center={[14.7167,-17.4677]} zoom={12} style={{width:'100%',height:'100%'}}>

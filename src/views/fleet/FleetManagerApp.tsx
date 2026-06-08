@@ -556,7 +556,7 @@ export default function FleetManagerApp({ operator }: { operator: 'DDD' | 'AFTU'
             <div className="text-xs font-black" style={{ color: '#64748b' }}>ALERTES NON TRAITÉES</div>
             <button onClick={() => setTab('alerts')}
               className="text-xs font-black px-3 py-1.5 rounded-full"
-              style={{ background: 'rgba(239,68,68,.15)', color: '#f87171', minHeight: 32 }}>
+              style={{ background: 'rgba(239,68,68,.15)', color: '#f87171', minHeight: 40 }}>
               Voir tout →
             </button>
           </div>
@@ -575,7 +575,7 @@ export default function FleetManagerApp({ operator }: { operator: 'DDD' | 'AFTU'
                 </div>
                 <button onClick={() => ackIncident(inc.id)}
                   className="text-xs font-black px-2 py-1.5 rounded-full flex-shrink-0"
-                  style={{ background: 'rgba(255,255,255,.1)', color: '#94a3b8', minHeight: 32 }}>
+                  style={{ background: 'rgba(255,255,255,.1)', color: '#94a3b8', minHeight: 40 }}>
                   ✓
                 </button>
               </div>

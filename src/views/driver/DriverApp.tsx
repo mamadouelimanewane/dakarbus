@@ -231,7 +231,7 @@ export default function DriverApp() {
               En service
             </div>
           )}
-          <button onClick={() => { if (window.confirm('Se déconnecter ?')) dispatch(logout()); }} className="btn btn-danger" style={{ padding: '5px 12px', fontSize: 11 }}>
+          <button onClick={() => { if (window.confirm('Se déconnecter ?')) dispatch(logout()); }} className="btn btn-danger" style={{ padding: '9px 14px', fontSize: 12, minHeight: 40 }}>
             Déconn.
           </button>
         </div>
@@ -312,11 +312,11 @@ export default function DriverApp() {
                   <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Passagers</p>
                   <div className="flex items-center gap-3">
                     <button onClick={() => setPassengers(n => Math.max(0, n - 1))}
-                      className="w-8 h-8 rounded-xl font-black text-lg transition-all active:scale-90"
+                      className="w-11 h-11 rounded-xl font-black text-lg transition-all active:scale-90"
                       style={{ background: 'rgba(255,255,255,.07)', color: '#94a3b8' }}>−</button>
                     <span className="text-xl font-black text-white w-8 text-center">{passengers}</span>
                     <button onClick={() => setPassengers(n => Math.min(50, n + 1))}
-                      className="w-8 h-8 rounded-xl font-black text-lg transition-all active:scale-90"
+                      className="w-11 h-11 rounded-xl font-black text-lg transition-all active:scale-90"
                       style={{ background: 'rgba(37,99,235,.3)', color: '#60a5fa' }}>+</button>
                   </div>
                 </div>
