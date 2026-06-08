@@ -70,7 +70,7 @@ export const AD_CAMPAIGNS: AdCampaign[] = [
     maxImpressions: 80_000,
     status:       'active',
     priority:     1,
-    freqCap:      3,
+    freqCap:      2,              // max 2× par session
   },
   {
     id:           'orange_money_001',
@@ -94,7 +94,7 @@ export const AD_CAMPAIGNS: AdCampaign[] = [
     maxImpressions: 60_000,
     status:       'active',
     priority:     2,
-    freqCap:      4,
+    freqCap:      2,
   },
   // ── Telecom ───────────────────────────────────────────────────
   {
@@ -119,7 +119,7 @@ export const AD_CAMPAIGNS: AdCampaign[] = [
     maxImpressions: 100_000,
     status:       'active',
     priority:     2,
-    freqCap:      5,
+    freqCap:      2,
   },
   // ── Grande distribution ───────────────────────────────────────
   {
@@ -144,7 +144,7 @@ export const AD_CAMPAIGNS: AdCampaign[] = [
     maxImpressions: 20_000,
     status:       'active',
     priority:     3,
-    freqCap:      2,
+    freqCap:      1,              // 1× par session (campagne weekend)
   },
   {
     id:           'citydia_001',
@@ -168,7 +168,7 @@ export const AD_CAMPAIGNS: AdCampaign[] = [
     maxImpressions: 50_000,
     status:       'active',
     priority:     3,
-    freqCap:      4,
+    freqCap:      2,
   },
   // ── Transport complémentaire ──────────────────────────────────
   {
@@ -193,7 +193,7 @@ export const AD_CAMPAIGNS: AdCampaign[] = [
     maxImpressions: 45_000,
     status:       'active',
     priority:     2,
-    freqCap:      3,
+    freqCap:      1,              // Yango : 1× par session max
   },
   {
     id:           'aibd_001',
@@ -206,18 +206,18 @@ export const AD_CAMPAIGNS: AdCampaign[] = [
     ctaLabel:     'Réserver ma place',
     ctaUrl:       'https://aibd.aero',
     accentColor:  '#0284c7',
-    bgColor:      'rgba(2,132,199,.1)',
-    format:       'interstitial',
+    bgColor:      'rgba(2,132,199,.06)',
+    format:       'card',           // interstitiel → card (non bloquant)
     targeting:    { lines: ['L52','L64','L15'], hours: [5, 22] },
     startDate:    NOW,
     endDate:      NOW + 60 * DAY,
     budgetFcfa:   5_000_000,
     spentFcfa:    0,
-    cpmFcfa:      3_000,
+    cpmFcfa:      2_000,
     maxImpressions: 30_000,
     status:       'active',
-    priority:     1,
-    freqCap:      1,
+    priority:     2,
+    freqCap:      1,                // max 1× par session
   },
   // ── Campagne civique ──────────────────────────────────────────
   {

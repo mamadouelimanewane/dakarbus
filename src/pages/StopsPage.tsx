@@ -295,11 +295,11 @@ export default function StopsPage() {
               onGuide={s => window.dispatchEvent(new CustomEvent('open-walk-guide', { detail: s }))}
             />
           ];
-          // Insère une AdCard après chaque 5e arrêt
-          if ((idx + 1) % 5 === 0) {
+          // Insère une AdCard après chaque 10e arrêt, uniquement en vue "Tous"
+          if (view === 'all' && (idx + 1) % 10 === 0) {
             const ad = selectAd({ format: 'card', zone: stop.zone });
             if (ad) cards.push(
-              <AdCard key={`ad_${idx}`} ad={ad} onClose={undefined} />
+              <AdCard key={`ad_${idx}`} ad={ad} />
             );
           }
           return cards;

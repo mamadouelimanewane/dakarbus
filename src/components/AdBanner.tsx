@@ -20,7 +20,7 @@ interface AdProps {
 }
 
 // ── AdBanner ─────────────────────────────────────────────────────
-// Bandeau compact pleine largeur, ~72px
+// Bandeau discret pleine largeur — fond neutre, pas de barre colorée
 export function AdBanner({ ad, onClose }: AdProps) {
   const fired = useRef(false);
   useEffect(() => {
@@ -30,95 +30,91 @@ export function AdBanner({ ad, onClose }: AdProps) {
   return (
     <div className="relative overflow-hidden select-none"
       style={{
-        background: ad.bgColor,
-        borderTop:    `1px solid ${ad.accentColor}30`,
-        borderBottom: `1px solid ${ad.accentColor}30`,
+        background: 'rgba(255,255,255,.03)',
+        borderTop:    '1px solid rgba(255,255,255,.06)',
+        borderBottom: '1px solid rgba(255,255,255,.06)',
       }}>
-      {/* Subtle gradient bar on the left */}
-      <div className="absolute left-0 top-0 bottom-0 w-1"
-        style={{ background: ad.accentColor }} />
 
-      <div className="flex items-center gap-3 px-4 py-2.5 pl-5">
-        {/* Logo */}
-        <div className="text-2xl flex-shrink-0 leading-none" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,.3))' }}>
-          {ad.logo}
-        </div>
+      <div className="flex items-center gap-3 px-4 py-2">
+        {/* Sponsorisé label — visible en premier */}
+        <span className="text-[9px] font-semibold flex-shrink-0 px-1.5 py-0.5 rounded"
+          style={{ background: 'rgba(255,255,255,.06)', color: '#475569' }}>
+          Pub
+        </span>
 
-        {/* Copy */}
+        {/* Logo petit */}
+        <span className="text-base flex-shrink-0 leading-none opacity-80">{ad.logo}</span>
+
+        {/* Copy compact */}
         <div className="flex-1 min-w-0">
-          <div className="text-[11px] font-black text-white leading-tight truncate">{ad.title}</div>
-          <div className="text-[10px] truncate mt-0.5" style={{ color: '#94a3b8' }}>{ad.tagline}</div>
+          <span className="text-[11px] font-semibold text-white leading-tight truncate">{ad.title}</span>
         </div>
 
-        {/* CTA */}
+        {/* CTA sobre */}
         <button
           onClick={() => trackClick(ad)}
-          className="flex-shrink-0 px-3 py-1.5 rounded-xl text-[10px] font-black whitespace-nowrap transition-all active:scale-90"
-          style={{ background: ad.accentColor, color: '#fff', boxShadow: `0 4px 12px ${ad.accentColor}55` }}>
+          className="flex-shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-all active:scale-90"
+          style={{ background: `${ad.accentColor}18`, color: ad.accentColor, border: `1px solid ${ad.accentColor}25` }}>
           {ad.ctaLabel}
         </button>
 
-        {/* Dismiss */}
-        {onClose && (
-          <button onClick={onClose}
-            className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] transition-all"
-            style={{ background: 'rgba(255,255,255,.08)', color: '#475569' }}>
-            ✕
-          </button>
-        )}
-      </div>
-
-      {/* "Sponsored" label */}
-      <div className="absolute top-1 right-8 text-[8px] font-semibold" style={{ color: '#334155' }}>
-        Sponsorisé
+        {/* Dismiss toujours visible */}
+        <button onClick={onClose ?? (() => {})}
+          className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] transition-all active:scale-90"
+          style={{ background: 'rgba(255,255,255,.05)', color: '#475569' }}>
+          ✕
+        </button>
       </div>
     </div>
   );
 }
 
 // ── AdCard ────────────────────────────────────────────────────────
-// Card native insérée dans les listes (arrêts, résultats)
+// Card native discrète — identifiable clairement comme publicité,
+// sans fond flashy, CTA sobre, toujours fermable
 export function AdCard({ ad, onClose }: AdProps) {
+  const [dismissed, setDismissed] = useState(false);
   const fired = useRef(false);
   useEffect(() => {
     if (!fired.current) { trackImpression(ad); fired.current = true; }
   }, [ad]);
 
+  if (dismissed) return null;
+  const handleClose = () => { if (onClose) onClose(); else setDismissed(true); };
+
   return (
-    <div className="rounded-2xl overflow-hidden relative select-none"
+    <div className="rounded-xl overflow-hidden relative select-none"
       style={{
-        background: `linear-gradient(135deg, ${ad.bgColor}, ${ad.accentColor}08)`,
-        border: `1px solid ${ad.accentColor}30`,
-        boxShadow: `0 4px 24px ${ad.accentColor}15`,
+        background: 'var(--c-surface)',
+        border: '1px solid rgba(255,255,255,.07)',
       }}>
-      {/* Header */}
-      <div className="flex items-center gap-2 px-4 pt-3 pb-1">
-        <span className="text-xl leading-none">{ad.logo}</span>
-        <div>
-          <div className="text-[11px] font-black" style={{ color: ad.accentColor }}>{ad.advertiser}</div>
-          <div className="text-[9px]" style={{ color: '#334155' }}>Publicité · Sponsorisé</div>
-        </div>
-        {onClose && (
-          <button onClick={onClose}
-            className="ml-auto w-6 h-6 rounded-full flex items-center justify-center text-[10px]"
-            style={{ background: 'rgba(255,255,255,.06)', color: '#475569' }}>
-            ✕
-          </button>
-        )}
+      {/* Header : label "Pub" bien visible + fermeture */}
+      <div className="flex items-center gap-2 px-3 pt-2.5 pb-1">
+        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded"
+          style={{ background: 'rgba(255,255,255,.06)', color: '#475569' }}>
+          Publicité
+        </span>
+        <span className="text-sm leading-none opacity-75">{ad.logo}</span>
+        <span className="text-[11px] font-semibold flex-shrink-0" style={{ color: '#64748b' }}>{ad.advertiser}</span>
+        <button onClick={handleClose}
+          className="ml-auto w-5 h-5 rounded-full flex items-center justify-center text-[10px] flex-shrink-0"
+          style={{ background: 'rgba(255,255,255,.05)', color: '#475569' }}>
+          ✕
+        </button>
       </div>
 
-      {/* Body */}
-      <div className="px-4 pb-3">
-        <h3 className="text-sm font-black text-white leading-snug mb-1">{ad.title}</h3>
-        <p className="text-xs leading-relaxed mb-3" style={{ color: '#94a3b8' }}>{ad.body}</p>
+      {/* Body compact */}
+      <div className="px-3 pb-3">
+        <p className="text-xs font-semibold text-white mb-1 leading-snug">{ad.title}</p>
+        <p className="text-[11px] leading-relaxed mb-2.5" style={{ color: '#64748b' }}>{ad.body}</p>
 
         <button
           onClick={() => trackClick(ad)}
-          className="w-full py-2.5 rounded-xl text-xs font-black transition-all active:scale-95"
+          className="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all active:scale-95"
           style={{
-            background: `linear-gradient(135deg, ${ad.accentColor}ee, ${ad.accentColor})`,
-            color: '#fff',
-            boxShadow: `0 6px 20px ${ad.accentColor}40`,
+            background: `${ad.accentColor}15`,
+            color: ad.accentColor,
+            border: `1px solid ${ad.accentColor}25`,
           }}>
           {ad.ctaLabel} →
         </button>

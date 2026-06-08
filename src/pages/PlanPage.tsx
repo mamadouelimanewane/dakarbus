@@ -162,9 +162,6 @@ export default function PlanPage() {
       <div className="flex-1 overflow-y-auto pb-6">
         <RoutePanel />
 
-        {/* Bannière pub après le panneau de route */}
-        <AdSlot format="banner" context={{}} />
-
         {/* Dynamic home content — shown only when no route */}
         {!hasRoute && (
           <div className="px-4 space-y-4 mt-2">
@@ -395,6 +392,9 @@ export default function PlanPage() {
 
             {/* Nav shortcuts */}
             <QuickNav dispatch={dispatch} />
+
+            {/* Publicité discrète — tout en bas, facilement ignorable */}
+            <AdSlot format="card" context={{}} className="mt-2" />
 
           </div>
         )}
