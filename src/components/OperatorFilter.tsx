@@ -21,7 +21,8 @@ export default function OperatorFilter() {
             onClick={() => dispatch(setSelectedOperator(op.id))}
             className="flex items-center gap-1.5 whitespace-nowrap rounded-full font-semibold text-xs transition-all active:scale-95 flex-shrink-0"
             style={{
-              padding: '5px 12px',
+              padding: '10px 14px',
+              minHeight: 44,
               background:     active ? op.color             : 'rgba(255,255,255,.05)',
               color:          active ? 'white'              : '#94a3b8',
               border:         active ? `1px solid ${op.color}` : '1px solid rgba(255,255,255,.07)',

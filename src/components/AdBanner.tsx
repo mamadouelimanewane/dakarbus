@@ -37,7 +37,7 @@ export function AdBanner({ ad, onClose }: AdProps) {
 
       <div className="flex items-center gap-3 px-4 py-2">
         {/* Sponsorisé label — visible en premier */}
-        <span className="text-[9px] font-semibold flex-shrink-0 px-1.5 py-0.5 rounded"
+        <span className="text-[11px] font-semibold flex-shrink-0 px-1.5 py-0.5 rounded"
           style={{ background: 'rgba(255,255,255,.06)', color: '#475569' }}>
           Pub
         </span>
@@ -90,7 +90,7 @@ export function AdCard({ ad, onClose }: AdProps) {
       }}>
       {/* Header : label "Pub" bien visible + fermeture */}
       <div className="flex items-center gap-2 px-3 pt-2.5 pb-1">
-        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded"
+        <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded"
           style={{ background: 'rgba(255,255,255,.06)', color: '#475569' }}>
           Publicité
         </span>

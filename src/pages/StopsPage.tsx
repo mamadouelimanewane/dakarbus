@@ -35,9 +35,9 @@ function WaitChip({ waitMin, time }: { waitMin: number; time: string }) {
     <span className="text-sm font-black flex-shrink-0 tabular-nums" style={{ color }}>
       {m > 0 ? `${m}m` : `${s}s`}
       {m <= 2 && secs > 0 && (
-        <span className="text-[9px] ml-0.5" style={{ color: '#34d399', opacity: 0.7 }}>{s.toString().padStart(2,'0')}</span>
+        <span className="text-[11px] ml-0.5" style={{ color: '#34d399', opacity: 0.7 }}>{s.toString().padStart(2,'0')}</span>
       )}
-      {m > 99 && <span className="text-[9px] ml-0.5" style={{ color: '#334155' }}>{time}</span>}
+      {m > 99 && <span className="text-[11px] ml-0.5" style={{ color: '#334155' }}>{time}</span>}
     </span>
   );
 }
@@ -69,7 +69,7 @@ function StopCard({ stop, isFav, onClick, onFav, showAllDeps = false, onGuide }:
           <h3 className="font-bold text-white text-sm group-hover:text-blue-400 transition-colors leading-snug">{stop.name}</h3>
           <p className="text-xs mt-0.5" style={{ color: '#475569' }}>{stop.zone}</p>
           {stop.terConnection && (
-            <span className="inline-block text-[9px] font-bold px-2 py-0.5 rounded-full mt-1"
+            <span className="inline-block text-[11px] font-bold px-2 py-0.5 rounded-full mt-1"
               style={{ background: 'rgba(5,150,105,.15)', color: '#34d399', border: '1px solid rgba(5,150,105,.2)' }}>
               🚆 TER
             </span>
@@ -103,19 +103,19 @@ function StopCard({ stop, isFav, onClick, onFav, showAllDeps = false, onGuide }:
 
       <div className="flex flex-wrap gap-1 mb-3">
         {stop.operators.map(op => (
-          <span key={op} className="text-[9px] font-black px-2 py-0.5 rounded-full text-white"
+          <span key={op} className="text-[11px] font-black px-2 py-0.5 rounded-full text-white"
             style={{ background: OPERATORS[op]?.color || '#64748b' }}>{op}</span>
         ))}
       </div>
 
       {visibleDeps.length > 0 && (
         <div className="space-y-1.5 pt-2.5" style={{ borderTop: '1px solid var(--c-border)' }}>
-          <div className="text-[9px] font-black uppercase tracking-widest mb-1.5" style={{ color: '#334155' }}>
+          <div className="text-[11px] font-black uppercase tracking-widest mb-1.5" style={{ color: '#334155' }}>
             Prochains passages
           </div>
           {visibleDeps.map((d, i) => (
             <div key={i} className="flex items-center gap-2.5">
-              <span className="text-[9px] font-black text-white px-2 py-1 rounded-lg flex-shrink-0"
+              <span className="text-[11px] font-black text-white px-2 py-1 rounded-lg flex-shrink-0"
                 style={{ background: d.color, minWidth: 46, textAlign: 'center' }}>{d.lineName}</span>
               <span className="text-xs flex-1 truncate" style={{ color: '#64748b' }}>
                 {d.route.split('↔')[1]?.trim() || d.route}

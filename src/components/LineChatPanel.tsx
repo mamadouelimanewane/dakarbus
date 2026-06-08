@@ -123,7 +123,7 @@ export default function LineChatPanel({ lineId, lineName, onClose }: Props) {
                 }}>
                 {msg.text}
               </div>
-              <span className="text-[9px] px-1" style={{ color: '#1e293b' }}>{fmt(msg.ts)}</span>
+              <span className="text-[11px] px-1" style={{ color: '#1e293b' }}>{fmt(msg.ts)}</span>
             </div>
           </div>
         ))}

@@ -420,9 +420,9 @@
   color: #94a3b8 !important;
   border: none !important;
   border-bottom: 1px solid var(--c-border) !important;
-  width: 36px !important; height: 36px !important;
-  line-height: 36px !important;
-  font-size: 18px !important;
+  width: 44px !important; height: 44px !important;
+  line-height: 44px !important;
+  font-size: 20px !important;
   font-weight: 700 !important;
 }
 .leaflet-control-zoom a:last-child { border-bottom: none !important; }

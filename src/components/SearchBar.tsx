@@ -69,7 +69,7 @@ function ResultRow({ r, onSelect, isLast }: { r: SearchResult; onSelect: () => v
       </div>
 
       {/* Category badge */}
-      <span className="flex-shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded-md self-start mt-0.5"
+      <span className="flex-shrink-0 text-[11px] font-black px-1.5 py-0.5 rounded-md self-start mt-0.5"
         style={{ background: color + '20', color }}>
         {r.categoryLabel}
       </span>
@@ -81,7 +81,7 @@ function ResultRow({ r, onSelect, isLast }: { r: SearchResult; onSelect: () => v
 function SectionHeader({ label }: { label: string }) {
   return (
     <div className="px-4 pt-2.5 pb-1">
-      <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#334155' }}>{label}</span>
+      <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#334155' }}>{label}</span>
     </div>
   );
 }

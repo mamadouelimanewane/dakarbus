@@ -37,8 +37,8 @@ function LineCard({ line, busCount, isFav, isRecent, onSelect, onFav }: {
           {/* Ligne 1 : nom + opérateur + badge */}
           <div className="flex items-center gap-2 mb-1">
             <span className="font-black text-white text-sm group-hover:text-blue-300 transition-colors">{line.name}</span>
-            <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full text-white" style={{ background: op?.color }}>{line.operator}</span>
-            {isRecent && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(250,204,21,.15)', color: '#fbbf24' }}>Récent</span>}
+            <span className="text-[11px] font-black px-1.5 py-0.5 rounded-full text-white" style={{ background: op?.color }}>{line.operator}</span>
+            {isRecent && <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(250,204,21,.15)', color: '#fbbf24' }}>Récent</span>}
           </div>
 
           {/* Ligne 2 : Départ → Destination */}
@@ -112,7 +112,7 @@ function StopRow({ idx, stop, cumMin, isTerminus, distFromPrev, isNearUser, busO
             style={!isTerminus ? { color: '#cbd5e1' } : {}}>
             {stop.name}
           </span>
-          {isNearUser && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold flex-shrink-0" style={{ background: 'rgba(37,99,235,.2)', color: '#60a5fa' }}>📍 Proche</span>}
+          {isNearUser && <span className="text-[11px] px-1.5 py-0.5 rounded-full font-bold flex-shrink-0" style={{ background: 'rgba(37,99,235,.2)', color: '#60a5fa' }}>📍 Proche</span>}
           {busOnStop && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#4ade80', boxShadow: '0 0 6px #4ade80', animation: 'live-pulse 2s infinite' }} />}
         </div>
         <div className="text-[10px] mt-0.5" style={{ color: '#334155' }}>
@@ -218,8 +218,8 @@ function LineDetail({ lineId, onBack, onShowMap }: { lineId: string; onBack: () 
               { v: line.freq, u: '', l: 'Fréq.' },
             ].map((s, i) => (
               <div key={i} className="text-center py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,.05)' }}>
-                <div className="text-sm font-black text-white leading-none">{s.v}<span className="text-[9px] ml-0.5" style={{ color: '#475569' }}>{s.u}</span></div>
-                <div className="text-[9px] mt-0.5 font-medium" style={{ color: '#334155' }}>{s.l}</div>
+                <div className="text-sm font-black text-white leading-none">{s.v}<span className="text-[11px] ml-0.5" style={{ color: '#475569' }}>{s.u}</span></div>
+                <div className="text-[11px] mt-0.5 font-medium" style={{ color: '#334155' }}>{s.l}</div>
               </div>
             ))}
           </div>
@@ -254,7 +254,7 @@ function LineDetail({ lineId, onBack, onShowMap }: { lineId: string; onBack: () 
                 <span className="text-sm">🚌</span>
                 <div>
                   <div className="text-[10px] font-black text-white">{b.speed} km/h</div>
-                  <div className="text-[9px]" style={{ color: '#64748b' }}>{b.occupancy}% plein</div>
+                  <div className="text-[11px]" style={{ color: '#64748b' }}>{b.occupancy}% plein</div>
                 </div>
               </div>
             ))}
@@ -470,7 +470,7 @@ export default function LinesPage({ onShowMap }: { onShowMap?: () => void } = {}
                       style={{ background: line.color + '20', border: `1px solid ${line.color}35` }}>
                       <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: line.color }} />
                       <span className="text-xs font-black text-white">{line.name}</span>
-                      {busCount(line.id) > 0 && <span className="text-[9px] font-bold" style={{ color: '#4ade80' }}>{busCount(line.id)} 🚌</span>}
+                      {busCount(line.id) > 0 && <span className="text-[11px] font-bold" style={{ color: '#4ade80' }}>{busCount(line.id)} 🚌</span>}
                     </button>
                   ))}
                 </div>

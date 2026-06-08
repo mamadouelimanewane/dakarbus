@@ -228,7 +228,7 @@ export default function WalkToStopGuide({ stop, initialPos, onClose, onBoardBus 
           <div className="text-xl font-black" style={{ color: arrived ? '#34d399' : opColor }}>
             {arrived ? '🏁' : dir.arrow}
           </div>
-          <div className="text-[9px] font-bold" style={{ color: '#334155' }}>
+          <div className="text-[11px] font-bold" style={{ color: '#334155' }}>
             {arrived ? 'Arrêt' : dir.label}
           </div>
         </div>
@@ -326,8 +326,8 @@ export default function WalkToStopGuide({ stop, initialPos, onClose, onBoardBus 
                   style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${opColor}, #34d399)` }} />
               </div>
               <div className="flex justify-between mt-1">
-                <span className="text-[9px]" style={{ color: '#334155' }}>📍 Votre position</span>
-                <span className="text-[9px]" style={{ color: '#334155' }}>{stop.name} 🚏</span>
+                <span className="text-[11px]" style={{ color: '#334155' }}>📍 Votre position</span>
+                <span className="text-[11px]" style={{ color: '#334155' }}>{stop.name} 🚏</span>
               </div>
             </div>
 
@@ -432,14 +432,14 @@ export default function WalkToStopGuide({ stop, initialPos, onClose, onBoardBus 
                         <div className="text-xs font-bold text-white truncate">
                           {d.route.split('↔')[1]?.trim() || d.route}
                         </div>
-                        <div className="text-[9px] mt-0.5" style={{ color: '#475569' }}>
+                        <div className="text-[11px] mt-0.5" style={{ color: '#475569' }}>
                           {d.time}
                         </div>
                       </div>
                       {/* Countdown */}
                       <div className="text-right flex-shrink-0">
                         <Countdown waitMin={d.waitMin} />
-                        <div className="text-[9px] mt-0.5" style={{ color: '#334155' }}>
+                        <div className="text-[11px] mt-0.5" style={{ color: '#334155' }}>
                           {d.waitMin <= 1 ? 'imminent' : `dans ${d.waitMin} min`}
                         </div>
                       </div>

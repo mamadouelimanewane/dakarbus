@@ -150,9 +150,9 @@ function DraggableInfoBar({ routeDisplay }: { routeDisplay: NonNullable<ReturnTy
         }}>
           <span style={{ fontSize: isMobile ? 14 : 18 }}>🚶</span>
           <div>
-            <div style={{ fontSize: 9, fontWeight: 800, color: '#34d399', textTransform: 'uppercase', letterSpacing: '.05em' }}>À pied</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#34d399', textTransform: 'uppercase', letterSpacing: '.05em' }}>À pied</div>
             <div style={{ fontSize: isMobile ? 10 : 12, fontWeight: 900, color: 'white', maxWidth: isMobile ? 80 : 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{origin.name}</div>
-            {walkMin && <div style={{ fontSize: 9, color: '#64748b' }}>~{walkDist}m · {walkMin}min</div>}
+            {walkMin && <div style={{ fontSize: 11, color: '#64748b' }}>~{walkDist}m · {walkMin}min</div>}
           </div>
         </div>
       )}
@@ -167,7 +167,7 @@ function DraggableInfoBar({ routeDisplay }: { routeDisplay: NonNullable<ReturnTy
         }}>
           <span style={{ fontSize: isMobile ? 14 : 18 }}>🎫</span>
           <div>
-            <div style={{ fontSize: 9, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em' }}>Tarif</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '.05em' }}>Tarif</div>
             <div style={{ fontSize: isMobile ? 12 : 14, fontWeight: 900, color: '#fbbf24' }}>{routeDisplay.fare} FCFA</div>
           </div>
         </div>
@@ -266,7 +266,7 @@ function DraggableTimeline({ routeDisplay }: { routeDisplay: NonNullable<ReturnT
                   {node.label}
                 </div>
               ) : (
-                <div style={{ width: 18, height: 18, borderRadius: 5, background: node.color + 'cc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, flexShrink: 0 }}>
+                <div style={{ width: 18, height: 18, borderRadius: 5, background: node.color + 'cc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, flexShrink: 0 }}>
                   🚌
                 </div>
               )}
@@ -348,7 +348,7 @@ function FocusedLineOverlay({ line }: { line: Line }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <div style={{ width: 22, height: 22, borderRadius: '50%', background: line.color,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 9, fontWeight: 900, color: 'white', flexShrink: 0 }}>
+                  fontSize: 11, fontWeight: 900, color: 'white', flexShrink: 0 }}>
                   {isTerminus ? (index === 1 ? 'A' : 'Z') : index}
                 </div>
                 <div>
@@ -896,7 +896,7 @@ export default function MapView() {
                 <div className="flex items-center gap-2">
                   <span className="font-black text-white text-sm">{fl.name}</span>
                   {liveBuses.length > 0 && (
-                    <span className="flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                    <span className="flex items-center gap-1 text-[11px] font-bold px-1.5 py-0.5 rounded-full"
                       style={{ background: 'rgba(74,222,128,.15)', color: '#4ade80' }}>
                       <span className="w-1.5 h-1.5 rounded-full bg-green-400" style={{ animation: 'live-pulse 2s infinite' }} />
                       {liveBuses.length} bus
@@ -934,8 +934,9 @@ export default function MapView() {
 
       {/* Fullscreen button */}
       <button onClick={toggleFullscreen} title={fullscreen ? 'Quitter plein écran' : 'Plein écran'}
-        className="absolute z-[900] w-10 h-10 rounded-xl shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+        className="absolute z-[900] rounded-xl shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
         style={{
+          width: 44, height: 44,
           top: 12, right: 12,
           background: fullscreen ? 'rgba(37,99,235,.9)' : 'rgba(15,23,42,.85)',
           backdropFilter: 'blur(8px)',

@@ -18,7 +18,7 @@ function StatCard({ label, value, unit, color = '#f1f5f9' }: { label:string; val
     <div className="flex flex-col items-center gap-0.5 px-4 py-3 rounded-2xl"
       style={{ background:'rgba(255,255,255,.04)', border:'1px solid rgba(255,255,255,.06)' }}>
       <div className="text-2xl font-black leading-none" style={{ color }}>{value}</div>
-      {unit && <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color:'rgba(255,255,255,.3)' }}>{unit}</div>}
+      {unit && <div className="text-[11px] font-bold uppercase tracking-wider" style={{ color:'rgba(255,255,255,.3)' }}>{unit}</div>}
       <div className="text-[10px] font-medium mt-0.5" style={{ color:'#64748b' }}>{label}</div>
     </div>
   );
@@ -399,7 +399,7 @@ export default function DriverApp() {
                   ].map(x => (
                     <div key={x.l} className="text-center py-2.5 rounded-xl" style={{ background: 'rgba(255,255,255,.04)' }}>
                       <div className="font-black text-white text-sm">{x.v}</div>
-                      <div className="text-[9px] uppercase tracking-wider mt-0.5" style={{ color: 'var(--c-muted)' }}>{x.l}</div>
+                      <div className="text-[11px] uppercase tracking-wider mt-0.5" style={{ color: 'var(--c-muted)' }}>{x.l}</div>
                     </div>
                   ))}
                 </div>

@@ -150,7 +150,7 @@ export default function RecurringTripWidget() {
               <span className="text-base">📅</span>
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-bold text-white truncate">{t.label}</div>
-                <div className="text-[9px]" style={{ color: '#334155' }}>{t.days.map(d=>DAYS[d]).join(', ')} · {String(t.hour).padStart(2,'0')}:{String(t.minute).padStart(2,'0')}</div>
+                <div className="text-[11px]" style={{ color: '#334155' }}>{t.days.map(d=>DAYS[d]).join(', ')} · {String(t.hour).padStart(2,'0')}:{String(t.minute).padStart(2,'0')}</div>
               </div>
               <button onClick={() => dispatch(removeRecurringTrip(t.id))}
                 className="text-[10px] w-6 h-6 rounded-lg flex items-center justify-center"

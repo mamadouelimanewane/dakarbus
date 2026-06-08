@@ -231,7 +231,7 @@ export default function ActiveJourneyPage() {
                   }}>
                   {done ? '✓' : cfg.emoji}
                 </div>
-                <span className="text-[9px] font-bold" style={{ color: current ? 'white' : '#334155' }}>
+                <span className="text-[11px] font-bold" style={{ color: current ? 'white' : '#334155' }}>
                   {{ walking:'Marche', waiting:'Attente', on_bus:'En bus', arrived:'Arrivé' }[s]}
                 </span>
               </div>

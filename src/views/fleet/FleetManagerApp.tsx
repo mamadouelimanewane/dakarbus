@@ -289,7 +289,7 @@ function MessageModal({ vehicle, messages, onClose, onSend }: {
                   ? { background: 'rgba(37,99,235,.25)', border: '1px solid rgba(37,99,235,.3)' }
                   : { background: 'rgba(255,255,255,.06)', border: '1px solid var(--c-border)' }}>
                 <p className="text-xs text-white">{m.text}</p>
-                <p className="text-[9px] mt-1" style={{ color: '#334155' }}>{formatTime(m.timestamp)}</p>
+                <p className="text-[11px] mt-1" style={{ color: '#334155' }}>{formatTime(m.timestamp)}</p>
               </div>
             </div>
           ))}
@@ -866,14 +866,14 @@ export default function FleetManagerApp({ operator }: { operator: 'DDD' | 'AFTU'
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-black text-white text-sm truncate">{inc.description}</span>
-                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full"
+                    <span className="text-[11px] font-black px-1.5 py-0.5 rounded-full"
                       style={{ background: sc.bg, color: sc.color }}>{sc.label}</span>
                     {inc.acknowledged && !inc.resolvedAt && (
-                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full"
+                      <span className="text-[11px] font-black px-1.5 py-0.5 rounded-full"
                         style={{ background: 'rgba(100,116,139,.15)', color: '#94a3b8' }}>Acquittée</span>
                     )}
                     {inc.resolvedAt && (
-                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full"
+                      <span className="text-[11px] font-black px-1.5 py-0.5 rounded-full"
                         style={{ background: 'rgba(16,185,129,.15)', color: '#34d399' }}>Résolue</span>
                     )}
                   </div>
@@ -940,7 +940,7 @@ export default function FleetManagerApp({ operator }: { operator: 'DDD' | 'AFTU'
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-full flex-shrink-0"
           style={{ background: 'rgba(16,185,129,.12)', border: '1px solid rgba(16,185,129,.2)' }}>
           <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#34d399' }} />
-          <span className="text-[9px] font-black" style={{ color: '#34d399' }}>LIVE</span>
+          <span className="text-[11px] font-black" style={{ color: '#34d399' }}>LIVE</span>
         </div>
         <button onClick={() => dispatch(logoutFleetManager())}
           className="ml-1 w-8 h-8 rounded-xl flex items-center justify-center text-sm transition-all active:scale-90"
@@ -983,7 +983,7 @@ export default function FleetManagerApp({ operator }: { operator: 'DDD' | 'AFTU'
                   </span>
                 )}
               </div>
-              <span className="text-[9px] font-bold">{t.label}</span>
+              <span className="text-[11px] font-bold">{t.label}</span>
             </button>
           );
         })}

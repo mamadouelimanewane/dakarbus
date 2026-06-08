@@ -21,7 +21,7 @@ function ExpiryBar({ timestamp }: { timestamp: number }) {
         <div className="h-full rounded-full transition-all duration-500"
           style={{ width: `${pct}%`, background: color }} />
       </div>
-      <span className="text-[9px] font-bold flex-shrink-0" style={{ color }}>
+      <span className="text-[11px] font-bold flex-shrink-0" style={{ color }}>
         {pct > 1 ? `expire dans ${minLeft}m` : 'expiré'}
       </span>
     </div>
@@ -302,7 +302,7 @@ export default function AlertsPage() {
                       {nearby.map(lid => {
                         const l = LINES.find(x => x.id === lid);
                         return l ? (
-                          <span key={lid} className="text-[9px] font-black px-1.5 py-0.5 rounded-md text-white"
+                          <span key={lid} className="text-[11px] font-black px-1.5 py-0.5 rounded-md text-white"
                             style={{ background: l.color }}>{l.name}</span>
                         ) : null;
                       })}

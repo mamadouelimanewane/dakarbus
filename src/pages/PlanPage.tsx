@@ -39,7 +39,7 @@ function QuickNav({ dispatch }: { dispatch: AppDispatch }) {
             <span className="text-2xl leading-none">{t.icon}</span>
             <span className="text-[11px] font-bold leading-tight text-center" style={{ color: t.color }}>{t.label}</span>
             {t.badge && t.badge > 0 ? (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-[9px] font-black flex items-center justify-center"
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-[11px] font-black flex items-center justify-center"
                 style={{ background: t.color, boxShadow: `0 2px 8px ${t.color}60` }}>
                 {t.badge > 9 ? '9+' : t.badge}
               </span>
@@ -232,7 +232,7 @@ export default function PlanPage() {
                     </button>
                   </div>
                   <button onClick={() => setHwSetup(true)}
-                    className="w-full mt-1.5 text-center text-[10px] font-bold py-1.5 rounded-xl transition-all"
+                    className="w-full mt-2 text-center text-xs font-bold py-3 rounded-xl transition-all"
                     style={{ color: '#334155', background: 'rgba(255,255,255,.03)' }}>
                     ✏️ Modifier domicile / travail
                   </button>
@@ -262,7 +262,7 @@ export default function PlanPage() {
                                 else saveHomeWork(homeWork?.homeId || '', s.id);
                                 if (homeWork?.homeId && homeWork?.workId) setHwSetup(false);
                               }}
-                              className="w-full text-left px-2 py-1.5 rounded-lg text-xs transition-all"
+                              className="w-full text-left px-3 py-3 rounded-xl text-sm transition-all"
                               style={{
                                 fontWeight: currentId === s.id ? 900 : 500,
                                 color: currentId === s.id ? (role === 'home' ? '#34d399' : '#a78bfa') : '#64748b',
@@ -361,7 +361,7 @@ export default function PlanPage() {
                                   <span>{t.emoji}</span>
                                   <span className="font-black" style={{ color: t.color }}>{t.label}</span>
                                 </div>
-                                <div className="text-[9px]" style={{ color: '#334155' }}>{t.price} FCFA/trajet</div>
+                                <div className="text-[11px]" style={{ color: '#334155' }}>{t.price} FCFA/trajet</div>
                               </td>
                               {trips.map(n => (
                                 <td key={n} className="px-3 py-2 text-right font-bold text-white">

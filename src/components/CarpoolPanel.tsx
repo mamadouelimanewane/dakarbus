@@ -99,7 +99,7 @@ export default function CarpoolPanel({ onClose }: Props) {
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-black text-white truncate">{req.from}</div>
                   <div className="text-[10px] mt-0.5 truncate" style={{ color: '#475569' }}>→ {req.to}</div>
-                  <div className="text-[9px] mt-0.5" style={{ color: '#334155' }}>{req.userId} · {relTime(req.ts)}</div>
+                  <div className="text-[11px] mt-0.5" style={{ color: '#334155' }}>{req.userId} · {relTime(req.ts)}</div>
                 </div>
                 {req.userId === 'Moi' ? (
                   <button onClick={() => dispatch(removeCarpoolRequest(req.id))}

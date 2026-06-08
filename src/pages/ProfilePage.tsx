@@ -95,7 +95,7 @@ export default function ProfilePage() {
               <div className="h-full rounded-full transition-all duration-1000"
                 style={{ width: `${lvlPct}%`, background: lvlCfg.bar }} />
             </div>
-            <div className="text-[9px] text-center mt-1" style={{ color: '#334155' }}>
+            <div className="text-[11px] text-center mt-1" style={{ color: '#334155' }}>
               {points} / {nextThreshold} pts
             </div>
           </div>
@@ -182,7 +182,7 @@ export default function ProfilePage() {
                     style={{ background: earned ? 'rgba(37,99,235,.12)' : 'rgba(255,255,255,.03)', border: `1px solid ${earned ? 'rgba(37,99,235,.3)' : 'rgba(255,255,255,.06)'}`, opacity: earned ? 1 : 0.45 }}>
                     <div className="text-2xl mb-1">{def.emoji}</div>
                     <div className="text-[10px] font-black text-white leading-tight">{def.label}</div>
-                    <div className="text-[9px] mt-1 font-bold" style={{ color: earned ? '#60a5fa' : '#334155' }}>
+                    <div className="text-[11px] mt-1 font-bold" style={{ color: earned ? '#60a5fa' : '#334155' }}>
                       {earned ? `+${def.pts} pts` : `${def.pts} pts`}
                     </div>
                     {earned && <div className="text-[8px] mt-0.5" style={{ color: '#22c55e' }}>✓ Obtenu</div>}
@@ -310,7 +310,7 @@ export default function ProfilePage() {
             {/* Appearance */}
             <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
               <div className="px-4 pt-3 pb-1">
-                <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Apparence</p>
+                <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Apparence</p>
               </div>
               <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--c-border)' }}>
                 <div>
@@ -331,7 +331,7 @@ export default function ProfilePage() {
             {/* Notifications */}
             <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
               <div className="px-4 pt-3 pb-1">
-                <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Notifications</p>
+                <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Notifications</p>
               </div>
               <div className="px-4 py-3 flex items-center justify-between">
                 <div>
@@ -345,7 +345,7 @@ export default function ProfilePage() {
             {/* Language */}
             <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
               <div className="px-4 pt-3 pb-1">
-                <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Langue / Làkk</p>
+                <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Langue / Làkk</p>
               </div>
               {([['fr','🇫🇷 Français'], ['wo','🇸🇳 Wolof'], ['en','🇬🇧 English']] as [Lang, string][]).map(([id, label]) => (
                 <button key={id} onClick={() => dispatch(setLang(id))}
@@ -361,7 +361,7 @@ export default function ProfilePage() {
             {/* Driver simulation */}
             <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
               <div className="px-4 pt-3 pb-1">
-                <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Simulation chauffeur</p>
+                <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Simulation chauffeur</p>
               </div>
               <div className="px-4 py-3" style={{ borderTop: '1px solid var(--c-border)' }}>
                 <p className="text-xs mb-2" style={{ color: 'var(--c-muted)' }}>
@@ -378,7 +378,7 @@ export default function ProfilePage() {
             {/* SOS Urgence */}
             <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
               <div className="px-4 pt-3 pb-1">
-                <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Numéros d'urgence</p>
+                <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Numéros d'urgence</p>
               </div>
               <div className="px-4 py-2 space-y-2" style={{ borderTop: '1px solid var(--c-border)' }}>
                 {[

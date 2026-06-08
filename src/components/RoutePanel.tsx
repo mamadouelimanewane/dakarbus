@@ -77,19 +77,19 @@ function OptionCard({ option, selected, onSelect }: { option: RouteOption; selec
           <div className="flex items-center gap-3 text-right">
             <div>
               <div className="text-lg font-black text-white leading-none">{option.totalMin}</div>
-              <div className="text-[9px] uppercase tracking-wider" style={{ color: '#475569' }}>min</div>
+              <div className="text-[11px] uppercase tracking-wider" style={{ color: '#475569' }}>min</div>
             </div>
             <div className="w-px h-6" style={{ background: 'rgba(255,255,255,.08)' }} />
             <div>
               <div className="text-lg font-black leading-none" style={{ color: option.primaryLineColor }}>{option.fare}</div>
-              <div className="text-[9px] uppercase tracking-wider" style={{ color: '#475569' }}>FCFA</div>
+              <div className="text-[11px] uppercase tracking-wider" style={{ color: '#475569' }}>FCFA</div>
             </div>
             {option.transfers > 0 && (
               <>
                 <div className="w-px h-6" style={{ background: 'rgba(255,255,255,.08)' }} />
                 <div>
                   <div className="text-lg font-black text-white leading-none">{option.transfers}</div>
-                  <div className="text-[9px] uppercase tracking-wider" style={{ color: '#475569' }}>corresp.</div>
+                  <div className="text-[11px] uppercase tracking-wider" style={{ color: '#475569' }}>corresp.</div>
                 </div>
               </>
             )}
@@ -589,7 +589,7 @@ export default function RoutePanel() {
               style={{ borderBottom: i < 4 ? '1px solid var(--c-border)' : '' }}
               onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.03)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-              <span className="text-[9px] font-black text-white px-2 py-1 rounded-lg flex-shrink-0"
+              <span className="text-[11px] font-black text-white px-2 py-1 rounded-lg flex-shrink-0"
                 style={{ background: d.color, minWidth: 48, textAlign: 'center' }}>{d.lineName}</span>
               <span className="text-xs flex-1 truncate" style={{ color: '#64748b' }}>
                 {d.route.split('↔')[1]?.trim() || d.route}

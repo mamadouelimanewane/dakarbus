@@ -669,7 +669,7 @@ export default function PassengerApp() {
                     style={{ background: active ? color + '20' : 'transparent' }}>
                     <span className="text-2xl leading-none">{tab.icon}</span>
                     {badge !== null && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-[9px] font-black flex items-center justify-center"
+                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-[11px] font-black flex items-center justify-center"
                         style={{ background: '#dc2626', boxShadow: '0 2px 6px rgba(220,38,38,.5)' }}>
                         {badge > 9 ? '9+' : badge}
                       </span>
