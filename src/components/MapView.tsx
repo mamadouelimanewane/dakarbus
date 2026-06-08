@@ -306,12 +306,12 @@ function FocusedLineOverlay({ line }: { line: Line }) {
   return (
     <>
       {/* Shadow polyline */}
-      <Polyline positions={coords} color="rgba(0,0,0,.4)" weight={14} opacity={1} />
+      <Polyline positions={coords} color="rgba(0,0,0,.35)" weight={6} opacity={1} />
       {/* Main line */}
-      <Polyline positions={coords} color={line.color} weight={8} opacity={1}
+      <Polyline positions={coords} color={line.color} weight={4} opacity={1}
         dashArray={line.operator === 'TER' ? '18 9' : undefined} />
       {/* Bright inner line */}
-      <Polyline positions={coords} color="rgba(255,255,255,.25)" weight={3} opacity={1} />
+      <Polyline positions={coords} color="rgba(255,255,255,.3)" weight={1.5} opacity={1} />
 
       {/* Direction arrows */}
       {arrows.map((a, i) => (
@@ -401,13 +401,13 @@ function BusLine({ line, isFocused, hasFocus }: { line: Line; isFocused: boolean
 
   if (!coords || coords.length < 2) return null;
 
-  const opacity = hasFocus && !isFocused ? 0.05 : isFocused ? 1 : 0.7;
-  const weight  = isFocused ? 8 : 4;
+  const opacity = hasFocus && !isFocused ? 0.04 : isFocused ? 1 : 0.65;
+  const weight  = isFocused ? 5 : 2.5;
 
   return (
     <>
       {!hasFocus || isFocused ? (
-        <Polyline positions={coords} color="rgba(0,0,0,.3)" weight={weight + 4} opacity={1} />
+        <Polyline positions={coords} color="rgba(0,0,0,.3)" weight={weight + 2} opacity={1} />
       ) : null}
       <Polyline positions={coords} color={line.color} weight={weight} opacity={opacity}
         dashArray={line.operator === 'TER' ? '16 8' : undefined} />

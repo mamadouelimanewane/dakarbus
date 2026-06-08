@@ -93,7 +93,7 @@ export default function PassengerApp() {
     if (!hasAutocentered.current && userLocation && geoReady) {
       hasAutocentered.current = true;
       dispatch(setMapCenter(userLocation));
-      dispatch(setMapZoom(13));
+      dispatch(setMapZoom(11));
     }
   }, [userLocation, geoReady]);
 

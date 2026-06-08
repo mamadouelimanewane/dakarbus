@@ -39,7 +39,7 @@ const mobilitySlice = createSlice({
     selectedStop: null,
     focusedLine: null,
     userLocation: null,
-    mapCenter: [14.7267, -17.4100] as [number, number],
+    mapCenter: [14.7167, -17.4677] as [number, number],
     mapZoom: 11,
     route: { origin: null, destination: null },
     busPositions: [],
