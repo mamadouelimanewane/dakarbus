@@ -374,15 +374,15 @@ export default function PassengerApp() {
                     {/* Logo */}
                     <div className="flex items-center gap-2 px-3 py-2 rounded-2xl"
                       style={{ background: 'rgba(10,15,30,.9)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,.1)' }}>
-                      <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs"
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm"
                         style={{ background: 'linear-gradient(135deg,#1d4ed8,#2563eb)' }}>🚌</div>
                       <span className="text-sm font-black text-white">SunuBus</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 pointer-events-auto">
-                    {/* Bouton recherche */}
+                    {/* Bouton recherche — 44px minimum pour accessibilité mobile */}
                     <button onClick={() => { haptic('light'); setSearchOpen(true); }}
-                      className="w-9 h-9 rounded-xl flex items-center justify-center text-base"
+                      className="w-11 h-11 rounded-xl flex items-center justify-center text-lg"
                       style={{ background: 'rgba(10,15,30,.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.1)' }}>🔍</button>
                     {activeJourney && (
                       <button onClick={() => setJourneyPanelOpen(true)}
@@ -393,7 +393,7 @@ export default function PassengerApp() {
                       </button>
                     )}
                     <button onClick={() => dispatch(logout())}
-                      className="w-9 h-9 rounded-xl flex items-center justify-center"
+                      className="w-11 h-11 rounded-xl flex items-center justify-center text-lg"
                       style={{ background: 'rgba(10,15,30,.9)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.1)', color: '#64748b' }}>↩</button>
                   </div>
                 </div>
@@ -630,18 +630,19 @@ export default function PassengerApp() {
             boxShadow: '0 -4px 24px rgba(0,0,0,.4)',
           }}>
 
-          <div className="flex items-end">
+          <div className="flex items-stretch" style={{ minHeight: 64 }}>
             {/* Journey shortcut */}
             {activeJourney && (
               <button onClick={() => setJourneyPanelOpen(true)}
-                className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 transition-all active:scale-90"
+                className="flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-all active:scale-90"
                 style={{ color: journeyPanelOpen ? jColor : jColor + '90' }}>
-                <div className="relative">
-                  <span className="text-xl leading-none">🧭</span>
-                  <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
+                <div className="relative w-10 h-10 flex items-center justify-center rounded-xl"
+                  style={{ background: journeyPanelOpen ? jColor + '22' : 'transparent' }}>
+                  <span className="text-2xl leading-none">🧭</span>
+                  <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
                     style={{ background: jColor, borderColor: 'rgba(6,10,20,.98)', animation: 'live-pulse 2s infinite' }} />
                 </div>
-                <span className="text-[9px] font-bold tracking-wide">Trajet</span>
+                <span className="text-[11px] font-bold tracking-wide">Trajet</span>
               </button>
             )}
 
@@ -653,23 +654,23 @@ export default function PassengerApp() {
               return (
                 <button key={tab.id}
                   onClick={() => goTab(tab.id)}
-                  className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 relative transition-all active:scale-90"
-                  style={{ color: active ? color : '#4b5563' }}>
+                  className="flex-1 flex flex-col items-center justify-center gap-1 py-2 relative transition-all active:scale-90"
+                  style={{ color: active ? color : '#6b7280', minWidth: 0 }}>
                   {active && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full"
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-[3px] rounded-full"
                       style={{ background: color }} />
                   )}
-                  <div className="relative w-8 h-8 flex items-center justify-center rounded-xl transition-all"
-                    style={{ background: active ? color + '18' : 'transparent' }}>
-                    <span className="text-xl leading-none">{tab.icon}</span>
+                  <div className="relative w-10 h-10 flex items-center justify-center rounded-xl transition-all"
+                    style={{ background: active ? color + '20' : 'transparent' }}>
+                    <span className="text-2xl leading-none">{tab.icon}</span>
                     {badge !== null && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-[8px] font-black flex items-center justify-center"
-                        style={{ background: '#dc2626' }}>
+                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-[9px] font-black flex items-center justify-center"
+                        style={{ background: '#dc2626', boxShadow: '0 2px 6px rgba(220,38,38,.5)' }}>
                         {badge > 9 ? '9+' : badge}
                       </span>
                     )}
                   </div>
-                  <span className="text-[9px] font-bold tracking-wide">{tab.label}</span>
+                  <span className="text-[11px] font-bold leading-tight" style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingInline: 2 }}>{tab.label}</span>
                 </button>
               );
             })}

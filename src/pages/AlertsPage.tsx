@@ -266,7 +266,7 @@ export default function AlertsPage() {
 
         {/* Count */}
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>
+          <h2 className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>
             {filtered.length} signalement{filtered.length !== 1 ? 's' : ''}
           </h2>
           {filtered.length > 0 && (

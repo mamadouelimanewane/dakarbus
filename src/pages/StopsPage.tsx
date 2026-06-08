@@ -233,7 +233,7 @@ export default function StopsPage() {
         <div className="flex gap-1.5 p-1 rounded-xl" style={{ background: 'rgba(255,255,255,.04)', border: '1px solid var(--c-border)' }}>
           {tabs.map(tab => (
             <button key={tab.id} onClick={() => setView(tab.id)}
-              className="flex-1 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1"
+              className="flex-1 py-2.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1.5"
               style={view === tab.id
                 ? { background: '#2563eb', color: 'white', boxShadow: '0 2px 10px rgba(37,99,235,.4)' }
                 : { color: '#475569' }}>

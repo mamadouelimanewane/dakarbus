@@ -442,8 +442,8 @@ export default function RoutePanel() {
 
   return (
     <div className="p-4 space-y-3">
-      <h2 className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>
-        Planifier un trajet
+      <h2 className="text-sm font-black" style={{ color: 'var(--c-text)' }}>
+        🗺️ Où voulez-vous aller ?
       </h2>
 
       {nearestInfo && !route.origin && !options.length && (

@@ -28,16 +28,16 @@ function QuickNav({ dispatch }: { dispatch: AppDispatch }) {
 
   return (
     <div>
-      <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--c-muted)' }}>
+      <p className="text-[11px] font-black uppercase tracking-widest mb-2.5" style={{ color: 'var(--c-muted)' }}>
         Navigation rapide
       </p>
       <div className="grid grid-cols-5 gap-2">
         {tabs.map(t => (
           <button key={t.id} onClick={() => dispatch(setActiveTab(t.id))}
-            className="relative flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all active:scale-90"
+            className="relative flex flex-col items-center gap-2 py-3.5 rounded-2xl transition-all active:scale-90"
             style={{ background: t.color + '12', border: `1px solid ${t.color}25` }}>
             <span className="text-2xl leading-none">{t.icon}</span>
-            <span className="text-[10px] font-bold" style={{ color: t.color }}>{t.label}</span>
+            <span className="text-[11px] font-bold leading-tight text-center" style={{ color: t.color }}>{t.label}</span>
             {t.badge && t.badge > 0 ? (
               <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-[9px] font-black flex items-center justify-center"
                 style={{ background: t.color, boxShadow: `0 2px 8px ${t.color}60` }}>
@@ -175,7 +175,7 @@ export default function PlanPage() {
             {/* Quick re-do last trip */}
             {lastTrip?.originId && lastTrip?.destId && (
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--c-muted)' }}>
+                <p className="text-[11px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--c-muted)' }}>
                   Trajet récent
                 </p>
                 <button
@@ -289,7 +289,7 @@ export default function PlanPage() {
             {/* Favorite stops with live departures */}
             {favStopIds.length > 0 && (
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--c-muted)' }}>
+                <p className="text-[11px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--c-muted)' }}>
                   Mes arrêts favoris · Prochains départs
                 </p>
                 <div className="space-y-2">
