@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { buyTicket, useTicket, showToast } from '@/store/store';
+import { buyTicket, useTicket, showToast, buyPass, PASS_CATALOG } from '@/store/store';
+import type { PassType } from '@/store/store';
 import { usePopBack } from '@/hooks/usePopBack';
 import { QRCodeSVG } from 'qrcode.react';
 import { AdSlot } from '@/components/AdBanner';
@@ -18,10 +19,194 @@ const PAY = [
   { id:'free',   l:'Free Money',   e:'🏦', g:'linear-gradient(135deg,#7c3aed,#4c1d95)' },
 ];
 
+const PAY_METHODS = [
+  { id:'wave',   l:'Wave',         e:'🌊', g:'linear-gradient(135deg,#00c5e3,#0082a3)' },
+  { id:'orange', l:'Orange Money', e:'🟠', g:'linear-gradient(135deg,#f97316,#c2410c)' },
+  { id:'free',   l:'Free Money',   e:'🏦', g:'linear-gradient(135deg,#7c3aed,#4c1d95)' },
+];
+
+function fmtFcfa(n: number) {
+  return n.toLocaleString('fr-FR') + ' FCFA';
+}
+function daysLeft(ts: number) {
+  return Math.max(0, Math.ceil((ts - Date.now()) / 86_400_000));
+}
+
+// ── Section Pass Mensuel ─────────────────────────────────────
+function PassSection() {
+  const dispatch = useAppDispatch();
+  const myPasses = useAppSelector(s => s.passes.myPasses);
+  const [buying, setBuying] = useState<PassType | null>(null);
+  const [holderName, setHolderName] = useState('');
+  const [passTab, setPassTab] = useState<'mes_pass'|'acheter'>('mes_pass');
+  usePopBack(() => setBuying(null), !!buying);
+
+  const activeCount = myPasses.filter(p => p.status === 'active').length;
+
+  const confirmBuy = (method: string) => {
+    if (!buying) return;
+    dispatch(buyPass({ type: buying, holderName: holderName || 'Passager', payMethod: method }));
+    dispatch(showToast({ type: 'success', message: `Pass activé ! Valable 30 jours.` }));
+    setBuying(null);
+    setHolderName('');
+    setPassTab('mes_pass');
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Sub-tabs */}
+      <div className="flex gap-1.5 p-1 mx-4 mt-3 rounded-2xl" style={{ background: 'var(--c-surface)' }}>
+        {[{ id:'mes_pass', l:`Mes pass${activeCount>0?` (${activeCount})`:''}` }, { id:'acheter', l:'Acheter un pass' }].map(t => (
+          <button key={t.id} onClick={() => setPassTab(t.id as any)}
+            className="flex-1 py-2.5 rounded-xl text-sm font-black transition-all"
+            style={passTab===t.id ? { background:'#7c3aed', color:'white' } : { color:'#475569' }}>
+            {t.l}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 pt-3 pb-24 space-y-3">
+        {passTab === 'mes_pass' && (
+          myPasses.length === 0 ? (
+            <div className="text-center mt-10">
+              <div className="text-5xl mb-3">🎟</div>
+              <p className="font-black text-white">Aucun pass actif</p>
+              <p className="text-sm mt-1 mb-5" style={{ color:'#475569' }}>Un pass mensuel vous fait économiser jusqu'à 40%</p>
+              <button onClick={() => setPassTab('acheter')} className="btn btn-primary px-8">Voir les pass</button>
+            </div>
+          ) : myPasses.map(p => {
+            const cfg = PASS_CATALOG[p.type];
+            const left = daysLeft(p.validUntil);
+            const pct = Math.round((left / 30) * 100);
+            const isActive = p.status === 'active' && left > 0;
+            return (
+              <div key={p.id} className="rounded-3xl overflow-hidden"
+                style={{ background: `linear-gradient(160deg,${cfg.color}15,var(--c-surface) 60%)`, border:`1px solid ${cfg.color}${isActive?'40':'15'}` }}>
+                <div className="h-1" style={{ background: isActive ? cfg.color : '#1e293b' }} />
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">{cfg.emoji}</span>
+                      <div>
+                        <div className="font-black text-white">{cfg.label}</div>
+                        <div className="text-xs mt-0.5" style={{ color: '#475569' }}>{p.holderName}</div>
+                      </div>
+                    </div>
+                    <span className="badge" style={isActive
+                      ? { background:'rgba(34,197,94,.12)', color:'#4ade80', border:'1px solid rgba(34,197,94,.2)' }
+                      : { background:'rgba(255,255,255,.05)', color:'#475569' }}>
+                      {isActive ? `✓ ACTIF` : '✗ EXPIRÉ'}
+                    </span>
+                  </div>
+                  {/* Validity bar */}
+                  <div className="mb-2">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span style={{ color:'#475569' }}>Validité</span>
+                      <span className="font-black" style={{ color: left <= 5 ? '#f87171' : '#94a3b8' }}>
+                        {isActive ? `${left}j restants` : 'Expiré'}
+                      </span>
+                    </div>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background:'rgba(255,255,255,.08)' }}>
+                      <div className="h-full rounded-full transition-all" style={{ width:`${pct}%`, background: cfg.color }} />
+                    </div>
+                  </div>
+                  {/* Stats */}
+                  <div className="flex gap-4 text-xs">
+                    <span style={{ color:'#475569' }}>🚌 <strong className="text-white">{p.usedRides}</strong> trajets</span>
+                    <span style={{ color:'#475569' }}>💰 <strong className="text-white">{fmtFcfa(p.price)}</strong></span>
+                    <span style={{ color:'#475569' }}>QR: <strong className="font-mono text-[10px]" style={{ color: cfg.color }}>{p.qrData.slice(-8)}</strong></span>
+                  </div>
+                  {isActive && (
+                    <div className="mt-3 p-3 rounded-2xl flex items-center justify-center" style={{ background:'white' }}>
+                      <QRCodeSVG value={p.qrData} size={120} level="M" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+
+        {passTab === 'acheter' && !buying && (
+          <>
+            <p className="text-xs font-black uppercase tracking-widest pb-1" style={{ color:'var(--c-muted)' }}>Choisissez votre formule</p>
+            {(Object.entries(PASS_CATALOG) as [PassType, typeof PASS_CATALOG[PassType]][]).map(([key, cfg]) => (
+              <button key={key} onClick={() => setBuying(key)}
+                className="w-full p-4 rounded-2xl text-left transition-all active:scale-[.98]"
+                style={{ background:`${cfg.color}12`, border:`1.5px solid ${cfg.color}30` }}>
+                <div className="flex items-start gap-3">
+                  <span className="text-3xl">{cfg.emoji}</span>
+                  <div className="flex-1">
+                    <div className="font-black text-white">{cfg.label}</div>
+                    <div className="text-xs mt-0.5 mb-2" style={{ color:'#64748b' }}>{cfg.desc}</div>
+                    {cfg.maxRides && <div className="text-xs" style={{ color:'#94a3b8' }}>Max {cfg.maxRides} trajets/mois</div>}
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-xl font-black" style={{ color: cfg.color }}>{cfg.price.toLocaleString('fr-FR')}</div>
+                    <div className="text-[10px]" style={{ color:'#334155' }}>FCFA/mois</div>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </>
+        )}
+
+        {passTab === 'acheter' && buying && (
+          <div className="space-y-4 animate-fade-up">
+            <button onClick={() => setBuying(null)} className="text-sm font-bold" style={{ color:'#60a5fa' }}>← Retour</button>
+            <div className="rounded-2xl p-4" style={{ background:`${PASS_CATALOG[buying].color}15`, border:`1.5px solid ${PASS_CATALOG[buying].color}35` }}>
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-3xl">{PASS_CATALOG[buying].emoji}</span>
+                <div>
+                  <div className="font-black text-white">{PASS_CATALOG[buying].label}</div>
+                  <div className="text-xs" style={{ color:'#64748b' }}>{PASS_CATALOG[buying].desc}</div>
+                </div>
+              </div>
+              <div className="text-2xl font-black" style={{ color: PASS_CATALOG[buying].color }}>
+                {PASS_CATALOG[buying].price.toLocaleString('fr-FR')} FCFA
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-black uppercase tracking-widest mb-2 block" style={{ color:'var(--c-muted)' }}>Nom du titulaire</label>
+              <input
+                type="text" value={holderName} onChange={e => setHolderName(e.target.value)}
+                placeholder="Votre prénom et nom"
+                className="input w-full"
+                style={{ fontSize:14, padding:'12px 16px' }}
+              />
+            </div>
+
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest mb-3" style={{ color:'var(--c-muted)' }}>Payer avec</p>
+              <div className="space-y-2.5">
+                {PAY_METHODS.map(m => (
+                  <button key={m.id} onClick={() => confirmBuy(m.l)}
+                    className="w-full flex items-center justify-between p-4 rounded-2xl text-white font-bold transition-all active:scale-[.98]"
+                    style={{ background:m.g, boxShadow:'0 8px 28px rgba(0,0,0,.3)' }}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{m.e}</span>
+                      <div className="text-left">
+                        <div className="font-black">{m.l}</div>
+                        <div className="text-xs opacity-60">Paiement sécurisé · activé instantanément</div>
+                      </div>
+                    </div>
+                    <span className="font-black">{PASS_CATALOG[buying].price.toLocaleString('fr-FR')} F</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function TicketsPage() {
   const dispatch = useAppDispatch();
   const { myTickets } = useAppSelector(s=>s.tickets);
-  const [tab, setTab]         = useState<'wallet'|'buy'>('wallet');
+  const [tab, setTab]         = useState<'wallet'|'buy'|'pass'>('wallet');
   const [selOp, setSelOp]     = useState<typeof OPS[number]['op']>('DDD');
   const [expanded, setExpanded]= useState<string|null>(null);
   const [confirming, setConfirming] = useState<string|null>(null);
@@ -30,6 +215,7 @@ export default function TicketsPage() {
   usePopBack(() => setExpanded(null),   !!expanded && !confirming);
   const op = OPS.find(o=>o.op===selOp)!;
   const validCount = myTickets.filter(t=>t.status==='valid').length;
+  const activePassCount = useAppSelector(s => s.passes.myPasses.filter(p => p.status === 'active').length);
 
   const buy = (method:string) => {
     dispatch(buyTicket({operator:selOp, price:op.p}));
@@ -45,10 +231,14 @@ export default function TicketsPage() {
           <h2 className="text-xl font-black text-white">Billetterie</h2>
           {validCount>0&&<span className="badge" style={{background:'rgba(34,197,94,.1)',color:'#4ade80',border:'1px solid rgba(34,197,94,.2)'}}>{validCount} valide{validCount>1?'s':''}</span>}
         </div>
-        <div className="flex gap-1.5 p-1 rounded-2xl" style={{background:'var(--c-surface)'}}>
-          {[{id:'wallet',l:`Mes billets${myTickets.length>0?` (${myTickets.length})`:''}`,a:'#2563eb'},{id:'buy',l:'Acheter +',a:'#059669'}].map(t=>(
+        <div className="flex gap-1 p-1 rounded-2xl" style={{background:'var(--c-surface)'}}>
+          {[
+            {id:'wallet',l:`Billets${myTickets.length>0?` (${myTickets.length})`:''}`,a:'#2563eb'},
+            {id:'pass',  l:`Pass${activePassCount>0?` (${activePassCount})`:''}`,      a:'#7c3aed'},
+            {id:'buy',   l:'Acheter +',                                                  a:'#059669'},
+          ].map(t=>(
             <button key={t.id} onClick={()=>setTab(t.id as any)}
-              className="flex-1 py-2.5 rounded-xl text-sm font-black transition-all"
+              className="flex-1 py-2.5 rounded-xl text-xs font-black transition-all"
               style={tab===t.id?{background:t.a,color:'white',boxShadow:`0 4px 16px ${t.a}40`}:{color:'#475569'}}>
               {t.l}
             </button>
@@ -57,9 +247,12 @@ export default function TicketsPage() {
       </div>
 
       {/* Pub contextuelle — opérateur sélectionné */}
-      <AdSlot format="card" context={{ operator: selOp as 'DDD'|'AFTU' }} className="px-4 pt-3" />
+      {tab !== 'pass' && <AdSlot format="card" context={{ operator: selOp as 'DDD'|'AFTU' }} className="px-4 pt-3" />}
 
-      <div className="flex-1 overflow-y-auto p-4">
+      {/* Pass tab */}
+      {tab === 'pass' && <div className="flex-1 overflow-hidden"><PassSection /></div>}
+
+      <div className="flex-1 overflow-y-auto p-4" style={tab==='pass'?{display:'none'}:{}}>
         {/* WALLET */}
         {tab==='wallet'&&(
           <div className="space-y-3 pb-20">

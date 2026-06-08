@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import AdManagerPage from './AdManagerPage';
+import AnalyticsPage from './AnalyticsPage';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout, acknowledgeReport, showToast } from '@/store/store';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -166,7 +167,7 @@ export default function AdminApp() {
   const { name }                  = useAppSelector(s => s.auth);
   const darkMode                  = useAppSelector(s => s.ui.darkMode);
 
-  const [activeTab, setActiveTab] = useState<'map'|'fleet'|'routes'|'alerts'|'finance'|'ads'>('map');
+  const [activeTab, setActiveTab] = useState<'map'|'fleet'|'routes'|'alerts'|'finance'|'ads'|'analytics'>('map');
   const [selectedLine, setSelectedLine] = useState<string|null>(null);
   const [mapSidebarOpen, setMapSidebarOpen] = useState(false);
   const [fleet, setFleet]         = useState<FleetBus[]>(INITIAL_FLEET);
@@ -224,12 +225,13 @@ export default function AdminApp() {
   };
 
   const tabs: {id:typeof activeTab;label:string;icon:string;badge?:number}[] = [
-    {id:'map',     label:'Carte',   icon:'🗺️'},
-    {id:'fleet',   label:'Flotte',  icon:'🚌'},
-    {id:'routes',  label:'Lignes',  icon:'🛤️'},
-    {id:'alerts',  label:'Alertes', icon:'⚠️', badge:pendingAlerts},
-    {id:'finance', label:'Revenus', icon:'💰'},
-    {id:'ads',     label:'Pub',     icon:'📢'},
+    {id:'map',       label:'Carte',     icon:'🗺️'},
+    {id:'fleet',     label:'Flotte',    icon:'🚌'},
+    {id:'routes',    label:'Lignes',    icon:'🛤️'},
+    {id:'alerts',    label:'Alertes',   icon:'⚠️', badge:pendingAlerts},
+    {id:'finance',   label:'Revenus',   icon:'💰'},
+    {id:'analytics', label:'Analytics', icon:'📊'},
+    {id:'ads',       label:'Pub',       icon:'📢'},
   ];
 
   return (
@@ -581,6 +583,13 @@ export default function AdminApp() {
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ── ANALYTICS ── */}
+        {activeTab==='analytics'&&(
+          <div className="flex-1 overflow-hidden">
+            <AnalyticsPage operator="DDD" />
           </div>
         )}
 

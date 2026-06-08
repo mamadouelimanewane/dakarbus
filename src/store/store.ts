@@ -1,6 +1,32 @@
 import { configureStore, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { OperatorId, Stop, BusPosition, Lang, Ticket, CrowdsourceReport, Toast, ActiveJourney, JourneyRecord, JourneyStatus } from '@/types';
 
+// ── Pass Mensuel types ─────────────────────────────────────────
+export type PassType = 'mensuel_ddd' | 'mensuel_aftu' | 'mensuel_all' | 'scolaire' | 'famille';
+export interface MonthlyPass {
+  id: string;
+  type: PassType;
+  operator: OperatorId | 'all';
+  holderName: string;
+  price: number;
+  purchaseTime: number;
+  validUntil: number;   // timestamp
+  usedRides: number;
+  qrData: string;
+  status: 'active' | 'expired';
+}
+export const PASS_CATALOG: Record<PassType, {
+  label: string; emoji: string; operator: OperatorId|'all';
+  price: number; duration: number; desc: string; color: string;
+  maxRides: number | null;
+}> = {
+  mensuel_ddd:  { label: 'Pass DDD Mensuel',    emoji: '🚌', operator: 'DDD',  price: 9_900,  duration: 30, desc: 'Voyages illimités sur toutes les lignes DDD', color: '#2563eb', maxRides: null },
+  mensuel_aftu: { label: 'Pass AFTU Mensuel',   emoji: '🚐', operator: 'AFTU', price: 7_500,  duration: 30, desc: 'Voyages illimités sur tout le réseau AFTU',   color: '#e11d48', maxRides: null },
+  mensuel_all:  { label: 'Pass Tout-Réseau',    emoji: '🌐', operator: 'all',  price: 14_900, duration: 30, desc: 'DDD + AFTU + BRT — réseau complet de Dakar',  color: '#7c3aed', maxRides: null },
+  scolaire:     { label: 'Pass Scolaire',       emoji: '📚', operator: 'all',  price: 5_000,  duration: 30, desc: 'Tarif réduit pour élèves et étudiants',        color: '#059669', maxRides: 60 },
+  famille:      { label: 'Pass Famille (×4)',   emoji: '👨‍👩‍👧‍👦', operator: 'all',  price: 29_900, duration: 30, desc: '4 voyageurs — économisez 37% vs 4 pass individuel', color: '#f59e0b', maxRides: null },
+};
+
 // ── Mobility Slice ─────────────────────────────────────────────
 export interface RouteSegmentDisplay {
   lineId: string;
@@ -175,6 +201,38 @@ const ticketSlice = createSlice({
     },
     acknowledgeReport: (s, a: PayloadAction<string>) => {
       s.reports = s.reports.filter(r => r.id !== a.payload);
+    },
+  },
+});
+
+// ── Pass Slice ───────────────────────────────────────────────
+interface PassState { myPasses: MonthlyPass[]; passSales: Record<PassType, number>; }
+const passSlice = createSlice({
+  name: 'passes',
+  initialState: { myPasses: [], passSales: { mensuel_ddd:0, mensuel_aftu:0, mensuel_all:0, scolaire:0, famille:0 } } as PassState,
+  reducers: {
+    buyPass: (s, a: PayloadAction<{ type: PassType; holderName: string; payMethod: string }>) => {
+      const cfg = PASS_CATALOG[a.payload.type];
+      const id = Math.random().toString(36).substring(2, 11).toUpperCase();
+      const now = Date.now();
+      s.myPasses.push({
+        id, type: a.payload.type, operator: cfg.operator, holderName: a.payload.holderName,
+        price: cfg.price, purchaseTime: now,
+        validUntil: now + cfg.duration * 86_400_000,
+        usedRides: 0, qrData: `PASS-${id}-${a.payload.type.toUpperCase()}`,
+        status: 'active',
+      });
+      s.passSales[a.payload.type] = (s.passSales[a.payload.type] || 0) + 1;
+    },
+    usePassRide: (s, a: PayloadAction<string>) => {
+      const p = s.myPasses.find(x => x.id === a.payload);
+      if (p && p.status === 'active') {
+        p.usedRides++;
+        if (Date.now() > p.validUntil) p.status = 'expired';
+      }
+    },
+    expirePasses: (s) => {
+      s.myPasses.forEach(p => { if (Date.now() > p.validUntil) p.status = 'expired'; });
     },
   },
 });
@@ -390,6 +448,7 @@ export const store = configureStore({
     auth: authSlice.reducer,
     ui: uiSlice.reducer,
     tickets: ticketSlice.reducer,
+    passes:   passSlice.reducer,
     favorites: favSlice.reducer,
     toasts: toastSlice.reducer,
     journey: journeySlice.reducer,
@@ -417,4 +476,5 @@ export const { startJourney, updateJourneyStatus, attachTicketToJourney, finishJ
 export const { addPoints, earnBadge, addCarpoolRequest, removeCarpoolRequest, addRecurringTrip, removeRecurringTrip } = gamifSlice.actions;
 export const { loginFleetManager, logoutFleetManager } = fleetSlice.actions;
 export const { recordImpression, recordClick, setAdOverride } = adsSlice.actions;
+export const { buyPass, usePassRide, expirePasses } = passSlice.actions;
 export { BADGES_DEF };

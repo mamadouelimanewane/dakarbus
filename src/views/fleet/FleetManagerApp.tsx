@@ -9,7 +9,7 @@ import { MapContainer, TileLayer, CircleMarker, Popup, Polyline, useMap } from '
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { logoutFleetManager } from '@/store/store';
+import { logoutFleetManager, showToast } from '@/store/store';
 import { LINES, OPERATORS } from '@/data/transportData';
 import type { BusPosition } from '@/types';
 import {
@@ -902,6 +902,19 @@ export default function FleetManagerApp({ operator }: { operator: 'DDD' | 'AFTU'
                     className="flex-1 py-2 rounded-xl text-[11px] font-black transition-all active:scale-95"
                     style={{ background: 'rgba(37,99,235,.15)', color: '#60a5fa', border: '1px solid rgba(37,99,235,.2)' }}>
                     💬 Contacter
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Simulation envoi SMS aux passagers abonnés à la ligne
+                      const count = Math.floor(800 + Math.random() * 2400);
+                      dispatch(showToast({
+                        type: 'success',
+                        message: `📱 SMS envoyé à ${count.toLocaleString('fr-FR')} passagers abonnés — ${inc.lineName}`,
+                      }));
+                    }}
+                    className="flex-1 py-2 rounded-xl text-[11px] font-black transition-all active:scale-95"
+                    style={{ background: 'rgba(251,191,36,.12)', color: '#fbbf24', border: '1px solid rgba(251,191,36,.2)' }}>
+                    📱 SMS
                   </button>
                   <button onClick={() => resolveIncident(inc.id)}
                     className="flex-1 py-2 rounded-xl text-[11px] font-black transition-all active:scale-95"
