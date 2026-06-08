@@ -343,6 +343,181 @@ export const STOPS: Stop[] = [
   { id:'ha8', name:'Hann Maristes Carrefour',    zone:'Hann',        lat:14.7282, lng:-17.4158, operators:['AFTU'],             lines:['A86'] },
   { id:'hr1', name:'Hann Pêcheurs',              zone:'Hann',        lat:14.7136, lng:-17.4069, operators:['AFTU'],             lines:['A86'] },
 
+  // ════════════════════════════════════════════════════════════
+  //  NOUVEAUX ARRÊTS — Densification (< 500 m de marche)
+  // ════════════════════════════════════════════════════════════
+
+  // ── DDD Corridor: Colobane → Liberté 1 (intermédiaires) ──
+  { id:'cl1', name:'Amitié Carrefour',             zone:'Amitié',      lat:14.7045, lng:-17.4512, operators:['DDD'],              lines:['L9','L10','L13'] },
+  { id:'cl2', name:'Cité Gorgui',                  zone:'Amitié',      lat:14.6995, lng:-17.4497, operators:['DDD'],              lines:['L9','L10'] },
+  { id:'cl3', name:'Gueule Tapée Bis',             zone:'Médina',      lat:14.6955, lng:-17.4483, operators:['DDD'],              lines:['L9','L3'] },
+
+  // ── DDD Route Nationale: Front de Terre → Pikine ─────────
+  { id:'rn1', name:'Hann Zone Industrielle 2',     zone:'Hann',        lat:14.7203, lng:-17.4028, operators:['DDD'],              lines:['L12','L15','L45','L46'] },
+  { id:'rn2', name:'Hann Cité Biagui',             zone:'Hann',        lat:14.7237, lng:-17.3997, operators:['DDD'],              lines:['L12','L15'] },
+  { id:'rn3', name:'Pikine Route Nationale 1',     zone:'Pikine',      lat:14.7303, lng:-17.3953, operators:['DDD'],              lines:['L12','L15'] },
+  { id:'rn4', name:'Pikine Route Nationale 2',     zone:'Pikine',      lat:14.7358, lng:-17.3925, operators:['DDD'],              lines:['L12','L35'] },
+  { id:'rn5', name:'Pikine Route Nationale 3',     zone:'Pikine',      lat:14.7408, lng:-17.3900, operators:['DDD'],              lines:['L12','L35','L46'] },
+  { id:'rn6', name:'Pikine Entrée RN',             zone:'Pikine',      lat:14.7453, lng:-17.3875, operators:['DDD'],              lines:['L12','L15','L35'] },
+
+  // ── DDD axe Liberté–Plateau intermédiaires ────────────────
+  { id:'p21', name:'Avenue Pompidou',              zone:'Plateau',     lat:14.6769, lng:-17.4447, operators:['DDD'],              lines:['L6','L9','L10'] },
+  { id:'p22', name:'Médina Santiaba',              zone:'Médina',      lat:14.6836, lng:-17.4458, operators:['DDD'],              lines:['L9','L3'] },
+
+  // ── DDD VDN / Parcelles–Cambérène axe Nord ───────────────
+  { id:'vd1', name:'VDN Bifurcation',              zone:'Patte d\'Oie',lat:14.7278, lng:-17.4678, operators:['DDD'],              lines:['L16','L38'] },
+  { id:'vd2', name:'Cité ASECNA',                  zone:'Patte d\'Oie',lat:14.7303, lng:-17.4703, operators:['DDD'],              lines:['L16','L18'] },
+  { id:'p24', name:'Parcelles–Cambérène km16',     zone:'Parcelles',   lat:14.7567, lng:-17.4220, operators:['DDD'],              lines:['L19','L29'] },
+  { id:'p23', name:'Guédiawaye km17',              zone:'Guédiawaye',  lat:14.7547, lng:-17.4142, operators:['DDD'],              lines:['L11','L2'] },
+
+  // ── Fann / Point-E / Mermoz densification AFTU ────────────
+  { id:'fa1', name:'Fann Résidence Nord',          zone:'Fann',        lat:14.6967, lng:-17.4708, operators:['AFTU'],             lines:['A36','A24'] },
+  { id:'fa2', name:'Fann Stade Iba Mar Diop',      zone:'Fann',        lat:14.6978, lng:-17.4628, operators:['AFTU'],             lines:['A97','A36'] },
+  { id:'fa3', name:'UCAD Bibliothèque',            zone:'Fann',        lat:14.6931, lng:-17.4598, operators:['AFTU'],             lines:['A34','A17'] },
+  { id:'fa4', name:'Cité Universitaire',           zone:'Fann',        lat:14.6911, lng:-17.4545, operators:['AFTU'],             lines:['A17','A34'] },
+  { id:'fa5', name:'Fann Colobane Bis',            zone:'Fann',        lat:14.6942, lng:-17.4531, operators:['AFTU'],             lines:['A18','A34'] },
+  { id:'fa6', name:'Point-E Boulevard',            zone:'Point-E',     lat:14.7011, lng:-17.4672, operators:['AFTU'],             lines:['A16','A97'] },
+  { id:'fa7', name:'Mermoz Cité',                  zone:'Mermoz',      lat:14.7119, lng:-17.4764, operators:['AFTU'],             lines:['A97','A102'] },
+  { id:'fa8', name:'Mermoz Liberté 6',             zone:'Mermoz',      lat:14.7069, lng:-17.4683, operators:['AFTU'],             lines:['A91','A102'] },
+
+  // ── Sicap / HLM densification AFTU ───────────────────────
+  { id:'si4', name:'Sicap Amitié',                 zone:'Sicap',       lat:14.7078, lng:-17.4638, operators:['AFTU'],             lines:['A34','A16'] },
+  { id:'si5', name:'Sicap Foire Extension',        zone:'Sicap',       lat:14.7136, lng:-17.4650, operators:['AFTU'],             lines:['A34','A16'] },
+  { id:'si6', name:'Sicap Liberté 2',              zone:'Sicap',       lat:14.7107, lng:-17.4617, operators:['AFTU'],             lines:['A34','A91'] },
+  { id:'hlm5',name:'HLM 3',                        zone:'HLM',         lat:14.7125, lng:-17.4470, operators:['AFTU'],             lines:['A15','A17'] },
+  { id:'hlm6',name:'HLM 7',                        zone:'HLM',         lat:14.7183, lng:-17.4492, operators:['AFTU'],             lines:['A15'] },
+  { id:'gd13',name:'Grand Dakar Extension',        zone:'Grand Dakar', lat:14.7058, lng:-17.4520, operators:['AFTU'],             lines:['A30'] },
+  { id:'gd14',name:'Grand Dakar Cité 2',           zone:'Grand Dakar', lat:14.7022, lng:-17.4525, operators:['AFTU'],             lines:['A30'] },
+  { id:'gd15',name:'Biscuiterie Cité',             zone:'Grand Dakar', lat:14.6997, lng:-17.4490, operators:['AFTU'],             lines:['A15'] },
+
+  // ── Ouakam / Ngor / Almadies densification AFTU ───────────
+  { id:'ok4', name:'Ouakam Cité',                  zone:'Ouakam',      lat:14.7228, lng:-17.4948, operators:['AFTU'],             lines:['A35','A94'] },
+  { id:'ok5', name:'Ouakam Bifurcation',           zone:'Ouakam',      lat:14.7203, lng:-17.4930, operators:['AFTU'],             lines:['A91','A42'] },
+  { id:'ok6', name:'Ouakam Mosquée',               zone:'Ouakam',      lat:14.7239, lng:-17.4903, operators:['AFTU'],             lines:['A35','A36'] },
+  { id:'ng3', name:'Ngor Aéroport Bis',            zone:'Ngor',        lat:14.7497, lng:-17.5008, operators:['AFTU'],             lines:['A49','A94'] },
+  { id:'ng4', name:'Ngor Plage',                   zone:'Ngor',        lat:14.7542, lng:-17.5003, operators:['AFTU'],             lines:['A49','A105'] },
+  { id:'al2', name:'Almadies Résidence',           zone:'Almadies',    lat:14.7453, lng:-17.5072, operators:['AFTU'],             lines:['A49','A61'] },
+  { id:'al3', name:'Almadies Club',                zone:'Almadies',    lat:14.7467, lng:-17.5133, operators:['AFTU'],             lines:['A91','A94'] },
+  { id:'ca2', name:'Castors Marché',               zone:'Castors',     lat:14.7147, lng:-17.4800, operators:['AFTU'],             lines:['A94','A91'] },
+  { id:'of3', name:'Ouest Foire Entrée',           zone:'Ouest Foire', lat:14.7325, lng:-17.4817, operators:['AFTU'],             lines:['A94','A105'] },
+
+  // ── Yoff / Grand Yoff densification AFTU ─────────────────
+  { id:'yf6', name:'Yoff Cité II',                 zone:'Yoff',        lat:14.7472, lng:-17.4869, operators:['AFTU'],             lines:['A10','A4'] },
+  { id:'yf7', name:'Yoff Route Aéroport',          zone:'Yoff',        lat:14.7433, lng:-17.4893, operators:['AFTU'],             lines:['A66','A105'] },
+  { id:'yf8', name:'Yoff Résidence',               zone:'Yoff',        lat:14.7453, lng:-17.4847, operators:['AFTU'],             lines:['A10','A66'] },
+  { id:'gy7', name:'Grand Yoff Centre',            zone:'Grand Yoff',  lat:14.7298, lng:-17.4528, operators:['AFTU'],             lines:['A3','A66'] },
+  { id:'gy8', name:'Grand Yoff Cité Gestion',      zone:'Grand Yoff',  lat:14.7278, lng:-17.4560, operators:['AFTU'],             lines:['A3','A7'] },
+  { id:'gy9', name:'Grand Yoff Extension',         zone:'Grand Yoff',  lat:14.7322, lng:-17.4512, operators:['AFTU'],             lines:['A66','A3'] },
+  { id:'gy10',name:'Grand Yoff Sud',               zone:'Grand Yoff',  lat:14.7262, lng:-17.4543, operators:['AFTU'],             lines:['A18','A66'] },
+
+  // ── Parcelles densification AFTU ──────────────────────────
+  { id:'pa13',name:'Parcelles Unité 3',            zone:'Parcelles',   lat:14.7458, lng:-17.4395, operators:['AFTU'],             lines:['A6','A98'] },
+  { id:'pa14',name:'Parcelles Unité 6',            zone:'Parcelles',   lat:14.7483, lng:-17.4375, operators:['AFTU'],             lines:['A6'] },
+  { id:'pa15',name:'Parcelles Unité 9',            zone:'Parcelles',   lat:14.7503, lng:-17.4348, operators:['AFTU'],             lines:['A25','A2'] },
+  { id:'pa16',name:'Parcelles Unité 13',           zone:'Parcelles',   lat:14.7528, lng:-17.4315, operators:['AFTU'],             lines:['A2','A25'] },
+  { id:'pa17',name:'Parcelles Unité 18',           zone:'Parcelles',   lat:14.7548, lng:-17.4258, operators:['AFTU'],             lines:['A2','A90'] },
+  { id:'pa18',name:'Parcelles Unité 21',           zone:'Parcelles',   lat:14.7567, lng:-17.4273, operators:['AFTU'],             lines:['A6','A90'] },
+  { id:'pa19',name:'Parcelles Unité 24',           zone:'Parcelles',   lat:14.7592, lng:-17.4310, operators:['AFTU'],             lines:['A29','A90'] },
+  { id:'pa20',name:'Parcelles Cité Lobatt Fall',   zone:'Parcelles',   lat:14.7468, lng:-17.4358, operators:['AFTU'],             lines:['A98','A6'] },
+  { id:'pa21',name:'Parcelles Cité Asecna',        zone:'Parcelles',   lat:14.7517, lng:-17.4335, operators:['AFTU'],             lines:['A2','A25'] },
+  { id:'pa22',name:'Parcelles Unité 25 Bis',       zone:'Parcelles',   lat:14.7608, lng:-17.4295, operators:['AFTU'],             lines:['A29','A13'] },
+
+  // ── Sam Sam / Khar Yalla densification AFTU ───────────────
+  { id:'ky3', name:'Khar Yalla Extension',         zone:'Khar Yalla',  lat:14.7520, lng:-17.4181, operators:['AFTU'],             lines:['A87','A98'] },
+  { id:'ky4', name:'Khar Yalla Nord',              zone:'Khar Yalla',  lat:14.7548, lng:-17.4217, operators:['AFTU'],             lines:['A90','A87'] },
+  { id:'ss3', name:'Sam Sam 3',                    zone:'Sam Sam',     lat:14.7625, lng:-17.4128, operators:['AFTU'],             lines:['A87','A101'] },
+  { id:'ss4', name:'Sam Sam 4',                    zone:'Sam Sam',     lat:14.7642, lng:-17.4108, operators:['AFTU'],             lines:['A101','A87'] },
+  { id:'zr2', name:'Zone Recasement Est',          zone:'Parcelles',   lat:14.7553, lng:-17.4138, operators:['AFTU'],             lines:['A98','A90'] },
+
+  // ── Cambérène / Daroukhane / Tivaouane / Malika AFTU ──────
+  { id:'cb5', name:'Cambérène Extension',          zone:'Cambérène',   lat:14.7700, lng:-17.4228, operators:['AFTU'],             lines:['A29','A50'] },
+  { id:'cb6', name:'Cambérène Cité Soprim',        zone:'Cambérène',   lat:14.7658, lng:-17.4252, operators:['AFTU'],             lines:['A29','A13'] },
+  { id:'cb7', name:'Cambérène Marché',             zone:'Cambérène',   lat:14.7617, lng:-17.4272, operators:['AFTU'],             lines:['A13','A29'] },
+  { id:'dk4', name:'Daroukhane Est',               zone:'Daroukhane',  lat:14.7861, lng:-17.4147, operators:['AFTU'],             lines:['A70','A104'] },
+  { id:'tp3', name:'Tivaouane Peul Extension',     zone:'Tivaouane Peul',lat:14.7800,lng:-17.4380,operators:['AFTU'],             lines:['A88','A96'] },
+  { id:'ma4', name:'Malika Nord',                  zone:'Malika',      lat:14.7978, lng:-17.3503, operators:['AFTU'],             lines:['A96','A104'] },
+  { id:'ma5', name:'Malika Extension',             zone:'Malika',      lat:14.8017, lng:-17.3547, operators:['AFTU'],             lines:['A96','A50'] },
+  { id:'ml2', name:'Malika Cité II',               zone:'Malika',      lat:14.7967, lng:-17.3447, operators:['AFTU'],             lines:['A75','A96'] },
+
+  // ── Guédiawaye densification AFTU ────────────────────────
+  { id:'gd16',name:'Guédiawaye Cité Aliou',        zone:'Guédiawaye',  lat:14.7728, lng:-17.4028, operators:['AFTU'],             lines:['A27','A56'] },
+  { id:'gd17',name:'Guédiawaye Ndoye Mbaye',       zone:'Guédiawaye',  lat:14.7753, lng:-17.4058, operators:['AFTU'],             lines:['A56','A27'] },
+  { id:'gd18',name:'Guédiawaye Wakhinane 2',       zone:'Guédiawaye',  lat:14.7847, lng:-17.4008, operators:['AFTU'],             lines:['A75','A27'] },
+  { id:'gd19',name:'Guédiawaye Grand Médine',      zone:'Guédiawaye',  lat:14.7797, lng:-17.3975, operators:['AFTU'],             lines:['A70','A64'] },
+  { id:'gd20',name:'Golf Franc',                   zone:'Guédiawaye',  lat:14.7825, lng:-17.3968, operators:['AFTU'],             lines:['A56','A64'] },
+  { id:'gd21',name:'Guédiawaye Cité Mansor',       zone:'Guédiawaye',  lat:14.7783, lng:-17.3947, operators:['AFTU'],             lines:['A64','A84'] },
+  { id:'gd22',name:'Nimzat Extension',             zone:'Guédiawaye',  lat:14.7839, lng:-17.4025, operators:['AFTU'],             lines:['A27','A75'] },
+
+  // ── Pikine densification AFTU ─────────────────────────────
+  { id:'pk12',name:'Pikine Cité Fayçal',           zone:'Pikine',      lat:14.7432, lng:-17.3826, operators:['AFTU'],             lines:['A9','A52'] },
+  { id:'pk13',name:'Pikine Rue 10',                zone:'Pikine',      lat:14.7447, lng:-17.3780, operators:['AFTU'],             lines:['A9','A85'] },
+  { id:'pk14',name:'Pikine Cité Derrière',         zone:'Pikine',      lat:14.7462, lng:-17.3672, operators:['AFTU'],             lines:['A52','A68'] },
+  { id:'pk15',name:'Pikine Cité Keur Massar',      zone:'Pikine',      lat:14.7487, lng:-17.3728, operators:['AFTU'],             lines:['A52','A9'] },
+  { id:'pk16',name:'Pikine Nord Marché',           zone:'Pikine',      lat:14.7622, lng:-17.3803, operators:['AFTU'],             lines:['A64','A52'] },
+  { id:'pk17',name:'Pikine Cité Soprim',           zone:'Pikine',      lat:14.7468, lng:-17.3843, operators:['AFTU'],             lines:['A9','A52'] },
+  { id:'pk18',name:'Pikine Cité Khar Yalla',       zone:'Pikine',      lat:14.7513, lng:-17.3750, operators:['AFTU'],             lines:['A52','A9'] },
+  { id:'pk19',name:'Pikine Unité 19',              zone:'Pikine',      lat:14.7397, lng:-17.3750, operators:['AFTU'],             lines:['A68','A84'] },
+  { id:'pk20',name:'Pikine Cité Darou',            zone:'Pikine',      lat:14.7518, lng:-17.3778, operators:['AFTU'],             lines:['A52','A64'] },
+
+  // ── Diamaguène densification AFTU ─────────────────────────
+  { id:'dg6', name:'Diamaguène Résidence',         zone:'Diamaguène',  lat:14.7487, lng:-17.3543, operators:['AFTU'],             lines:['A84','A85'] },
+  { id:'dg7', name:'Diamaguène Extension',         zone:'Diamaguène',  lat:14.7458, lng:-17.3572, operators:['AFTU'],             lines:['A84','A68'] },
+  { id:'dg8', name:'Diamaguène Cité 2',            zone:'Diamaguène',  lat:14.7512, lng:-17.3583, operators:['AFTU'],             lines:['A84','A85'] },
+
+  // ── Thiaroye densification AFTU ───────────────────────────
+  { id:'th6', name:'Thiaroye Cité Soprim',         zone:'Thiaroye',    lat:14.7322, lng:-17.3488, operators:['AFTU'],             lines:['A57','A83'] },
+  { id:'th7', name:'Thiaroye Cité Planète',        zone:'Thiaroye',    lat:14.7347, lng:-17.3458, operators:['AFTU'],             lines:['A68','A57'] },
+  { id:'th8', name:'Thiaroye Cité HLM',            zone:'Thiaroye',    lat:14.7367, lng:-17.3405, operators:['AFTU'],             lines:['A68','A89'] },
+  { id:'th9', name:'Thiaroye Extension Nord',      zone:'Thiaroye',    lat:14.7400, lng:-17.3452, operators:['AFTU'],             lines:['A68','A82'] },
+  { id:'taz4',name:'Thiaroye Azur Extension',      zone:'Thiaroye',    lat:14.7183, lng:-17.3360, operators:['AFTU'],             lines:['A82','A57'] },
+  { id:'taz5',name:'Thiaroye Azur Résidence',      zone:'Thiaroye',    lat:14.7167, lng:-17.3408, operators:['AFTU'],             lines:['A82','A83'] },
+  { id:'tsm4',name:'TSM Extension',                zone:'Thiaroye',    lat:14.7242, lng:-17.3455, operators:['AFTU'],             lines:['A83','A68'] },
+  { id:'tsm5',name:'TSM Nord',                     zone:'Thiaroye',    lat:14.7258, lng:-17.3517, operators:['AFTU'],             lines:['A83','A57'] },
+
+  // ── Yeumbeul / Keur Massar densification AFTU ─────────────
+  { id:'ye4', name:'Yeumbeul Extension',           zone:'Yeumbeul',    lat:14.7637, lng:-17.3465, operators:['AFTU'],             lines:['A68','A26'] },
+  { id:'ye5', name:'Yeumbeul Cité',                zone:'Yeumbeul',    lat:14.7667, lng:-17.3478, operators:['AFTU'],             lines:['A100','A68'] },
+  { id:'ye6', name:'Yeumbeul Marché 2',            zone:'Yeumbeul',    lat:14.7692, lng:-17.3488, operators:['AFTU'],             lines:['A100','A26'] },
+  { id:'km7', name:'Keur Massar Cité Biagui',      zone:'Keur Massar', lat:14.7803, lng:-17.3217, operators:['AFTU'],             lines:['A65','A51'] },
+  { id:'km8', name:'Keur Massar Route',            zone:'Keur Massar', lat:14.7817, lng:-17.3167, operators:['AFTU'],             lines:['A99','A65'] },
+  { id:'km9', name:'Keur Massar Extension Est',    zone:'Keur Massar', lat:14.7843, lng:-17.3108, operators:['AFTU'],             lines:['A99','A56'] },
+  { id:'km10',name:'Keur Massar Centre Bis',       zone:'Keur Massar', lat:14.7853, lng:-17.3152, operators:['AFTU'],             lines:['A65','A99'] },
+  { id:'kn3', name:'Keur Massar Nord Bis',         zone:'Keur Massar', lat:14.7983, lng:-17.3083, operators:['AFTU'],             lines:['A56','A73'] },
+  { id:'kn4', name:'Keur Massar Nord Cité',        zone:'Keur Massar', lat:14.7967, lng:-17.3119, operators:['AFTU'],             lines:['A56','A99'] },
+
+  // ── Mbao densification AFTU ───────────────────────────────
+  { id:'mb9', name:'Grand Mbao Extension',         zone:'Mbao',        lat:14.7517, lng:-17.2897, operators:['AFTU'],             lines:['A40','A44'] },
+  { id:'mb10',name:'Mbao Cité Keur Ndiaye',        zone:'Mbao',        lat:14.7497, lng:-17.2972, operators:['AFTU'],             lines:['A43','A44'] },
+  { id:'mb11',name:'Mbao Résidence',               zone:'Mbao',        lat:14.7508, lng:-17.2942, operators:['AFTU'],             lines:['A40','A43'] },
+  { id:'mb12',name:'Mbao Cité CIF 2',              zone:'Mbao',        lat:14.7528, lng:-17.2963, operators:['AFTU'],             lines:['A43','A40'] },
+
+  // ── Rufisque densification AFTU ───────────────────────────
+  { id:'rf8', name:'Rufisque Colobane',            zone:'Rufisque',    lat:14.7202, lng:-17.2773, operators:['AFTU'],             lines:['A12','A55'] },
+  { id:'rf9', name:'Rufisque Thiawlène',           zone:'Rufisque',    lat:14.7173, lng:-17.2836, operators:['AFTU'],             lines:['A55','A12'] },
+  { id:'rf10',name:'Rufisque PAPS',                zone:'Rufisque',    lat:14.7242, lng:-17.2762, operators:['AFTU'],             lines:['A12','A40'] },
+
+  // ── Hann densification AFTU ───────────────────────────────
+  { id:'ha9', name:'Hann Maristes Extension',      zone:'Hann',        lat:14.7352, lng:-17.4092, operators:['AFTU'],             lines:['A86'] },
+  { id:'ha10',name:'Hann Cité Mixte',              zone:'Hann',        lat:14.7272, lng:-17.4183, operators:['AFTU'],             lines:['A86'] },
+  { id:'ha11',name:'Hann Bel-Air Extension',       zone:'Hann',        lat:14.7208, lng:-17.4133, operators:['AFTU'],             lines:['A86'] },
+  { id:'ha12',name:'Hann Pêcheurs Plage',          zone:'Hann',        lat:14.7108, lng:-17.4092, operators:['AFTU'],             lines:['A86'] },
+
+  // ── Médina / Tilène densification AFTU ────────────────────
+  { id:'me4', name:'Médina Rue 8',                 zone:'Médina',      lat:14.6863, lng:-17.4448, operators:['AFTU'],             lines:['A18','A20'] },
+  { id:'me5', name:'Médina Pharmacie',             zone:'Médina',      lat:14.6892, lng:-17.4453, operators:['AFTU'],             lines:['A18','A30'] },
+  { id:'me6', name:'Médina Liberté',               zone:'Médina',      lat:14.6917, lng:-17.4462, operators:['AFTU'],             lines:['A20','A30'] },
+  { id:'ti3', name:'Tilène Bis',                   zone:'Médina',      lat:14.6822, lng:-17.4458, operators:['AFTU'],             lines:['A30','A18'] },
+  { id:'ti4', name:'Tilène Est',                   zone:'Médina',      lat:14.6858, lng:-17.4430, operators:['AFTU'],             lines:['A18','A20'] },
+
+  // ── Bargny / Diamniadio densification AFTU ────────────────
+  { id:'bg3', name:'Bargny Extension',             zone:'Bargny',      lat:14.6992, lng:-17.2258, operators:['AFTU'],             lines:['A95','A93'] },
+  { id:'di4', name:'Diamniadio Parc Industriel',   zone:'Diamniadio',  lat:14.7311, lng:-17.1680, operators:['AFTU'],             lines:['A92','A103'] },
+  { id:'di5', name:'Diamniadio Cité',              zone:'Diamniadio',  lat:14.7275, lng:-17.1725, operators:['AFTU'],             lines:['A92','A93'] },
+
+  // ── Guinaw Rails / Dalifort densification AFTU ────────────
+  { id:'gr3', name:'Guinaw Rails Centre',          zone:'Guinaw Rails', lat:14.7400, lng:-17.3805, operators:['AFTU'],            lines:['A100','A84'] },
+  { id:'dl3', name:'Dalifort Cité',                zone:'Pikine',      lat:14.7547, lng:-17.3647, operators:['AFTU'],             lines:['A89','A52'] },
+
   // ── BRT ───────────────────────────────────────────────────
   { id:'b01', name:'Petersen (BRT)',             zone:'Plateau',     lat:14.6811, lng:-17.4464, operators:['BRT'],              lines:['BRT-L1'] },
   { id:'b02', name:'Colobane (BRT)',             zone:'Médina',      lat:14.6908, lng:-17.4478, operators:['BRT'],              lines:['BRT-L1'] },
@@ -377,8 +552,8 @@ const DDD_LINES: Line[] = [
   { id:'L6',   name:'Ligne 6',   operator:'DDD', route:'Parcelles ↔ Palais',                   color:'#1d4ed8', freq:'12 min', tarif:200, stops:['pa1','pa5','pa3','cb1','lb5','lb6','p03','p08','p01'] },
   { id:'L7',   name:'Ligne 7',   operator:'DDD', route:'Ouakam ↔ Palais',                      color:'#3b82f6', freq:'15 min', tarif:200, stops:['ok1','yf2','bm1','ha2','p03','p15','p08','p01'] },
   { id:'L8',   name:'Ligne 8',   operator:'DDD', route:'Yoff ↔ Palais',                        color:'#60a5fa', freq:'15 min', tarif:200, stops:['yf1','yf2','ha2','bm1','ha4','p03','p15','p01'] },
-  { id:'L9',   name:'Ligne 9',   operator:'DDD', route:'Liberté 6 ↔ Palais',                   color:'#2563eb', freq:'10 min', tarif:200, stops:['lb6','sc1','lb1','p04','p11','p05','p03','p01'] },
-  { id:'L10',  name:'Ligne 10',  operator:'DDD', route:'Liberté 5 ↔ Palais',                   color:'#1e40af', freq:'12 min', tarif:200, stops:['lb5','sc1','lb2','lb1','p05','p03','p01'] },
+  { id:'L9',   name:'Ligne 9',   operator:'DDD', route:'Liberté 6 ↔ Palais',                   color:'#2563eb', freq:'10 min', tarif:200, stops:['lb6','sc1','lb1','cl1','cl2','cl3','p22','p04','p11','p05','p21','p03','p01'] },
+  { id:'L10',  name:'Ligne 10',  operator:'DDD', route:'Liberté 5 ↔ Palais',                   color:'#1e40af', freq:'12 min', tarif:200, stops:['lb5','sc1','lb2','lb1','cl1','cl2','p11','p05','p21','p03','p01'] },
   { id:'L13',  name:'Ligne 13',  operator:'DDD', route:'Liberté 5 ↔ Palais (Sicap)',           color:'#3b82f6', freq:'10 min', tarif:200, stops:['lb5','lb4','lb3','lb2','lb6','sc7','p05','p03','p01'] },
   { id:'L14',  name:'Ligne 14',  operator:'DDD', route:'Liberté 5 ↔ Leclerc (Axe Sicap)',     color:'#93c5fd', freq:'15 min', tarif:200, stops:['lb5','sc1','lb1','lc1'] },
   { id:'L18',  name:'Ligne 18',  operator:'DDD', route:'Cité Millionnaire ↔ Leclerc',          color:'#2563eb', freq:'20 min', tarif:200, stops:['cm1','zo1','nf1','gy3','po1','sc8','lb5','lb4','lb3','lb1','lc1'] },
@@ -389,16 +564,16 @@ const DDD_LINES: Line[] = [
   { id:'L43',  name:'Ligne 43',  operator:'DDD', route:'HLM ↔ Grand Yoff',                    color:'#2563eb', freq:'15 min', tarif:200, stops:['lc1','lc2','sc8','gy3','gy1'] },
 
   // ── Axe Route Nationale — Pikine, Thiaroye, Rufisque ──────
-  { id:'L12',  name:'Ligne 12',  operator:'DDD', route:'Guédiawaye ↔ Palais',                  color:'#1a56db', freq:'12 min', tarif:200, stops:['gd4','gd1','gd8','gd3','pk1','bm1','ha2','p03','p01'] },
-  { id:'L15',  name:'Ligne 15',  operator:'DDD', route:'Rufisque ↔ Palais',                    color:'#1d4ed8', freq:'20 min', tarif:300, stops:['rf1','rf2','th1','pk5','pk1','ha4','ha2','p03','p10','p01'] },
+  { id:'L12',  name:'Ligne 12',  operator:'DDD', route:'Guédiawaye ↔ Palais',                  color:'#1a56db', freq:'12 min', tarif:200, stops:['gd4','gd1','gd8','gd3','pk1','rn6','rn5','rn4','rn3','rn2','rn1','ha2','p03','p01'] },
+  { id:'L15',  name:'Ligne 15',  operator:'DDD', route:'Rufisque ↔ Palais',                    color:'#1d4ed8', freq:'20 min', tarif:300, stops:['rf1','rf2','th1','pk5','pk1','rn6','rn3','rn2','rn1','ha4','ha2','p03','p10','p01'] },
   { id:'L21',  name:'Ligne 21',  operator:'DDD', route:'Keur Massar ↔ Palais Express',         color:'#1e3a8a', freq:'20 min', tarif:300, stops:['km1','km4','km6','pk1','ha2','p03','p01'] },
   { id:'L24',  name:'Ligne 24',  operator:'DDD', route:'Pikine ↔ Ouakam',                      color:'#1d4ed8', freq:'20 min', tarif:200, stops:['pk1','pk5','pk6','gd3','gd8','gd1','gy1','ok1'] },
   { id:'L30',  name:'Ligne 30',  operator:'DDD', route:'Thiaroye ↔ Leclerc',                   color:'#1e40af', freq:'20 min', tarif:250, stops:['th1','th3','pk1','pk5','pk6','gd3','gd1','lb5','lc1'] },
   { id:'L33',  name:'Ligne 33',  operator:'DDD', route:'Rufisque ↔ Liberté 6',                 color:'#1d4ed8', freq:'25 min', tarif:350, stops:['rf1','rf2','th3','th1','pk1','ha2','lb6'] },
-  { id:'L35',  name:'Ligne 35',  operator:'DDD', route:'Pikine ↔ Palais',                      color:'#3b82f6', freq:'20 min', tarif:250, stops:['pk1','pk11','pk5','pk6','bm1','ha2','p16','p08','p10','p01'] },
+  { id:'L35',  name:'Ligne 35',  operator:'DDD', route:'Pikine ↔ Palais',                      color:'#3b82f6', freq:'20 min', tarif:250, stops:['pk1','rn6','rn5','rn4','pk11','pk5','pk6','bm1','ha2','p16','p08','p10','p01'] },
   { id:'L44',  name:'Ligne 44',  operator:'DDD', route:'Pikine ↔ Guédiawaye',                  color:'#1d4ed8', freq:'15 min', tarif:200, stops:['pk1','pk5','pk6','gd3','gd8','gd9','gd11','gd1'] },
-  { id:'L45',  name:'Ligne 45',  operator:'DDD', route:'Mbao ↔ Palais',                        color:'#1e40af', freq:'20 min', tarif:300, stops:['mb1','mb3','pk1','ha4','ha2','p03','p01'] },
-  { id:'L46',  name:'Ligne 46',  operator:'DDD', route:'Thiaroye ↔ Palais',                    color:'#1e40af', freq:'20 min', tarif:250, stops:['th1','th3','pk1','ha4','ha2','p16','p03','p01'] },
+  { id:'L45',  name:'Ligne 45',  operator:'DDD', route:'Mbao ↔ Palais',                        color:'#1e40af', freq:'20 min', tarif:300, stops:['mb1','mb3','pk1','rn1','ha4','ha2','p03','p01'] },
+  { id:'L46',  name:'Ligne 46',  operator:'DDD', route:'Thiaroye ↔ Palais',                    color:'#1e40af', freq:'20 min', tarif:250, stops:['th1','th3','pk1','rn5','rn1','ha4','ha2','p16','p03','p01'] },
   { id:'L47',  name:'Ligne 47',  operator:'DDD', route:'Rufisque ↔ Grand Yoff',                color:'#1a56db', freq:'30 min', tarif:300, stops:['rf1','rf2','mb1','pk1','ha2','gy1'] },
   { id:'L48',  name:'Ligne 48',  operator:'DDD', route:'Mbao ↔ Palais Express',                color:'#2563eb', freq:'25 min', tarif:300, stops:['mb1','mb3','pk1','ha4','ha2','p03','p01'] },
 
