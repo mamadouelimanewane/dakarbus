@@ -41,12 +41,13 @@ function WaitChip({ waitMin, time }: { waitMin: number; time: string }) {
 }
 
 // ── Stop card ─────────────────────────────────────────────────
-function StopCard({ stop, isFav, onClick, onFav, showAllDeps = false }: {
+function StopCard({ stop, isFav, onClick, onFav, showAllDeps = false, onGuide }: {
   stop: typeof STOPS[0];
   isFav: boolean;
   onClick: () => void;
   onFav: (e: React.MouseEvent) => void;
   showAllDeps?: boolean;
+  onGuide?: (stop: typeof STOPS[0]) => void;
 }) {
   const deps = useLiveDepartures(stop.id);
   const [qrOpen, setQrOpen] = useState(false);
@@ -87,6 +88,16 @@ function StopCard({ stop, isFav, onClick, onFav, showAllDeps = false }: {
         </div>
       </div>
       {qrOpen && <QRCodeStop stopId={stop.id} stopName={stop.name} onClose={() => setQrOpen(false)} />}
+
+      {/* Bouton M'y guider */}
+      {onGuide && (
+        <button
+          onClick={e => { e.stopPropagation(); onGuide(stop); }}
+          className="w-full mt-2 mb-1 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all active:scale-95"
+          style={{ background: `${opColor}18`, border: `1px solid ${opColor}30`, color: opColor }}>
+          🚶 M'y guider
+        </button>
+      )}
 
       <div className="flex flex-wrap gap-1 mb-3">
         {stop.operators.map(op => (
@@ -278,6 +289,7 @@ export default function StopsPage() {
             showAllDeps={expandedId === stop.id}
             onClick={() => handleClick(stop)}
             onFav={e => { e.stopPropagation(); dispatch(toggleFavStop(stop.id)); }}
+            onGuide={s => window.dispatchEvent(new CustomEvent('open-walk-guide', { detail: s }))}
           />
         ))}
       </div>

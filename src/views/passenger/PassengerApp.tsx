@@ -17,9 +17,12 @@ import ChatBot from '@/components/ChatBot';
 import VoyagerWizard from '@/components/VoyagerWizard';
 import OnboardingModal from '@/components/OnboardingModal';
 import GlobalSearch from '@/components/GlobalSearch';
+import WalkToStopGuide from '@/components/WalkToStopGuide';
 import { haptic } from '@/utils/haptic';
 import { useSmartAlerts } from '@/hooks/useSmartAlerts';
 import { usePopBack } from '@/hooks/usePopBack';
+import { getNearestStop } from '@/utils/nearest';
+import type { Stop } from '@/types';
 
 const LAST_TAB_KEY = 'sunubus_last_tab';
 
@@ -65,6 +68,7 @@ export default function PassengerApp() {
   const [transitionKey, setTransitionKey] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
   const [mapFullscreen, setMapFullscreen] = useState(false);
+  const [walkGuideStop, setWalkGuideStop] = useState<Stop | null>(null);
 
   const sheetRef = useRef<HTMLDivElement>(null);
 
@@ -215,6 +219,22 @@ export default function PassengerApp() {
   }, []);
 
   React.useEffect(() => {
+    const handler = (e: Event) => {
+      const stop = (e as CustomEvent).detail as Stop;
+      setWalkGuideStop(stop);
+    };
+    window.addEventListener('open-walk-guide', handler);
+    return () => window.removeEventListener('open-walk-guide', handler);
+  }, []);
+
+  const handleNearestStop = useCallback(() => {
+    if (!userLocation) return;
+    haptic('medium');
+    const result = getNearestStop(userLocation[0], userLocation[1]);
+    if (result) setWalkGuideStop(result.stop);
+  }, [userLocation]);
+
+  React.useEffect(() => {
     if (routeDisplay) setSheetState('half');
   }, [routeDisplay]);
 
@@ -262,6 +282,15 @@ export default function PassengerApp() {
 
       {/* ── Recherche universelle ────────────────────────────── */}
       {searchOpen && <GlobalSearch onClose={() => setSearchOpen(false)} />}
+
+      {/* ── Guidage piéton vers arrêt ────────────────────────── */}
+      {walkGuideStop && userLocation && (
+        <WalkToStopGuide
+          stop={walkGuideStop}
+          initialPos={userLocation}
+          onClose={() => setWalkGuideStop(null)}
+        />
+      )}
 
       {/* ── Wizard Voyager ──────────────────────────────────── */}
       {voyagerOpen && (
@@ -421,6 +450,14 @@ export default function PassengerApp() {
                     title="Centrer sur ma position">
                     📍
                   </button>
+                  {userLocation && (
+                    <button onClick={handleNearestStop}
+                      className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shadow-2xl transition-all active:scale-90"
+                      style={{ background: 'rgba(8,12,24,.92)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.15)', boxShadow: '0 4px 16px rgba(0,0,0,.5)' }}
+                      title="M'y guider vers l'arrêt le plus proche">
+                      🚶
+                    </button>
+                  )}
                   <button onClick={() => { haptic('light'); setMapFullscreen(f => !f); }}
                     className="w-11 h-11 rounded-2xl flex items-center justify-center text-lg shadow-2xl transition-all active:scale-90"
                     style={{ background: 'rgba(8,12,24,.92)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,.15)', boxShadow: '0 4px 16px rgba(0,0,0,.5)' }}
