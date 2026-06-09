@@ -282,20 +282,24 @@ function LineDetail({ lineId, onBack, onShowMap }: { lineId: string; onBack: () 
       </div>
 
       {/* Actions */}
-      <div className="flex-shrink-0 p-4 flex gap-2" style={{ borderTop: '1px solid var(--c-border)' }}>
+      <div className="flex-shrink-0 p-4 space-y-2" style={{ borderTop: '1px solid var(--c-border)' }}>
+        {/* CTA principal : planifier depuis terminus */}
         <button onClick={planFromLine}
-          className="flex-1 btn btn-primary">
-          🗺️ Planifier
+          className="w-full py-3.5 rounded-xl text-sm font-black text-white transition-all active:scale-95"
+          style={{ background: `linear-gradient(135deg,${line.color},${line.color}cc)`, boxShadow: `0 6px 20px ${line.color}40`, fontSize: 14 }}>
+          🚌 Prendre cette ligne — Planifier
         </button>
-        <button onClick={() => { dispatch(setFocusedLine(lineId)); onShowMap?.(); }}
-          className="flex-1 btn btn-ghost">
-          📍 Carte
-        </button>
-        <button onClick={() => setChatOpen(true)}
-          className="btn btn-ghost flex items-center gap-1 px-3"
-          style={{ background: 'rgba(37,99,235,.1)', border: '1px solid rgba(37,99,235,.2)', color: '#60a5fa' }}>
-          💬
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => { dispatch(setFocusedLine(lineId)); onShowMap?.(); }}
+            className="flex-1 btn btn-ghost">
+            🗺️ Voir sur la carte
+          </button>
+          <button onClick={() => setChatOpen(true)}
+            className="btn btn-ghost flex items-center gap-1 px-3"
+            style={{ background: 'rgba(37,99,235,.1)', border: '1px solid rgba(37,99,235,.2)', color: '#60a5fa' }}>
+            💬 Aide
+          </button>
+        </div>
       </div>
       {chatOpen && <LineChatPanel lineId={lineId} lineName={line.name} onClose={() => setChatOpen(false)} />}
     </div>
@@ -338,8 +342,7 @@ export default function LinesPage({ onShowMap }: { onShowMap?: () => void } = {}
 
   const handleSelectLine = (lineId: string) => {
     dispatch(visitLine(lineId));
-    dispatch(setFocusedLine(lineId));
-    onShowMap?.();          // → carte directement, sans passer par LineDetail
+    setSelectedLine(lineId); // ouvre LineDetail d'abord, l'utilisateur peut ensuite taper "📍 Carte"
   };
 
   // ── Line detail view ───────────────────────────────────────
@@ -367,7 +370,7 @@ export default function LinesPage({ onShowMap }: { onShowMap?: () => void } = {}
             {searchMode === 'line' ? '🔍' : '📍'}
           </span>
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder={searchMode === 'line' ? 'Rechercher une ligne…' : 'Arrêt, quartier… (ex: Liberté, Yoff)'}
+            placeholder={searchMode === 'line' ? 'Nom de ligne (ex: DDD 12, C2…)' : 'Nom d\'arrêt ou quartier (ex: Liberté, Yoff…)'}
             className="input pl-9" />
           {search && (
             <button onClick={() => setSearch('')}
@@ -385,14 +388,14 @@ export default function LinesPage({ onShowMap }: { onShowMap?: () => void } = {}
               style={searchMode === 'line'
                 ? { background: '#2563eb', color: 'white', minHeight: 40 }
                 : { color: '#475569', minHeight: 40 }}>
-              Par ligne
+              🚌 Ligne
             </button>
             <button onClick={() => setSearchMode('stop')}
               className="px-3 py-2 rounded-lg text-xs font-black transition-all"
               style={searchMode === 'stop'
                 ? { background: '#059669', color: 'white', minHeight: 40 }
                 : { color: '#475569', minHeight: 40 }}>
-              Par arrêt
+              📍 Arrêt
             </button>
           </div>
 

@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
-  updateJourneyStatus, cancelJourney, setActiveTab,
-  setFocusedLine, setMapCenter, setMapZoom, showToast, finishJourney,
+  updateJourneyStatus, cancelJourney,
+  setFocusedLine, setMapCenter, setMapZoom, showToast, finishJourney, buyTicket, setActiveTab,
 } from '@/store/store';
 import { usePopBack } from '@/hooks/usePopBack';
 import { walkingMinutes } from '@/utils/nearest';
@@ -125,6 +125,7 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
   const [elapsed, setElapsed] = useState(0);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showWalkGuide, setShowWalkGuide] = useState(false);
+  const [ticketExpanded, setTicketExpanded] = useState(false);
   const prevStatus = useRef<JourneyStatus | null>(null);
 
   // Retour Android : ferme le dialog d'annulation avant de quitter le trajet
@@ -324,32 +325,72 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
 
       {/* Ticket */}
       {ticket && active.status !== 'arrived' && (
-        <div className="mx-4 mb-3 card rounded-2xl p-4">
-          <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: 'var(--c-muted)' }}>Mon billet</p>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white"
+        <div className="mx-4 mb-3 card rounded-2xl overflow-hidden">
+          <button onClick={() => setTicketExpanded(e => !e)}
+            className="w-full flex items-center gap-3 p-4 transition-all active:scale-[.98]">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white flex-shrink-0"
               style={{ background: 'linear-gradient(135deg,#1d4ed8,#2563eb)' }}>QR</div>
-            <div className="flex-1">
-              <p className="font-bold text-white text-sm">{ticket.operator} · {ticket.price} FCFA</p>
-              <p className="text-xs" style={{ color: '#64748b' }}>Valide · #{ticket.id}</p>
+            <div className="flex-1 text-left">
+              <p className="font-bold text-white text-sm">🎫 Mon billet · {ticket.operator}</p>
+              <p className="text-xs" style={{ color: '#64748b' }}>Valide · {ticket.price} FCFA</p>
             </div>
-            <button onClick={() => dispatch(setActiveTab('tickets'))}
-              className="btn btn-primary" style={{ padding: '9px 16px', fontSize: 13, minHeight: 40 }}>
-              Voir QR
-            </button>
-          </div>
+            <span className="text-lg" style={{ color: '#60a5fa' }}>{ticketExpanded ? '▲' : '▼'}</span>
+          </button>
+          {ticketExpanded && (
+            <div className="px-4 pb-4 flex flex-col items-center gap-3 animate-fade-up"
+              style={{ borderTop: '1px solid var(--c-border)' }}>
+              {/* QR code simulé */}
+              <div className="w-36 h-36 rounded-2xl flex items-center justify-center mt-3"
+                style={{ background: 'white' }}>
+                <div className="w-28 h-28 grid gap-0.5" style={{ display:'grid', gridTemplateColumns:'repeat(7, 1fr)' }}>
+                  {Array.from({length:49}).map((_,i) => (
+                    <div key={i} style={{
+                      background: [0,1,2,3,4,5,6,7,13,14,20,21,27,28,34,35,41,42,43,44,45,46,47,48,8,9,10,24,25,26,36,37,38].includes(i) ? '#0f172a' : 'white',
+                      borderRadius: 1,
+                    }} />
+                  ))}
+                </div>
+              </div>
+              <p className="text-xs text-center font-bold" style={{ color: 'white' }}>
+                Montrez ce QR au contrôleur
+              </p>
+              <p className="text-[10px] text-center" style={{ color: '#475569' }}>
+                Billet #{ticket.id} · {ticket.operator} · {ticket.price} FCFA
+              </p>
+            </div>
+          )}
         </div>
       )}
 
       {!ticket && active.status !== 'arrived' && (
-        <div className="mx-4 mb-3 rounded-2xl p-4 flex items-center gap-3"
+        <div className="mx-4 mb-3 rounded-2xl p-4"
           style={{ background: 'rgba(217,119,6,.08)', border: '1px solid rgba(217,119,6,.25)' }}>
-          <span className="text-xl">🎫</span>
-          <p className="text-xs text-white flex-1">Pas encore de billet pour ce trajet.</p>
-          <button onClick={() => dispatch(setActiveTab('tickets'))}
-            className="btn btn-primary flex-shrink-0" style={{ padding: '10px 18px', fontSize: 14, minHeight: 44 }}>
-            🎫 Acheter
-          </button>
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-2xl">🎫</span>
+            <div className="flex-1">
+              <p className="text-sm font-black text-white">Pas encore de billet</p>
+              <p className="text-xs mt-0.5" style={{ color: '#d97706' }}>Payez votre trajet avant de monter dans le bus</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { l:'Wave', e:'🌊', g:'linear-gradient(135deg,#00c5e3,#0082a3)' },
+              { l:'Orange Money', e:'🟠', g:'linear-gradient(135deg,#f97316,#c2410c)' },
+              { l:'Free Money', e:'🏦', g:'linear-gradient(135deg,#7c3aed,#4c1d95)' },
+            ].map(m => (
+              <button key={m.l}
+                onClick={() => {
+                  dispatch(buyTicket({ operator: active.operator, price: active.fare }));
+                  dispatch(showToast({ type: 'success', message: `Billet acheté via ${m.l} !` }));
+                }}
+                className="flex flex-col items-center gap-1 py-2.5 rounded-xl text-white font-bold transition-all active:scale-95"
+                style={{ background: m.g, fontSize: 11 }}>
+                <span className="text-xl">{m.e}</span>
+                <span className="font-black text-[10px]">{m.l}</span>
+                <span className="font-black text-[10px]">{active.fare} F</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -415,9 +456,9 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
         <div className="mx-4">
           {!showCancelConfirm ? (
             <button onClick={() => setShowCancelConfirm(true)}
-              className="w-full py-3 rounded-xl text-xs font-bold transition-colors"
-              style={{ color: '#475569' }}>
-              Annuler le trajet
+              className="w-full py-3 rounded-xl text-sm font-bold transition-all active:scale-95"
+              style={{ color: '#ef4444', background: 'rgba(239,68,68,.07)', border: '1px solid rgba(239,68,68,.15)' }}>
+              ✕ Annuler ce trajet
             </button>
           ) : (
             <div className="card rounded-2xl p-4">

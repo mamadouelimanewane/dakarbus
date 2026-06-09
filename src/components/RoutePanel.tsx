@@ -263,14 +263,14 @@ function RouteTimeline({ option, origin, dest, onBuy, onStart }: {
       {!buying ? (
         <div className="flex gap-2 px-4 pb-4 pt-1" style={{ borderTop: '1px solid var(--c-border)' }}>
           <button onClick={onStart}
-            className="flex-1 py-3 rounded-xl text-sm font-black text-white transition-all active:scale-95"
-            style={{ background: 'linear-gradient(135deg,#059669,#10b981)', boxShadow: '0 6px 20px rgba(5,150,105,.3)' }}>
-            🚀 Démarrer
+            className="flex-1 py-3.5 rounded-xl text-sm font-black text-white transition-all active:scale-95"
+            style={{ background: 'linear-gradient(135deg,#059669,#10b981)', boxShadow: '0 6px 20px rgba(5,150,105,.3)', fontSize: 14 }}>
+            🚀 Partir maintenant
           </button>
           <button onClick={() => setBuying(true)}
-            className="flex-1 py-3 rounded-xl text-sm font-black text-white transition-all active:scale-95"
-            style={{ background: 'linear-gradient(135deg,#1d4ed8,#2563eb)', boxShadow: '0 6px 20px rgba(37,99,235,.3)' }}>
-            🎫 {option.fare} FCFA
+            className="flex-1 py-3.5 rounded-xl text-sm font-black text-white transition-all active:scale-95"
+            style={{ background: 'linear-gradient(135deg,#1d4ed8,#2563eb)', boxShadow: '0 6px 20px rgba(37,99,235,.3)', fontSize: 14 }}>
+            🎫 Payer {option.fare} F
           </button>
         </div>
       ) : (
@@ -409,9 +409,14 @@ export default function RoutePanel() {
 
   return (
     <div className="p-4 space-y-3">
-      <h2 className="text-sm font-black" style={{ color: 'var(--c-text)' }}>
-        🗺️ Où voulez-vous aller ?
+      <h2 className="text-base font-black text-white">
+        🚌 Trouver mon bus
       </h2>
+      {!route.origin && !route.destination && (
+        <p className="text-xs" style={{ color: '#64748b' }}>
+          Entrez votre point de départ et votre destination
+        </p>
+      )}
 
       {nearestInfo && !route.origin && !options.length && (
         <button
@@ -434,9 +439,13 @@ export default function RoutePanel() {
 
       {/* Origin */}
       <div className="flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg,#059669,#10b981)', boxShadow: '0 4px 12px rgba(5,150,105,.4)' }}>A</div>
-        <SearchBar placeholder="D'où partez-vous ?" value={route.origin}
+        <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
+          <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white"
+            style={{ background: 'linear-gradient(135deg,#059669,#10b981)', boxShadow: '0 4px 12px rgba(5,150,105,.4)' }}>
+            {route.origin ? '✓' : 'A'}
+          </div>
+        </div>
+        <SearchBar placeholder="📍 D'où partez-vous ?" value={route.origin}
           onSelect={s => { dispatch(setRouteOrigin(s)); setOptions([]); setSelected(null); setNoRoute(false); }}
           className="flex-1" />
       </div>
@@ -453,8 +462,10 @@ export default function RoutePanel() {
       {/* Destination */}
       <div className="flex items-center gap-2.5">
         <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg,#991b1b,#dc2626)', boxShadow: '0 4px 12px rgba(220,38,38,.4)' }}>B</div>
-        <SearchBar placeholder="Où allez-vous ?" value={route.destination}
+          style={{ background: 'linear-gradient(135deg,#991b1b,#dc2626)', boxShadow: '0 4px 12px rgba(220,38,38,.4)' }}>
+          {route.destination ? '✓' : 'B'}
+        </div>
+        <SearchBar placeholder="🏁 Où allez-vous ?" value={route.destination}
           onSelect={s => { dispatch(setRouteDestination(s)); setOptions([]); setSelected(null); setNoRoute(false); }}
           className="flex-1" />
       </div>
@@ -462,11 +473,11 @@ export default function RoutePanel() {
       {/* Calculate + Share buttons */}
       <div className="flex gap-2">
         <button onClick={calculate} disabled={!route.origin || !route.destination}
-          className="flex-1 py-3 rounded-xl text-sm font-black text-white transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex-1 py-3.5 rounded-xl text-sm font-black text-white transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
           style={route.origin && route.destination
-            ? { background: 'linear-gradient(135deg,#1d4ed8,#2563eb)', boxShadow: '0 6px 20px rgba(37,99,235,.35)' }
+            ? { background: 'linear-gradient(135deg,#059669,#10b981)', boxShadow: '0 8px 24px rgba(5,150,105,.4)', fontSize: 15 }
             : { background: 'var(--c-surface2)' }}>
-          Calculer l'itinéraire
+          🔍 Rechercher mon bus
         </button>
         {options.length > 0 && (
           <button onClick={handleShare}
