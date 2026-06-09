@@ -300,6 +300,16 @@ function LineDetail({ lineId, onBack, onShowMap }: { lineId: string; onBack: () 
             💬 Aide
           </button>
         </div>
+        {/* Alerte retard SMS */}
+        <button
+          onClick={() => {
+            const msg = `Alerte retard ligne ${line.name} (${line.route}). Informez-moi si retard > 10 min. Merci. — SunuBus`;
+            window.open(`sms:?body=${encodeURIComponent(msg)}`, '_self');
+          }}
+          className="w-full py-3 rounded-xl text-xs font-black transition-all active:scale-95 flex items-center justify-center gap-2"
+          style={{ background: 'rgba(234,179,8,.08)', border: '1px solid rgba(234,179,8,.2)', color: '#fbbf24' }}>
+          📩 Recevoir une alerte retard par SMS
+        </button>
       </div>
       {chatOpen && <LineChatPanel lineId={lineId} lineName={line.name} onClose={() => setChatOpen(false)} />}
     </div>

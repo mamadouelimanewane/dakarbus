@@ -68,8 +68,17 @@ function persistCache(cache: Record<string, [number, number][]>) {
 
 export const lineRouteCache: Record<string, [number, number][]> = loadCache();
 
-/** Ajoute un tracé dans le cache mémoire ET le persiste dans localStorage */
+const MAX_CACHED_LINES = 25; // Limite : 25 lignes en cache (les plus récentes)
+
+/** Ajoute un tracé dans le cache mémoire ET le persiste dans localStorage.
+ *  Applique une rotation FIFO si le cache dépasse MAX_CACHED_LINES. */
 export function cacheLineRoute(lineId: string, coords: [number, number][]): void {
   lineRouteCache[lineId] = coords;
+  // Rotation FIFO si trop de lignes
+  const keys = Object.keys(lineRouteCache);
+  if (keys.length > MAX_CACHED_LINES) {
+    const toDelete = keys.slice(0, keys.length - MAX_CACHED_LINES);
+    toDelete.forEach(k => delete lineRouteCache[k]);
+  }
   persistCache(lineRouteCache);
 }

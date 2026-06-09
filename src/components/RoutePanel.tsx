@@ -8,6 +8,7 @@ import {
 } from '@/store/store';
 import type { RouteDisplay } from '@/store/store';
 import { STOPS, LINES, getNextDepartures } from '@/data/transportData';
+import { DAKAR_PLACES } from '@/data/dakarPlaces';
 import { getNearestStop, walkingMinutes } from '@/utils/nearest';
 import { findRoutes, type RouteOption } from '@/utils/routeFinder';
 import { shareRoute } from '@/utils/share';
@@ -494,11 +495,50 @@ export default function RoutePanel() {
 
       {/* ══ VOYAGER — séparateur visible seulement en état vierge (aucun champ rempli) ══ */}
       {options.length === 0 && !noRoute && !route.origin && !route.destination && (
-        <div className="relative flex items-center gap-3 my-1">
-          <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,.08)' }} />
-          <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#334155' }}>ou</span>
-          <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,.08)' }} />
-        </div>
+        <>
+          <div className="relative flex items-center gap-3 my-1">
+            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,.08)' }} />
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#334155' }}>ou</span>
+            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,.08)' }} />
+          </div>
+
+          {/* ── Mode "Je connais pas l'adresse" — raccourcis lieux populaires ── */}
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: '#334155' }}>
+              📍 Je cherche un lieu connu
+            </p>
+            <div className="grid grid-cols-4 gap-1.5">
+              {[
+                { id:'t-dakar',    e:'🚉', l:'Gare Dakar'   },
+                { id:'t-aibd',     e:'✈️',  l:'Aéroport'     },
+                { id:'h-principal',e:'🏥', l:'Hôpital'      },
+                { id:'u-ucad',     e:'🎓', l:'UCAD'         },
+                { id:'m-sandaga',  e:'🛒', l:'Sandaga'      },
+                { id:'m-hlm',      e:'🛍️', l:'Marché HLM'   },
+                { id:'q-plateau',  e:'🏙️', l:'Plateau'      },
+                { id:'s-lsc',      e:'⚽', l:'Stade LSC'    },
+              ].map(poi => {
+                const place = DAKAR_PLACES.find(p => p.id === poi.id);
+                const nearStop = place ? STOPS.find(s => s.id === place.nearestStopId) : null;
+                return (
+                  <button key={poi.id}
+                    onClick={() => {
+                      if (nearStop) {
+                        dispatch(setRouteDestination(nearStop));
+                        setOptions([]); setSelected(null); setNoRoute(false);
+                      }
+                    }}
+                    disabled={!nearStop}
+                    className="flex flex-col items-center gap-0.5 py-2.5 px-1 rounded-xl transition-all active:scale-90 disabled:opacity-30"
+                    style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.06)', fontSize: 10, color: '#94a3b8', fontWeight: 700 }}>
+                    <span className="text-xl leading-none">{poi.e}</span>
+                    <span className="leading-tight text-center" style={{ fontSize: 9 }}>{poi.l}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
       )}
 
       {noRoute && (

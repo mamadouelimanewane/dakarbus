@@ -203,6 +203,60 @@ function PassSection() {
   );
 }
 
+// ── Mini spending history ─────────────────────────────────────
+interface Ticket { id: string; operator: string; price: number; purchaseTime: number; status: string; qrData: string; }
+function SpendingHistory({ tickets }: { tickets: Ticket[] }) {
+  const now = Date.now();
+  const weekAgo  = now - 7 * 86_400_000;
+  const monthAgo = now - 30 * 86_400_000;
+  const weekAmt  = tickets.filter(t => t.purchaseTime >= weekAgo).reduce((s, t) => s + t.price, 0);
+  const monthAmt = tickets.filter(t => t.purchaseTime >= monthAgo).reduce((s, t) => s + t.price, 0);
+  const byOp = OPS.map(o => ({
+    ...o,
+    total: tickets.filter(t => t.operator === o.op && t.purchaseTime >= monthAgo).reduce((s, t) => s + t.price, 0),
+  })).filter(o => o.total > 0);
+
+  if (tickets.length === 0) return null;
+
+  return (
+    <div className="mb-4 rounded-2xl overflow-hidden" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+      <div className="px-4 pt-3 pb-2 border-b" style={{ borderColor: 'var(--c-border)' }}>
+        <p className="text-xs font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>📊 Historique des dépenses</p>
+      </div>
+      <div className="p-4 grid grid-cols-2 gap-3">
+        <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(37,99,235,.08)', border: '1px solid rgba(37,99,235,.15)' }}>
+          <p className="text-[10px] font-bold mb-1" style={{ color: '#64748b' }}>Cette semaine</p>
+          <p className="text-lg font-black text-white">{weekAmt.toLocaleString('fr-FR')}</p>
+          <p className="text-[10px]" style={{ color: '#3b82f6' }}>FCFA</p>
+        </div>
+        <div className="rounded-xl p-3 text-center" style={{ background: 'rgba(124,58,237,.08)', border: '1px solid rgba(124,58,237,.15)' }}>
+          <p className="text-[10px] font-bold mb-1" style={{ color: '#64748b' }}>Ce mois</p>
+          <p className="text-lg font-black text-white">{monthAmt.toLocaleString('fr-FR')}</p>
+          <p className="text-[10px]" style={{ color: '#a78bfa' }}>FCFA</p>
+        </div>
+      </div>
+      {byOp.length > 0 && (
+        <div className="px-4 pb-3 space-y-1.5">
+          {byOp.map(o => {
+            const pct = monthAmt > 0 ? Math.round((o.total / monthAmt) * 100) : 0;
+            return (
+              <div key={o.op}>
+                <div className="flex justify-between text-xs mb-0.5">
+                  <span style={{ color: '#64748b' }}>{o.e} {o.op}</span>
+                  <span className="font-black text-white">{o.total.toLocaleString('fr-FR')} F</span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,.06)' }}>
+                  <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: o.c }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TicketsPage() {
   const dispatch = useAppDispatch();
   const { myTickets } = useAppSelector(s=>s.tickets);
@@ -256,6 +310,7 @@ export default function TicketsPage() {
         {/* WALLET */}
         {tab==='wallet'&&(
           <div className="space-y-3 pb-20">
+            <SpendingHistory tickets={myTickets} />
             {myTickets.length===0 ? (
               <div className="text-center mt-14">
                 <div className="text-6xl mb-4">🎫</div>

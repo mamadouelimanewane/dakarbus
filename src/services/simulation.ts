@@ -1,6 +1,6 @@
 import { store, setBusPositions } from '@/store/store';
 import { LINES, STOPS } from '@/data/transportData';
-import { routeOnRoads } from '@/utils/osrm';
+import { routeOnRoads, lineRouteCache, cacheLineRoute } from '@/utils/osrm';
 import type { BusPosition, Stop } from '@/types';
 
 export interface DriverInfo {
@@ -164,6 +164,11 @@ let simulatedBuses: {
 let simInterval: ReturnType<typeof setInterval> | null = null;
 
 async function buildSimRoute(lineId: string): Promise<[number, number][]> {
+  // Priorité au cache persistant (lineRouteCache = déjà calculé pour la carte)
+  if (lineRouteCache[lineId]) {
+    simRouteCache[lineId] = lineRouteCache[lineId];
+    return lineRouteCache[lineId];
+  }
   if (simRouteCache[lineId]) return simRouteCache[lineId];
   const line = LINES.find(l => l.id === lineId);
   if (!line || line.stops.length < 2) return [];
@@ -205,6 +210,8 @@ async function buildSimRoute(lineId: string): Promise<[number, number][]> {
   // Fallback ultime : positions brutes des stops (toutes validées)
   const result = landRoute.length >= 2 ? landRoute : points.map(p => [p.lat, p.lng] as [number, number]);
   simRouteCache[lineId] = result;
+  // Partage aussi dans lineRouteCache pour que la carte en bénéficie
+  cacheLineRoute(lineId, result);
   return result;
 }
 

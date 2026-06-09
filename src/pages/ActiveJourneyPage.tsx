@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   updateJourneyStatus, cancelJourney,
-  setFocusedLine, setMapCenter, setMapZoom, showToast, finishJourney, buyTicket, setActiveTab,
+  setFocusedLine, setMapCenter, setMapZoom, showToast, finishJourney, buyTicket, setActiveTab, addReport,
 } from '@/store/store';
 import { usePopBack } from '@/hooks/usePopBack';
 import { walkingMinutes } from '@/utils/nearest';
@@ -11,6 +11,21 @@ import { STOPS, LINES } from '@/data/transportData';
 import WalkToStopGuide from '@/components/WalkToStopGuide';
 import type { JourneyStatus } from '@/types';
 import type { RouteStep } from '@/utils/routeFinder';
+
+// ── Sons d'alerte via Web Audio API ──────────────────────────
+function playBeep(freq = 660, dur = 0.18, vol = 0.25) {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    osc.start(); osc.stop(ctx.currentTime + dur);
+    setTimeout(() => ctx.close(), 500);
+  } catch { /* AudioContext non dispo */ }
+}
 
 const STATUS_CONFIG: Record<JourneyStatus, { emoji: string; label: string; color: string }> = {
   walking:  { emoji: '🚶', label: 'En marche vers l\'arrêt', color: '#059669' },
@@ -126,6 +141,7 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showWalkGuide, setShowWalkGuide] = useState(false);
   const [ticketExpanded, setTicketExpanded] = useState(false);
+  const [busFullReported, setBusFullReported] = useState(false);
   const prevStatus = useRef<JourneyStatus | null>(null);
 
   // Retour Android : ferme le dialog d'annulation avant de quitter le trajet
@@ -137,6 +153,10 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
     if (!active) return;
     if (prevStatus.current && prevStatus.current !== active.status) {
       if ('vibrate' in navigator) navigator.vibrate([100, 50, 100]);
+      // Son d'alerte selon l'étape
+      if (active.status === 'waiting')  playBeep(520, 0.2);   // bus approche
+      if (active.status === 'on_bus')   playBeep(660, 0.15);  // montez !
+      if (active.status === 'arrived')  { playBeep(880, 0.15); setTimeout(() => playBeep(1100, 0.2), 200); }
       const cfg = STATUS_CONFIG[active.status];
       dispatch(showToast({ type: 'info', message: `${cfg.emoji} ${cfg.label}` }));
     }
@@ -171,6 +191,31 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
 
   // ── Early return after ALL hooks ──────────────────────────
   if (!active) return null;
+
+  // ── Partager ma position ──────────────────────────────────
+  const sharePosition = () => {
+    const text = `🚌 Je suis en route !\nLigne ${active.lineName} → ${active.destinationStop.name}\nDurée estimée : ~${active.estimatedDuration} min\nPartagé via SunuBus 🇸🇳`;
+    if (navigator.share) {
+      navigator.share({ title: 'Ma position SunuBus', text }).catch(() => {});
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
+  };
+
+  // ── Bus complet / Signalement ─────────────────────────────
+  const reportBusFull = () => {
+    dispatch(addReport({
+      id: `bf-${Date.now()}`,
+      type: 'crowd',
+      description: `🚌 Bus complet — ${active.lineName} à ${active.walkingStop.name}, passé sans s'arrêter`,
+      location: [active.walkingStop.lat, active.walkingStop.lng] as [number, number],
+      timestamp: Date.now(),
+      upvotes: 0,
+    }));
+    setBusFullReported(true);
+    if ('vibrate' in navigator) navigator.vibrate(60);
+    dispatch(showToast({ type: 'success', message: '✅ Signalement envoyé — merci !' }));
+  };
 
   const departures  = getNextDepartures(active.walkingStop.id);
   const nextBus     = departures.find(d => d.lineId === active.lineId) ?? departures[0];
@@ -277,7 +322,7 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
             <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--c-muted)' }}>
               🕐 Attendez le bus
             </p>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 mb-3">
               <div className="text-3xl font-black" style={{ color: active.lineColor }}>
                 <LiveCountdown seconds={nextBus.waitMin * 60} />
               </div>
@@ -286,6 +331,16 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
                 <p className="text-xs mt-0.5" style={{ color: '#64748b' }}>Arrêt {active.walkingStop.name}</p>
               </div>
             </div>
+            {/* Signalement bus complet */}
+            <button
+              onClick={reportBusFull}
+              disabled={busFullReported}
+              className="w-full py-2.5 rounded-xl text-xs font-black transition-all active:scale-95"
+              style={busFullReported
+                ? { background: 'rgba(34,197,94,.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,.2)', cursor: 'not-allowed' }
+                : { background: 'rgba(239,68,68,.08)', color: '#f87171', border: '1px solid rgba(239,68,68,.2)' }}>
+              {busFullReported ? '✅ Signalement envoyé — merci !' : '🚌 Bus complet — passé sans s\'arrêter'}
+            </button>
           </>
         )}
         {active.status === 'on_bus' && (
@@ -418,6 +473,21 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
           <div className="text-left flex-1">
             <p className="font-bold text-white text-sm">Voir sur la carte</p>
             <p className="text-xs mt-0.5" style={{ color: '#60a5fa' }}>Suivre la ligne {active.lineName}</p>
+          </div>
+          <span className="text-base font-black" style={{ color: '#475569' }}>→</span>
+        </button>
+      )}
+
+      {/* Partager ma position */}
+      {active.status !== 'arrived' && (
+        <button onClick={sharePosition}
+          className="mx-4 mb-3 flex items-center gap-3 p-4 rounded-2xl transition-all active:scale-[.98]"
+          style={{ background: 'rgba(5,150,105,.07)', border: '1px solid rgba(5,150,105,.2)' }}>
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+            style={{ background: 'rgba(5,150,105,.15)' }}>📤</div>
+          <div className="text-left flex-1">
+            <p className="font-bold text-white text-sm">Partager ma position</p>
+            <p className="text-xs mt-0.5" style={{ color: '#34d399' }}>Envoyer via WhatsApp ou SMS</p>
           </div>
           <span className="text-base font-black" style={{ color: '#475569' }}>→</span>
         </button>

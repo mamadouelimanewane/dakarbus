@@ -4,7 +4,7 @@ import QRCodeStop from '@/components/QRCodeStop';
 import { AdCard } from '@/components/AdBanner';
 import { selectAd, trackImpression } from '@/services/adEngine';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { setSelectedStop, toggleFavStop, setMapCenter, setMapZoom } from '@/store/store';
+import { setSelectedStop, toggleFavStop, setMapCenter, setMapZoom, addReport, showToast } from '@/store/store';
 import { STOPS, OPERATORS, LINES, getNextDepartures } from '@/data/transportData';
 import { searchStops } from '@/utils/fuzzy';
 import type { OperatorId } from '@/types';
@@ -150,6 +150,27 @@ export default function StopsPage() {
   const [view, setView] = useState<ViewMode>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportDesc, setReportDesc] = useState('');
+  const [reportSent, setReportSent] = useState(false);
+
+  // Retour Android → ferme modal signalement
+  usePopBack(useCallback(() => setShowReportModal(false), []), showReportModal);
+
+  const submitStopReport = useCallback(() => {
+    const loc: [number, number] = userLocation ?? [14.693, -17.447];
+    dispatch(addReport({
+      id: `stoprep-${Date.now()}`,
+      type: 'other' as any,
+      description: reportDesc.trim() || 'Arrêt manquant ou mal positionné',
+      location: loc,
+      timestamp: Date.now(),
+      upvotes: 0,
+    }));
+    dispatch(showToast({ type: 'success', message: '📍 Signalement envoyé — merci !' }));
+    setReportSent(true);
+    setTimeout(() => { setShowReportModal(false); setReportDesc(''); setReportSent(false); }, 1800);
+  }, [dispatch, reportDesc, userLocation]);
 
   // Retour arrière → ferme le détail de l'arrêt
   usePopBack(useCallback(() => setExpandedId(null), []), !!expandedId);
@@ -215,7 +236,7 @@ export default function StopsPage() {
   ];
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       {/* Search bar */}
       <div className="px-4 pt-4 pb-2 flex-shrink-0 space-y-2">
         <div className="relative">
@@ -266,6 +287,50 @@ export default function StopsPage() {
           style={{ height: refreshing ? 40 : pullY, overflow: 'hidden' }}>
           <div className={`text-xl ${refreshing ? 'animate-spin' : ''}`} style={{ opacity: refreshing || pullY > 24 ? 1 : 0.3 }}>
             {refreshing ? '🔄' : '↓'}
+          </div>
+        </div>
+      )}
+
+      {/* Bouton flottant : Reporter un arrêt */}
+      <button
+        onClick={() => setShowReportModal(true)}
+        className="absolute bottom-28 right-4 z-20 flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-lg transition-all active:scale-95"
+        style={{ background: 'linear-gradient(135deg,#1e293b,#0f172a)', border: '1px solid rgba(255,255,255,.1)', color: '#94a3b8', fontSize: 12, fontWeight: 700 }}>
+        📍 Signaler un arrêt
+      </button>
+
+      {/* Modal signalement arrêt */}
+      {showReportModal && (
+        <div className="absolute inset-0 z-50 flex items-end" style={{ background: 'rgba(0,0,0,.7)' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowReportModal(false); }}>
+          <div className="w-full rounded-t-3xl p-6 space-y-4 animate-slide-up"
+            style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.08)', borderBottom: 'none' }}>
+            <div className="w-10 h-1 rounded-full mx-auto" style={{ background: 'rgba(255,255,255,.15)' }} />
+            <h3 className="font-black text-white text-lg">📍 Signaler un arrêt</h3>
+            <p className="text-sm" style={{ color: '#64748b' }}>
+              {userLocation ? `📡 Position GPS : ${userLocation[0].toFixed(5)}, ${userLocation[1].toFixed(5)}` : '⚠️ GPS non disponible — votre position approx. sera utilisée'}
+            </p>
+            <textarea
+              value={reportDesc}
+              onChange={e => setReportDesc(e.target.value)}
+              placeholder="Décrivez le problème (ex: arrêt manquant, panneau cassé, coordonnées inexactes…)"
+              rows={3}
+              className="input w-full resize-none"
+              style={{ fontSize: 13, padding: '12px 14px' }}
+            />
+            {reportSent ? (
+              <div className="text-center py-3 font-black text-emerald-400">✅ Envoyé — merci pour votre contribution !</div>
+            ) : (
+              <div className="flex gap-2">
+                <button onClick={() => setShowReportModal(false)}
+                  className="flex-1 py-3 rounded-xl text-sm font-bold btn btn-ghost">Annuler</button>
+                <button onClick={submitStopReport}
+                  className="flex-1 py-3 rounded-xl text-sm font-black text-white transition-all active:scale-95"
+                  style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', boxShadow: '0 4px 16px rgba(37,99,235,.4)' }}>
+                  📤 Envoyer le signalement
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
