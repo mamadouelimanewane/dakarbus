@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   updateJourneyStatus, cancelJourney,
@@ -219,8 +219,9 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
     dispatch(showToast({ type: 'success', message: '✅ Signalement envoyé — merci !' }));
   };
 
-  const departures  = getNextDepartures(active.walkingStop.id);
-  const nextBus     = departures.find(d => d.lineId === active.lineId) ?? departures[0];
+  // useMemo : getNextDepartures utilise Math.random() → résultat stable entre renders
+  const departures  = useMemo(() => getNextDepartures(active.walkingStop.id), [active.walkingStop.id, active.status]);
+  const nextBus     = useMemo(() => departures.find(d => d.lineId === active.lineId) ?? departures[0], [departures, active.lineId]);
   const currentIdx  = STATUS_ORDER.indexOf(active.status);
   const walkMin     = walkingMinutes(active.walkingMeters);
   const elapsedMin  = Math.floor((Date.now() - active.startedAt) / 60000);
