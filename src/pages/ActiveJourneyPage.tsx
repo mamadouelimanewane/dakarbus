@@ -141,8 +141,10 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showWalkGuide, setShowWalkGuide] = useState(false);
   const [ticketExpanded, setTicketExpanded] = useState(false);
-  const [busFullReported, setBusFullReported] = useState(false);
   const prevStatus = useRef<JourneyStatus | null>(null);
+  // Persisté via ref lié à l'ID du trajet — survit aux re-renders/re-montages
+  const busFullReportedForJourney = useRef<string | null>(null);
+  const busFullReported = busFullReportedForJourney.current === active?.startedAt?.toString();
 
   // Retour Android : ferme le dialog d'annulation avant de quitter le trajet
   usePopBack(() => setShowCancelConfirm(false), showCancelConfirm);
@@ -194,7 +196,7 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
 
   // ── Partager ma position ──────────────────────────────────
   const sharePosition = () => {
-    const text = `🚌 Je suis en route !\nLigne ${active.lineName} → ${active.destinationStop.name}\nDurée estimée : ~${active.estimatedDuration} min\nPartagé via SunuBus 🇸🇳`;
+    const text = `🚌 Je suis en route !\n${active.lineName} → ${active.destinationStop.name}\nDurée estimée : ~${active.estimatedDuration} min\nPartagé via SunuBus 🇸🇳`;
     if (navigator.share) {
       navigator.share({ title: 'Ma position SunuBus', text }).catch(() => {});
     } else {
@@ -212,7 +214,7 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
       timestamp: Date.now(),
       upvotes: 0,
     }));
-    setBusFullReported(true);
+    busFullReportedForJourney.current = active.startedAt.toString();
     if ('vibrate' in navigator) navigator.vibrate(60);
     dispatch(showToast({ type: 'success', message: '✅ Signalement envoyé — merci !' }));
   };

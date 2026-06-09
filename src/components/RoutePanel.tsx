@@ -509,14 +509,14 @@ export default function RoutePanel() {
             </p>
             <div className="grid grid-cols-4 gap-1.5">
               {[
-                { id:'t-dakar',    e:'🚉', l:'Gare Dakar'   },
-                { id:'t-aibd',     e:'✈️',  l:'Aéroport'     },
-                { id:'h-principal',e:'🏥', l:'Hôpital'      },
-                { id:'u-ucad',     e:'🎓', l:'UCAD'         },
-                { id:'m-sandaga',  e:'🛒', l:'Sandaga'      },
-                { id:'m-hlm',      e:'🛍️', l:'Marché HLM'   },
-                { id:'q-plateau',  e:'🏙️', l:'Plateau'      },
-                { id:'s-lsc',      e:'⚽', l:'Stade LSC'    },
+                { id:'tr-gare-dakar', e:'🚉', l:'Gare Dakar' },
+                { id:'tr-aibd',       e:'✈️',  l:'Aéroport'   },
+                { id:'h-principal',   e:'🏥', l:'Hôpital'    },
+                { id:'e-ucad',        e:'🎓', l:'UCAD'       },
+                { id:'m-sandaga',     e:'🛒', l:'Sandaga'    },
+                { id:'m-hlm',         e:'🧵', l:'Marché HLM' },
+                { id:'q-plateau',     e:'🏙️', l:'Plateau'    },
+                { id:'sp-lss',        e:'🏟️', l:'Stade LSS'  },
               ].map(poi => {
                 const place = DAKAR_PLACES.find(p => p.id === poi.id);
                 const nearStop = place ? STOPS.find(s => s.id === place.nearestStopId) : null;
