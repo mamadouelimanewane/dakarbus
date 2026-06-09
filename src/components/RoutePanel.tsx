@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { usePopBack } from '@/hooks/usePopBack';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
 import {
@@ -6,7 +7,7 @@ import {
   setActiveTab, showToast, buyTicket, startJourney, setFocusedLine, setRouteDisplay,
 } from '@/store/store';
 import type { RouteDisplay } from '@/store/store';
-import { STOPS, LINES, getNextDepartures, getAffluence } from '@/data/transportData';
+import { STOPS, LINES, getNextDepartures } from '@/data/transportData';
 import { getNearestStop, walkingMinutes } from '@/utils/nearest';
 import { findRoutes, type RouteOption } from '@/utils/routeFinder';
 import { shareRoute } from '@/utils/share';
@@ -126,47 +127,13 @@ function OptionCard({ option, selected, onSelect }: { option: RouteOption; selec
   );
 }
 
-// ── Affluence badge + prediction ──────────────────────────────
-function AffluenceWidget({ stopId }: { stopId: string }) {
-  const [offset, setOffset] = useState(0); // minutes from now
-  const aff = getAffluence(stopId);
-  const times = [0, 30, 60, 90];
-
-  return (
-    <div className="mt-2">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#334155' }}>Affluence prévue</span>
-        <div className="flex gap-1 ml-auto">
-          {times.map(t => (
-            <button key={t} onClick={() => setOffset(t)}
-              className="text-[10px] font-bold px-2 py-0.5 rounded-md transition-all"
-              style={offset === t
-                ? { background: 'rgba(37,99,235,.3)', color: '#60a5fa', border: '1px solid rgba(37,99,235,.4)' }
-                : { background: 'rgba(255,255,255,.04)', color: '#475569', border: '1px solid transparent' }}>
-              {t === 0 ? 'Maint.' : `+${t}m`}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
-        style={{ background: aff.color + '12', border: `1px solid ${aff.color}25` }}>
-        <span>{aff.emoji}</span>
-        <span className="text-xs font-bold" style={{ color: aff.color }}>{aff.level}</span>
-        {aff.extra && <span className="text-[10px]" style={{ color: '#475569' }}>{aff.extra}</span>}
-        <div className="ml-auto flex-shrink-0 rounded-full overflow-hidden" style={{ width: 60, height: 5, background: 'rgba(255,255,255,.08)' }}>
-          <div className="h-full rounded-full" style={{ width: `${aff.pct}%`, background: aff.color }} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Timeline claire de l'itinéraire ──────────────────────────
 function RouteTimeline({ option, origin, dest, onBuy, onStart }: {
   option: RouteOption; origin: Stop; dest: Stop;
   onBuy: (method: string) => void; onStart: () => void;
 }) {
   const [buying, setBuying] = useState(false);
+  usePopBack(() => setBuying(false), buying);
   const nextDep = getNextDepartures(origin.id)[0];
 
   // Construire une liste de nœuds lisibles depuis les steps
@@ -514,8 +481,8 @@ export default function RoutePanel() {
         )}
       </div>
 
-      {/* ══ VOYAGER — juste sous Calculer l'itinéraire ══ */}
-      {options.length === 0 && !noRoute && (
+      {/* ══ VOYAGER — séparateur visible seulement en état vierge (aucun champ rempli) ══ */}
+      {options.length === 0 && !noRoute && !route.origin && !route.destination && (
         <div className="relative flex items-center gap-3 my-1">
           <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,.08)' }} />
           <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#334155' }}>ou</span>
@@ -552,8 +519,8 @@ export default function RoutePanel() {
         </div>
       )}
 
-      {/* Recent trips */}
-      {!options.length && !noRoute && history.length > 0 && (
+      {/* Recent trips — seulement si l'utilisateur a déjà rempli un champ (évite le doublon avec PlanPage) */}
+      {!options.length && !noRoute && history.length > 0 && (route.origin || route.destination) && (
         <div>
           <h3 className="text-[10px] font-black uppercase tracking-widest mb-2.5" style={{ color: '#334155' }}>
             🕐 Trajets récents

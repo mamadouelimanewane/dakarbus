@@ -198,7 +198,7 @@ export default function PassengerApp() {
   // Sous-vues / états dans PassengerApp (priorité variable, s'empilent)
   // isFullPage = !(plan|stops) && !lines — recopié ici pour éviter la référence avant déclaration
   const isFullPageForBack = !(activeTab === 'plan' || activeTab === 'stops') && activeTab !== 'lines';
-  usePopBack(useCallback(() => setJourneyPanelOpen(false), []), journeyPanelOpen && isFullPageForBack);
+  usePopBack(useCallback(() => setJourneyPanelOpen(false), []), journeyPanelOpen);
   usePopBack(useCallback(() => setMapFullscreen(false),    []), mapFullscreen);
   usePopBack(useCallback(() => { setLinesMapView(false); dispatch(clearFocusedLine()); }, [dispatch]), linesMapView);
 
@@ -471,7 +471,7 @@ export default function PassengerApp() {
                     onClick={() => setSheetState('half')}
                     className="absolute z-[1000] left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2.5 rounded-full shadow-2xl transition-all active:scale-95 pointer-events-auto"
                     style={{
-                      bottom: 300,
+                      bottom: 8,
                       background: 'rgba(29,78,216,.95)',
                       backdropFilter: 'blur(16px)',
                       border: '1px solid rgba(96,165,250,.5)',
