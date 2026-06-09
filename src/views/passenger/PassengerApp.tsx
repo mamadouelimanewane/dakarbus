@@ -617,27 +617,18 @@ export default function PassengerApp() {
 
             </aside>
 
-            {/* Carte desktop */}
-            {isCitymapper && (
-              <main className="flex-1 relative overflow-hidden" style={{ marginLeft: 360 }}>
-                <MapView />
-              </main>
-            )}
-            {isLinesTab && linesMapView && (
-              <main className="flex-1 relative overflow-hidden">
+            {/* Carte desktop — toujours visible à droite du panel */}
+            <main className={`flex-1 relative overflow-hidden${isCitymapper ? ' ml-[360px] xl:ml-[400px]' : ''}`}>
+              {/* Bouton retour liste — uniquement sur Lignes avec carte ouverte */}
+              {isLinesTab && linesMapView && (
                 <button onClick={() => { setLinesMapView(false); dispatch(clearFocusedLine()); }}
                   className="absolute z-[1000] flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-2xl transition-all active:scale-95"
                   style={{ bottom: 24, left: 16, background: 'rgba(8,12,24,.95)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,.15)', color: 'white', fontSize: 13, fontWeight: 800 }}>
                   ← Retour à la liste
                 </button>
-                <MapView />
-              </main>
-            )}
-            {!isCitymapper && !isLinesTab && (
-              <main className="flex-1 relative overflow-hidden">
-                <MapView />
-              </main>
-            )}
+              )}
+              <MapView />
+            </main>
           </div>
 
         </div>
