@@ -934,7 +934,7 @@ export default function MapView() {
 
       {/* Fullscreen button */}
       <button onClick={toggleFullscreen} title={fullscreen ? 'Quitter plein écran' : 'Plein écran'}
-        className="absolute z-[900] rounded-xl shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+        className="absolute z-[9000] rounded-xl shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
         style={{
           width: 44, height: 44,
           top: 12, right: 12,
@@ -945,6 +945,26 @@ export default function MapView() {
         }}>
         {fullscreen ? '⊡' : '⤢'}
       </button>
+
+      {/* Bouton retour itinéraire — visible uniquement en plein écran avec route calculée */}
+      {fullscreen && routeDisplay && (
+        <button
+          onClick={toggleFullscreen}
+          className="absolute z-[9000] flex items-center gap-2 rounded-2xl shadow-2xl hover:scale-105 active:scale-95 transition-all"
+          style={{
+            bottom: 80, left: 12,
+            padding: '10px 16px',
+            background: 'rgba(29,78,216,.95)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(96,165,250,.5)',
+            color: 'white',
+            fontSize: 13,
+            fontWeight: 800,
+            boxShadow: '0 4px 20px rgba(29,78,216,.5)',
+          }}>
+          ← Itinéraire
+        </button>
+      )}
 
       {/* Geolocate button */}
       <button onClick={handleLocate} title="Ma position"
