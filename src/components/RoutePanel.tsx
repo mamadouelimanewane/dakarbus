@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { usePopBack } from '@/hooks/usePopBack';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
@@ -332,13 +332,19 @@ export default function RoutePanel() {
   const [selected, setSelected] = useState<RouteOption | null>(null);
   const [noRoute, setNoRoute]   = useState(false);
   const [nearestInfo, setNearestInfo] = useState<{ stop: Stop; meters: number } | null>(null);
+  const hasAutoSetOrigin = useRef(false);
 
-  // Détecte l'arrêt le plus proche mais NE pré-remplit PAS l'origine
+  // Détecte l'arrêt le plus proche et le définit comme origine par défaut (une seule fois)
   useEffect(() => {
     if (!userLocation) return;
     const res = getNearestStop(userLocation[0], userLocation[1]);
     if (!res) return;
     setNearestInfo({ stop: res.stop, meters: res.distanceMeters });
+    // Auto-set origin uniquement au 1er fix GPS et si l'utilisateur n'a pas encore rempli le champ
+    if (!hasAutoSetOrigin.current && !route.origin) {
+      hasAutoSetOrigin.current = true;
+      dispatch(setRouteOrigin(res.stop));
+    }
   }, [userLocation]);
 
   const calculate = () => {
@@ -418,23 +424,17 @@ export default function RoutePanel() {
         </p>
       )}
 
-      {nearestInfo && !route.origin && !options.length && (
-        <button
-          onClick={() => { dispatch(setRouteOrigin(nearestInfo.stop)); setOptions([]); setSelected(null); setNoRoute(false); }}
-          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs animate-fade-up transition-all active:scale-[.98]"
-          style={{ background: 'rgba(37,99,235,.08)', border: '1px solid rgba(37,99,235,.2)' }}>
+      {nearestInfo && route.origin?.id === nearestInfo.stop.id && !options.length && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl animate-fade-up"
+          style={{ background: 'rgba(5,150,105,.08)', border: '1px solid rgba(5,150,105,.2)' }}>
           <span>📍</span>
-          <div className="flex-1 text-left">
-            <span className="font-bold text-white">Arrêt le plus proche :</span>
-            <span className="ml-1.5" style={{ color: '#60a5fa' }}>{nearestInfo.stop.name}</span>
-            <span className="ml-1.5" style={{ color: '#334155' }}>
-              {nearestInfo.meters < 1000 ? `${nearestInfo.meters} m` : `${(nearestInfo.meters / 1000).toFixed(1)} km`}
-            </span>
-          </div>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md" style={{ background: 'rgba(37,99,235,.2)', color: '#60a5fa' }}>
-            Utiliser →
+          <span className="text-xs flex-1" style={{ color: '#34d399' }}>
+            Départ depuis votre position actuelle
           </span>
-        </button>
+          <span className="text-[10px] font-bold" style={{ color: '#34d399' }}>
+            {nearestInfo.meters < 1000 ? `${nearestInfo.meters} m` : `${(nearestInfo.meters / 1000).toFixed(1)} km`}
+          </span>
+        </div>
       )}
 
       {/* Origin */}
