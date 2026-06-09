@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { usePopBack } from '@/hooks/usePopBack';
 import QRCodeStop from '@/components/QRCodeStop';
 import { AdCard } from '@/components/AdBanner';
 import { selectAd, trackImpression } from '@/services/adEngine';
@@ -149,6 +150,9 @@ export default function StopsPage() {
   const [view, setView] = useState<ViewMode>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Retour arrière → ferme le détail de l'arrêt
+  usePopBack(useCallback(() => setExpandedId(null), []), !!expandedId);
   const [pullY, setPullY] = useState(0);
   const pullStart = useRef<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
