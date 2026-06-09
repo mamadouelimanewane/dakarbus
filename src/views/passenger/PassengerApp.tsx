@@ -505,7 +505,7 @@ export default function PassengerApp() {
 
               {/* Vue carte ligne */}
               {linesMapView && (
-                <div className="flex-1 relative overflow-hidden">
+                <div className="flex-1 relative overflow-hidden page-enter-right">
                   <button onClick={() => { setLinesMapView(false); dispatch(clearFocusedLine()); }}
                     className="absolute z-[1000] flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-2xl transition-all active:scale-95"
                     style={{
@@ -576,11 +576,13 @@ export default function PassengerApp() {
                 className={`flex-1 overflow-y-auto ${transitionDir === 'right' ? 'page-enter-right' : 'page-enter-left'}`}
                 style={{ scrollbarWidth: 'none' }}>
                 {journeyPanelOpen ? (
-                  <ActiveJourneyPage onGoToMap={() => {
-                    setJourneyPanelOpen(false);
-                    dispatch(setActiveTab('lines'));
-                    setLinesMapView(true);
-                  }} />
+                  <div key="journey-panel" className="animate-fade-up h-full">
+                    <ActiveJourneyPage onGoToMap={() => {
+                      setJourneyPanelOpen(false);
+                      dispatch(setActiveTab('lines'));
+                      setLinesMapView(true);
+                    }} />
+                  </div>
                 ) : <Page />}
               </div>
             </div>
@@ -607,11 +609,13 @@ export default function PassengerApp() {
                 className={`flex-1 overflow-y-auto ${transitionDir === 'right' ? 'page-enter-right' : 'page-enter-left'}`}
                 style={{ scrollbarWidth: 'none' }}>
                 {journeyPanelOpen ? (
-                  <ActiveJourneyPage onGoToMap={() => {
-                    setJourneyPanelOpen(false);
-                    dispatch(setActiveTab('lines'));
-                    setLinesMapView(true);
-                  }} />
+                  <div key="journey-panel-desktop" className="animate-fade-up h-full">
+                    <ActiveJourneyPage onGoToMap={() => {
+                      setJourneyPanelOpen(false);
+                      dispatch(setActiveTab('lines'));
+                      setLinesMapView(true);
+                    }} />
+                  </div>
                 ) : <Page />}
               </div>
 
