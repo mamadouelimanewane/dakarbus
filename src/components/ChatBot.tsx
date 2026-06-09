@@ -5,6 +5,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setRouteOrigin, setRouteDestination, setActiveTab, showToast } from '@/store/store';
 import { searchLocal } from '@/utils/placeSearch';
 import { STOPS } from '@/data/transportData';
+import { usePopBack } from '@/hooks/usePopBack';
 import type { Stop } from '@/types';
 
 interface Message {
@@ -67,6 +68,7 @@ export default function ChatBot() {
   const dispatch = useAppDispatch();
   const { userLocation } = useAppSelector(s => s.mobility);
   const [open, setOpen]     = useState(false);
+  usePopBack(() => setOpen(false), open);
   const [input, setInput]   = useState('');
   const [messages, setMessages] = useState<Message[]>([
     { role: 'bot', text: 'Bonjour ! Demandez-moi un itinéraire en langage naturel 😊\nEx: "Comment aller à Sandaga depuis UCAD ?"' }

@@ -2,8 +2,9 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   updateJourneyStatus, cancelJourney, setActiveTab,
-  setFocusedLine, setMapCenter, setMapZoom, showToast,
+  setFocusedLine, setMapCenter, setMapZoom, showToast, finishJourney,
 } from '@/store/store';
+import { usePopBack } from '@/hooks/usePopBack';
 import { walkingMinutes } from '@/utils/nearest';
 import { getNextDepartures } from '@/data/transportData';
 import { STOPS, LINES } from '@/data/transportData';
@@ -125,6 +126,9 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showWalkGuide, setShowWalkGuide] = useState(false);
   const prevStatus = useRef<JourneyStatus | null>(null);
+
+  // Retour Android : ferme le dialog d'annulation avant de quitter le trajet
+  usePopBack(() => setShowCancelConfirm(false), showCancelConfirm);
 
   // ── All effects BEFORE early return (Rules of Hooks) ──────
   // Vibrate on status change
@@ -393,6 +397,18 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
           />
         );
       })()}
+
+      {/* Bouton Terminer — uniquement quand arrivé (si modal manqué) */}
+      {active.status === 'arrived' && (
+        <div className="mx-4 mb-2">
+          <button
+            onClick={() => { dispatch(finishJourney()); dispatch(setActiveTab('plan')); }}
+            className="w-full py-4 rounded-2xl text-sm font-black text-white transition-all active:scale-95"
+            style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', boxShadow: '0 6px 20px rgba(124,58,237,.35)' }}>
+            🏁 Terminer & retour au planificateur
+          </button>
+        </div>
+      )}
 
       {/* Cancel */}
       {active.status !== 'arrived' && (

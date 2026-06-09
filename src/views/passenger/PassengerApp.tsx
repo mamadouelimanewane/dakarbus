@@ -439,7 +439,7 @@ export default function PassengerApp() {
                 )}
 
                 {/* Boutons GPS + fullscreen flottants */}
-                <div className="absolute z-[800] flex flex-col gap-2 pointer-events-auto"
+                <div className="absolute z-[1000] flex flex-col gap-2 pointer-events-auto"
                   style={{ bottom: activeTab !== 'plan' ? 52 : 12, right: 12 }}>
                   <button onClick={handleGPSCenter}
                     className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl shadow-2xl transition-all active:scale-90"
@@ -464,6 +464,26 @@ export default function PassengerApp() {
                 </div>
 
                 <MapView />
+
+                {/* Rappel itinéraire — visible quand sheet en peek + route calculée */}
+                {!mapFullscreen && sheetState === 'peek' && routeDisplay && (
+                  <button
+                    onClick={() => setSheetState('half')}
+                    className="absolute z-[1000] left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2.5 rounded-full shadow-2xl transition-all active:scale-95 pointer-events-auto"
+                    style={{
+                      bottom: 300,
+                      background: 'rgba(29,78,216,.95)',
+                      backdropFilter: 'blur(16px)',
+                      border: '1px solid rgba(96,165,250,.5)',
+                      color: 'white',
+                      fontSize: 13,
+                      fontWeight: 800,
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 4px 20px rgba(29,78,216,.5)',
+                    }}>
+                    🗺️ Voir l'itinéraire ↑
+                  </button>
+                )}
               </div>
 
               {/* ── BOTTOM SHEET ──────────────────────────── */}

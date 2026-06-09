@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { finishJourney, dismissEndModal, setRouteOrigin, setRouteDestination, startJourney, setActiveTab, showToast, addPoints, earnBadge } from '@/store/store';
+import { usePopBack } from '@/hooks/usePopBack';
 import { LINES } from '@/data/transportData';
 import { walkingMinutes } from '@/utils/nearest';
 import type { ActiveJourney } from '@/types';
@@ -27,6 +28,9 @@ export default function JourneyEndModal() {
   const dispatch = useAppDispatch();
   const { active, showEndModal, history } = useAppSelector(s => s.journey);
   const { tripCount } = useAppSelector(s => s.favorites);
+
+  // Retour Android → ferme le modal comme "Terminer"
+  usePopBack(() => { dispatch(finishJourney()); dispatch(addPoints(10)); dispatch(setActiveTab('plan')); }, !!showEndModal);
 
   if (!showEndModal || !active) return null;
 

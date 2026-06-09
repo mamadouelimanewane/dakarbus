@@ -946,23 +946,23 @@ export default function MapView() {
         {fullscreen ? '⊡' : '⤢'}
       </button>
 
-      {/* Bouton retour itinéraire — visible uniquement en plein écran avec route calculée */}
-      {fullscreen && routeDisplay && (
+      {/* Bouton retour itinéraire — visible en plein écran avec ou sans route calculée */}
+      {fullscreen && (
         <button
           onClick={toggleFullscreen}
           className="absolute z-[9000] flex items-center gap-2 rounded-2xl shadow-2xl hover:scale-105 active:scale-95 transition-all"
           style={{
-            bottom: 80, left: 12,
+            top: 68, left: 12,
             padding: '10px 16px',
-            background: 'rgba(29,78,216,.95)',
+            background: routeDisplay ? 'rgba(29,78,216,.95)' : 'rgba(8,12,24,.92)',
             backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(96,165,250,.5)',
+            border: routeDisplay ? '1px solid rgba(96,165,250,.5)' : '1px solid rgba(255,255,255,.15)',
             color: 'white',
             fontSize: 13,
             fontWeight: 800,
-            boxShadow: '0 4px 20px rgba(29,78,216,.5)',
+            boxShadow: routeDisplay ? '0 4px 20px rgba(29,78,216,.5)' : '0 4px 16px rgba(0,0,0,.5)',
           }}>
-          ← Itinéraire
+          ← {routeDisplay ? 'Itinéraire' : 'Retour'}
         </button>
       )}
 
