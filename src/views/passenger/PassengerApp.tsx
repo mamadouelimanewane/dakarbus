@@ -419,6 +419,25 @@ export default function PassengerApp() {
                   </div>
                 )}
 
+                {/* Bouton retour itinéraire — visible quand plein écran + route calculée */}
+                {mapFullscreen && routeDisplay && (
+                  <button
+                    onClick={() => { haptic('light'); setMapFullscreen(false); setSheetState('half'); }}
+                    className="absolute z-[1000] flex items-center gap-2 px-4 py-3 rounded-2xl shadow-2xl transition-all active:scale-95 pointer-events-auto"
+                    style={{
+                      bottom: 16, left: 12,
+                      background: 'rgba(29,78,216,.95)',
+                      backdropFilter: 'blur(16px)',
+                      border: '1px solid rgba(96,165,250,.5)',
+                      color: 'white',
+                      fontSize: 13,
+                      fontWeight: 800,
+                      boxShadow: '0 4px 20px rgba(29,78,216,.5)',
+                    }}>
+                    ← Itinéraire
+                  </button>
+                )}
+
                 {/* Boutons GPS + fullscreen flottants */}
                 <div className="absolute z-[800] flex flex-col gap-2 pointer-events-auto"
                   style={{ bottom: activeTab !== 'plan' ? 52 : 12, right: 12 }}>
