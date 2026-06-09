@@ -50,6 +50,44 @@ const TAB_COLORS: Record<Tab, string> = {
 };
 
 // ── Composant ──────────────────────────────────────────────────
+// ── Bannière hors-ligne ────────────────────────────────────────
+function OfflineBanner() {
+  const [online, setOnline] = React.useState(navigator.onLine);
+  const [dismissed, setDismissed] = React.useState(false);
+
+  React.useEffect(() => {
+    const on  = () => { setOnline(true);  setDismissed(false); };
+    const off = () => { setOnline(false); setDismissed(false); };
+    window.addEventListener('online',  on);
+    window.addEventListener('offline', off);
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
+  }, []);
+
+  if (online || dismissed) return null;
+
+  return (
+    <div className="fixed top-0 inset-x-0 z-[9990] flex items-center justify-between gap-3 px-4 py-2.5 animate-slide-down"
+      style={{
+        background: 'linear-gradient(135deg,rgba(217,119,6,.97),rgba(180,83,9,.97))',
+        backdropFilter: 'blur(12px)',
+        boxShadow: '0 4px 20px rgba(0,0,0,.4)',
+      }}>
+      <div className="flex items-center gap-2.5">
+        <span className="text-xl">📵</span>
+        <div>
+          <p className="text-xs font-black text-white leading-tight">Mode hors ligne</p>
+          <p className="text-[10px] leading-tight" style={{ color: 'rgba(255,255,255,.75)' }}>
+            Tracés des lignes disponibles · Calcul d'itinéraire indisponible
+          </p>
+        </div>
+      </div>
+      <button onClick={() => setDismissed(true)}
+        className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black"
+        style={{ background: 'rgba(0,0,0,.2)', color: 'white' }}>✕</button>
+    </div>
+  );
+}
+
 export default function PassengerApp() {
   const dispatch = useAppDispatch();
   const { activeTab, routeDisplay, focusedLine } = useAppSelector(s => s.mobility);
@@ -272,6 +310,7 @@ export default function PassengerApp() {
       onTouchStart={onSwipeStart}
       onTouchEnd={onSwipeEnd}>
       {!geoReady && <GeolocGate onDone={handleGeoReady} />}
+      <OfflineBanner />
       <ToastContainer />
       <JourneyEndModal />
       <ChatBot />

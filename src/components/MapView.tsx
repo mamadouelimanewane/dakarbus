@@ -9,7 +9,7 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setSelectedStop, setMapCenter, setMapZoom, clearFocusedLine, setUserLocation } from '@/store/store';
 import type { RouteDisplay } from '@/store/store';
 import { STOPS, LINES, OPERATORS } from '@/data/transportData';
-import { routeOnRoads, routeOnFoot, routeLine, lineRouteCache } from '@/utils/osrm';
+import { routeOnRoads, routeOnFoot, routeLine, lineRouteCache, cacheLineRoute } from '@/utils/osrm';
 import { buildStopTimings, sampleArrowPoints } from '@/utils/lineUtils';
 import StopPopup from './StopPopup';
 import type { Stop, Line, BusPosition } from '@/types';
@@ -312,7 +312,7 @@ function FocusedLineOverlay({ line }: { line: Line }) {
     if (stops.length < 2) return;
     routeLine(stops).then(result => {
       const c = result || stops.map(s => [s.lat, s.lng] as [number, number]);
-      lineRouteCache[line.id] = c;
+      cacheLineRoute(line.id, c);
       setCoords(c);
     });
   }, [line.id]);
@@ -412,7 +412,7 @@ function BusLine({ line, isFocused, hasFocus }: { line: Line; isFocused: boolean
     if (stops.length < 2) return;
     routeLine(stops).then(result => {
       const c = result || stops.map(s => [s.lat, s.lng] as [number, number]);
-      lineRouteCache[line.id] = c;
+      cacheLineRoute(line.id, c);
       setCoords(c);
     });
   }, [line.id]);

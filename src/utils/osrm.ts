@@ -46,4 +46,30 @@ export async function routeLine(stops: LatLng[]): Promise<[number, number][] | n
   return all.length > 1 ? all : null;
 }
 
-export const lineRouteCache: Record<string, [number, number][]> = {};
+// ── Cache persistant des tracés de lignes (survit aux rechargements) ──
+
+const LS_KEY = 'sunubus_line_routes_v2';
+
+function loadCache(): Record<string, [number, number][]> {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+function persistCache(cache: Record<string, [number, number][]>) {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(cache));
+  } catch {
+    // Quota localStorage dépassé : vider l'ancien cache et réessayer
+    try { localStorage.removeItem(LS_KEY); } catch {}
+  }
+}
+
+export const lineRouteCache: Record<string, [number, number][]> = loadCache();
+
+/** Ajoute un tracé dans le cache mémoire ET le persiste dans localStorage */
+export function cacheLineRoute(lineId: string, coords: [number, number][]): void {
+  lineRouteCache[lineId] = coords;
+  persistCache(lineRouteCache);
+}
