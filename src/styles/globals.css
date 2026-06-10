@@ -37,6 +37,22 @@
   --shadow-glow-green:  0 0 30px rgba(5,150,105,.35);
 }
 
+/* ── Dim theme (intermédiaire) ───────────────────────────────── */
+[data-theme="dim"] {
+  --c-bg:       #141b2d;
+  --c-surface:  #1c2541;
+  --c-surface2: #243050;
+  --c-border:   rgba(255,255,255,.10);
+  --c-border2:  rgba(255,255,255,.16);
+  --c-text:     #e2e8f0;
+  --c-muted:    #7b8ea8;
+  --c-subtle:   #243050;
+  --shadow-sm:  0 1px 3px rgba(0,0,0,.3);
+  --shadow-md:  0 4px 16px rgba(0,0,0,.35);
+  --shadow-lg:  0 12px 40px rgba(0,0,0,.4);
+  --shadow-xl:  0 24px 64px rgba(0,0,0,.5);
+}
+
 /* ── Light theme ─────────────────────────────────────────────── */
 [data-theme="light"] {
   --c-bg:       #f0f4f8;

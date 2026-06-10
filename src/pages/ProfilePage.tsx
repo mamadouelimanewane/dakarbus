@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { toggleFavStop, toggleFavLine, logout, setRouteOrigin, setRouteDestination, setActiveTab, toggleDarkMode, setAutoTheme, setNotifEnabled, setLang, BADGES_DEF } from '@/store/store';
+import { toggleFavStop, toggleFavLine, logout, setRouteOrigin, setRouteDestination, setActiveTab, toggleDarkMode, setTheme, setAutoTheme, setNotifEnabled, setLang, BADGES_DEF } from '@/store/store';
+import type { AppTheme } from '@/store/store';
 import { STOPS, LINES, OPERATORS } from '@/data/transportData';
 import type { Lang } from '@/types';
 
@@ -29,7 +30,7 @@ export default function ProfilePage() {
   const { myTickets } = useAppSelector(s => s.tickets);
   const { name } = useAppSelector(s => s.auth);
   const { history } = useAppSelector(s => s.journey);
-  const { darkMode, autoTheme, notifEnabled, lang } = useAppSelector(s => s.ui);
+  const { darkMode, theme, autoTheme, notifEnabled, lang } = useAppSelector(s => s.ui);
   const [tab, setTab] = useState<'stats' | 'badges' | 'history' | 'favs' | 'settings'>('stats');
   const { points, badges, level } = useAppSelector(s => s.gamif);
   const lvlCfg = LEVEL_CONFIG[level];
@@ -312,12 +313,33 @@ export default function ProfilePage() {
               <div className="px-4 pt-3 pb-1">
                 <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Apparence</p>
               </div>
-              <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--c-border)' }}>
-                <div>
-                  <div className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>Thème sombre</div>
-                  <div className="text-[10px]" style={{ color: 'var(--c-muted)' }}>Mode nuit activé</div>
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--c-border)' }}>
+                <div className="text-sm font-bold mb-2" style={{ color: 'var(--c-text)' }}>Thème</div>
+                <div className="flex gap-2">
+                  {([
+                    { value: 'dark',  icon: '🌑', label: 'Sombre' },
+                    { value: 'dim',   icon: '🌓', label: 'Tamisé' },
+                    { value: 'light', icon: '☀️', label: 'Clair'  },
+                  ] as { value: AppTheme; icon: string; label: string }[]).map(opt => {
+                    const active = (theme ?? (darkMode ? 'dark' : 'light')) === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        onClick={() => { dispatch(setTheme(opt.value)); }}
+                        className="flex-1 flex flex-col items-center gap-1 py-2 rounded-xl text-xs font-bold transition-all"
+                        style={{
+                          background: active ? 'var(--blue)' : 'var(--c-surface2)',
+                          color: active ? '#fff' : 'var(--c-muted)',
+                          border: active ? '1.5px solid var(--blue-l)' : '1.5px solid var(--c-border)',
+                          transform: active ? 'scale(1.05)' : 'scale(1)',
+                        }}
+                      >
+                        <span className="text-base">{opt.icon}</span>
+                        <span>{opt.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-                <Toggle value={darkMode} onChange={() => dispatch(toggleDarkMode())} />
               </div>
               <div className="px-4 py-3 flex items-center justify-between">
                 <div>

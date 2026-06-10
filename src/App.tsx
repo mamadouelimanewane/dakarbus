@@ -358,13 +358,13 @@ function RoleSelection() {
 export default function App() {
   const dispatch = useAppDispatch();
   const { role, isAuthenticated } = useAppSelector(s => s.auth);
-  const { darkMode } = useAppSelector(s => s.ui);
+  const { darkMode, theme } = useAppSelector(s => s.ui);
   const fleetOp = useAppSelector(s => s.fleet.operator);
 
   // Apply theme to <html>
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
-  }, [darkMode]);
+    document.documentElement.setAttribute('data-theme', theme ?? (darkMode ? 'dark' : 'light'));
+  }, [theme, darkMode]);
 
   useEffect(() => {
     initSimulation();

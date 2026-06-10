@@ -120,8 +120,11 @@ const authSlice = createSlice({
 });
 
 // ── UI Slice ──────────────────────────────────────────────────
+export type AppTheme = 'dark' | 'dim' | 'light';
+
 interface UIState {
-  darkMode: boolean;
+  darkMode: boolean;   // true si theme !== 'light' (rétro-compat MapView etc.)
+  theme: AppTheme;
   autoTheme: boolean;
   lang: Lang;
   sidebarCollapsed: boolean;
@@ -129,26 +132,39 @@ interface UIState {
   notifEnabled: boolean;
 }
 
-function getAutoTheme(): boolean {
+function getAutoTheme(): AppTheme {
   const h = new Date().getHours();
-  return h < 6 || h >= 19; // sombre avant 6h et après 19h
+  return h < 6 || h >= 19 ? 'dark' : 'light';
 }
 
 const uiSlice = createSlice({
   name: 'ui',
   initialState: {
-    darkMode: true,   // UI toujours sombre — la carte est gérée séparément
-    autoTheme: false, // auto-thème désactivé par défaut (trop de conflits UI/carte)
+    theme: 'dark' as AppTheme,
+    darkMode: true,   // rétro-compat : true quand theme !== 'light'
+    autoTheme: false,
     lang: 'fr' as Lang,
     sidebarCollapsed: false,
     showQR: false,
     notifEnabled: false,
   } as UIState,
   reducers: {
-    toggleDarkMode: (s) => { s.darkMode = !s.darkMode; s.autoTheme = false; },
+    toggleDarkMode: (s) => {
+      s.theme = s.theme === 'light' ? 'dark' : 'light';
+      s.darkMode = s.theme !== 'light';
+      s.autoTheme = false;
+    },
+    setTheme: (s, a: PayloadAction<AppTheme>) => {
+      s.theme = a.payload;
+      s.darkMode = a.payload !== 'light';
+      s.autoTheme = false;
+    },
     setAutoTheme: (s, a: PayloadAction<boolean>) => {
       s.autoTheme = a.payload;
-      if (a.payload) s.darkMode = getAutoTheme();
+      if (a.payload) {
+        s.theme = getAutoTheme();
+        s.darkMode = s.theme !== 'light';
+      }
     },
     setLang: (s, a: PayloadAction<Lang>) => { s.lang = a.payload; },
     toggleSidebar: (s) => { s.sidebarCollapsed = !s.sidebarCollapsed; },
@@ -468,7 +484,7 @@ export const {
 } = mobilitySlice.actions;
 
 export const { loginPassenger, loginDriver, loginAdmin, logout } = authSlice.actions;
-export const { toggleDarkMode, setAutoTheme, setLang, toggleSidebar, setShowQR, setNotifEnabled } = uiSlice.actions;
+export const { toggleDarkMode, setTheme, setAutoTheme, setLang, toggleSidebar, setShowQR, setNotifEnabled } = uiSlice.actions;
 export const { buyTicket, useTicket, addReport, upvoteReport, acknowledgeReport } = ticketSlice.actions;
 export const { toggleFavStop, toggleFavLine, recordTrip, visitLine } = favSlice.actions;
 export const { showToast, dismissToast } = toastSlice.actions;
