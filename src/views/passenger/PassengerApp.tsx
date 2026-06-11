@@ -563,7 +563,7 @@ export default function PassengerApp() {
               MOBILE : LINES TAB
           ══════════════════════════════════════════════════ */}
           {isLinesTab && (
-            <div className="flex-1 flex overflow-hidden relative">
+            <div className="lg:hidden flex-1 flex overflow-hidden relative">
               {/* Liste */}
               <div className="flex-1 flex flex-col overflow-hidden" style={{ display: linesMapView ? 'none' : 'flex' }}>
                 <div className="flex-shrink-0 z-40"
