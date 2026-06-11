@@ -566,20 +566,40 @@ function RouteOverlay() {
     async function fetchSegments() {
       for (const seg of routeDisplay!.segments) {
         const line = LINES.find(l => l.id === seg.lineId);
-        if (!line) continue;
-        const fromIdx = line.stops.indexOf(seg.fromStopId);
-        const toIdx   = line.stops.indexOf(seg.toStopId);
-        if (fromIdx < 0 || toIdx < 0) continue;
-        const [lo, hi] = fromIdx < toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
-        const waypoints = line.stops.slice(lo, hi + 1)
-          .map(id => STOPS.find(s => s.id === id))
-          .filter(Boolean)
-          .map(s => ({ lat: s!.lat, lng: s!.lng }));
         const key = `${seg.lineId}:${seg.fromStopId}:${seg.toStopId}`;
+
+        // Build waypoints — fallback to just the two endpoints if stops not found in line list
+        let waypoints: { lat: number; lng: number }[];
+        if (line) {
+          const fromIdx = line.stops.indexOf(seg.fromStopId);
+          const toIdx   = line.stops.indexOf(seg.toStopId);
+          if (fromIdx >= 0 && toIdx >= 0) {
+            const [lo, hi] = fromIdx < toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
+            waypoints = line.stops.slice(lo, hi + 1)
+              .map(id => STOPS.find(s => s.id === id))
+              .filter(Boolean)
+              .map(s => ({ lat: s!.lat, lng: s!.lng }));
+          } else {
+            // Stops not found in line — use direct endpoints
+            const fromStop = STOPS.find(s => s.id === seg.fromStopId);
+            const toStop   = STOPS.find(s => s.id === seg.toStopId);
+            waypoints = [fromStop, toStop].filter(Boolean).map(s => ({ lat: s!.lat, lng: s!.lng }));
+          }
+        } else {
+          const fromStop = STOPS.find(s => s.id === seg.fromStopId);
+          const toStop   = STOPS.find(s => s.id === seg.toStopId);
+          waypoints = [fromStop, toStop].filter(Boolean).map(s => ({ lat: s!.lat, lng: s!.lng }));
+        }
+
+        if (waypoints.length < 2) continue;
+
+        // Show straight-line fallback immediately, then replace with OSRM route if available
+        const immediateFallback = waypoints.map(w => [w.lat, w.lng] as [number, number]);
+        if (!cancelled) setBusCoords(prev => ({ ...prev, [key]: immediateFallback }));
+
         const coords = await routeOnRoads(waypoints);
-        if (!cancelled) {
-          const fallback = waypoints.map(w => [w.lat, w.lng] as [number, number]);
-          setBusCoords(prev => ({ ...prev, [key]: coords ?? fallback }));
+        if (!cancelled && coords) {
+          setBusCoords(prev => ({ ...prev, [key]: coords }));
         }
       }
     }
@@ -922,15 +942,7 @@ export default function MapView() {
         );
       })()}
 
-      {/* ── Barre déplaçable : marche + tarif ── */}
-      {routeDisplay && (routeDisplay.fare || routeDisplay.walkFrom) && (
-        <DraggableInfoBar key={`infobar-${fullscreen}`} routeDisplay={routeDisplay} />
-      )}
-
-      {/* ── Timeline déplaçable ── */}
-      {routeDisplay && (
-        <DraggableTimeline key={`timeline-${fullscreen}`} routeDisplay={routeDisplay} />
-      )}
+      {/* Info barre et timeline déplacées dans RoutePanel (cadre blanc en bas) */}
 
       {/* Fullscreen button */}
       <button onClick={toggleFullscreen} title={fullscreen ? 'Quitter plein écran' : 'Plein écran'}

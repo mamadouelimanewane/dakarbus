@@ -550,6 +550,43 @@ export default function RoutePanel() {
         </div>
       )}
 
+      {/* ── Résumé itinéraire sélectionné : cadre blanc ── */}
+      {selected && (
+        <div className="rounded-2xl px-4 py-3 flex items-center gap-4 animate-fade-up"
+          style={{ background: 'var(--c-surface)', border: '1.5px solid var(--c-border2)', boxShadow: '0 4px 16px rgba(0,0,0,.12)' }}>
+          {/* Ligne principale */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              {selected.steps.filter(s => s.type === 'bus').map((s, i) => (
+                <span key={i} className="text-xs font-black px-2.5 py-1 rounded-lg text-white"
+                  style={{ background: s.color }}>
+                  {s.lineId}
+                </span>
+              ))}
+              <span className="text-xs font-bold" style={{ color: 'var(--c-muted)' }}>
+                {route.origin?.name} → {route.destination?.name}
+              </span>
+            </div>
+          </div>
+          {/* Durée */}
+          <div className="text-center flex-shrink-0">
+            <div className="text-lg font-black" style={{ color: 'var(--c-text)' }}>{selected.totalMin}<span className="text-xs font-bold ml-0.5" style={{ color: 'var(--c-muted)' }}>min</span></div>
+          </div>
+          {/* Tarif */}
+          <div className="text-center flex-shrink-0 px-3 py-1.5 rounded-xl" style={{ background: 'rgba(251,191,36,.1)', border: '1px solid rgba(251,191,36,.3)' }}>
+            <div className="text-xs font-black" style={{ color: '#d97706' }}>🎫 TARIF</div>
+            <div className="text-sm font-black" style={{ color: '#fbbf24' }}>{selected.fare} F</div>
+          </div>
+          {/* Marche */}
+          {selected.walkMin > 0 && (
+            <div className="text-center flex-shrink-0 px-3 py-1.5 rounded-xl" style={{ background: 'rgba(5,150,105,.1)', border: '1px solid rgba(5,150,105,.3)' }}>
+              <div className="text-xs font-black" style={{ color: '#059669' }}>🚶 MARCHE</div>
+              <div className="text-sm font-black" style={{ color: '#34d399' }}>{selected.walkMin} min</div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* OPTIONS */}
       {options.length > 0 && (
         <div className="space-y-2 animate-fade-up">
