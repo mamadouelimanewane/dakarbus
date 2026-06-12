@@ -234,8 +234,8 @@ export default function PassengerApp() {
   }, [activeTab, dispatch]));
 
   // Sous-vues / états dans PassengerApp (priorité variable, s'empilent)
-  // isFullPage = !(plan|stops) && !lines — recopié ici pour éviter la référence avant déclaration
-  const isFullPageForBack = !(activeTab === 'plan' || activeTab === 'stops') && activeTab !== 'lines';
+  // isFullPage = !plan && !lines — stops n'utilise plus la carte
+  const isFullPageForBack = activeTab !== 'plan' && activeTab !== 'lines';
   usePopBack(useCallback(() => setJourneyPanelOpen(false), []), journeyPanelOpen);
   usePopBack(useCallback(() => setMapFullscreen(false),    []), mapFullscreen);
   usePopBack(useCallback(() => { setLinesMapView(false); dispatch(clearFocusedLine()); }, [dispatch]), linesMapView);
@@ -293,7 +293,7 @@ export default function PassengerApp() {
   const jColor = activeJourney ? (journeyStatusColor[activeJourney.status] || '#2563eb') : '#2563eb';
 
   // Layout logic
-  const isCitymapper = (activeTab === 'plan' || activeTab === 'stops') && !journeyPanelOpen;
+  const isCitymapper = activeTab === 'plan' && !journeyPanelOpen;
   const isLinesTab   = activeTab === 'lines' && !journeyPanelOpen;
   const isFullPage   = !isCitymapper && !isLinesTab; // alerts / tickets / profile / journey
 
