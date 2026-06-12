@@ -777,6 +777,7 @@ function ZoomTracker({ onZoom }: { onZoom: (z: number) => void }) {
 export default function MapView() {
   const dispatch = useAppDispatch();
   const { selectedOperator, userLocation, route, focusedLine, busPositions, routeDisplay } = useAppSelector(s => s.mobility);
+  const { theme } = useAppSelector(s => s.ui);
   const darkMode = useAppSelector(s => s.ui.darkMode);
   const [loadingCount, setLoadingCount] = useState(0);
   const [routeCoords, setRouteCoords]   = useState<[number, number][] | null>(null);
@@ -987,9 +988,11 @@ export default function MapView() {
 
       <MapContainer center={[14.7167, -17.4677]} zoom={12}
         style={{ width: '100%', height: '100%', background: '#e8eaf0' }} zoomControl={true}>
-        {/* Carte toujours en clair : lignes colorées et arrêts bien lisibles */}
+        {/* Tuiles adaptées au thème */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"
+          url={theme === 'natural'
+            ? "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
+            : "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"}
           attribution=""
           keepBuffer={4}
         />

@@ -317,9 +317,10 @@ export default function ProfilePage() {
                 <div className="text-sm font-bold mb-2" style={{ color: 'var(--c-text)' }}>Thème</div>
                 <div className="flex gap-2">
                   {([
-                    { value: 'dark',  icon: '🌑', label: 'Sombre' },
-                    { value: 'dim',   icon: '🌓', label: 'Tamisé' },
-                    { value: 'light', icon: '☀️', label: 'Clair'  },
+                    { value: 'dark',    icon: '🌑', label: 'Sombre'  },
+                    { value: 'dim',     icon: '🌓', label: 'Tamisé'  },
+                    { value: 'light',   icon: '☀️', label: 'Clair'   },
+                    { value: 'natural', icon: '🌿', label: 'Jour'    },
                   ] as { value: AppTheme; icon: string; label: string }[]).map(opt => {
                     const active = (theme ?? (darkMode ? 'dark' : 'light')) === opt.value;
                     return (

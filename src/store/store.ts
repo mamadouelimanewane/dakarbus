@@ -120,7 +120,7 @@ const authSlice = createSlice({
 });
 
 // ── UI Slice ──────────────────────────────────────────────────
-export type AppTheme = 'dark' | 'dim' | 'light';
+export type AppTheme = 'dark' | 'dim' | 'light' | 'natural';
 
 interface UIState {
   darkMode: boolean;   // true si theme !== 'light' (rétro-compat MapView etc.)
