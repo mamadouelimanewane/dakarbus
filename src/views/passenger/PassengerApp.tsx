@@ -727,19 +727,19 @@ export default function PassengerApp() {
             boxShadow: '0 -4px 24px rgba(0,0,0,.4)',
           }}>
 
-          <div className="flex items-stretch" style={{ minHeight: 64 }}>
+          <div className="flex items-stretch" style={{ minHeight: 76 }}>
             {/* Journey shortcut */}
             {activeJourney && (
-              <button onClick={() => setJourneyPanelOpen(true)}
-                className="flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-all active:scale-90"
+              <button onClick={() => { haptic('medium'); setJourneyPanelOpen(true); }}
+                className="flex-1 flex flex-col items-center justify-center gap-1.5 py-2 transition-all duration-300 active:scale-90 touch-manipulation"
                 style={{ color: journeyPanelOpen ? jColor : jColor + '90' }}>
-                <div className="relative w-10 h-10 flex items-center justify-center rounded-xl"
-                  style={{ background: journeyPanelOpen ? jColor + '22' : 'transparent' }}>
-                  <span className="text-2xl leading-none">🧭</span>
-                  <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
+                <div className="relative w-12 h-12 flex items-center justify-center rounded-xl"
+                  style={{ background: journeyPanelOpen ? jColor + '22' : 'transparent', transform: journeyPanelOpen ? 'scale(1.1)' : 'scale(1)' }}>
+                  <span className="text-3xl leading-none">🧭</span>
+                  <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border-[2.5px]"
                     style={{ background: jColor, borderColor: 'rgba(6,10,20,.98)', animation: 'live-pulse 2s infinite' }} />
                 </div>
-                <span className="text-[11px] font-bold tracking-wide">Trajet</span>
+                <span className="text-xs font-bold tracking-wide">Trajet</span>
               </button>
             )}
 
@@ -750,24 +750,24 @@ export default function PassengerApp() {
               const color  = TAB_COLORS[tab.id];
               return (
                 <button key={tab.id}
-                  onClick={() => goTab(tab.id)}
-                  className="flex-1 flex flex-col items-center justify-center gap-1 py-2 relative transition-all active:scale-90"
+                  onClick={() => { haptic('light'); goTab(tab.id); }}
+                  className="flex-1 flex flex-col items-center justify-center gap-1.5 py-2 relative transition-all duration-300 active:scale-90 touch-manipulation"
                   style={{ color: active ? color : '#6b7280', minWidth: 0 }}>
                   {active && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-[3px] rounded-full"
-                      style={{ background: color }} />
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-[3px] rounded-b-md"
+                      style={{ background: color, boxShadow: `0 2px 10px ${color}80` }} />
                   )}
-                  <div className="relative w-10 h-10 flex items-center justify-center rounded-xl transition-all"
-                    style={{ background: active ? color + '20' : 'transparent' }}>
-                    <span className="text-2xl leading-none">{tab.icon}</span>
+                  <div className="relative w-12 h-12 flex items-center justify-center rounded-[18px] transition-all duration-300"
+                    style={{ background: active ? color + '20' : 'transparent', transform: active ? 'translateY(-2px)' : 'translateY(0)' }}>
+                    <span className="text-3xl leading-none" style={{ transform: active ? 'scale(1.15)' : 'scale(1)', transition: 'transform 0.3s' }}>{tab.icon}</span>
                     {badge !== null && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-white text-[11px] font-black flex items-center justify-center"
-                        style={{ background: '#dc2626', boxShadow: '0 2px 6px rgba(220,38,38,.5)' }}>
+                      <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-white text-[11px] font-black flex items-center justify-center"
+                        style={{ background: '#dc2626', boxShadow: '0 2px 8px rgba(220,38,38,.6)', border: '2px solid rgba(6,10,20,.98)' }}>
                         {badge > 9 ? '9+' : badge}
                       </span>
                     )}
                   </div>
-                  <span className="text-[11px] font-bold leading-tight" style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingInline: 2 }}>{tab.label}</span>
+                  <span className="text-xs font-bold leading-tight" style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingInline: 2, color: active ? color : '#94a3b8' }}>{tab.label}</span>
                 </button>
               );
             })}
