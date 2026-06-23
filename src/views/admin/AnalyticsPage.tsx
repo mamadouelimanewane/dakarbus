@@ -227,13 +227,32 @@ function DailyReport({ operator, onClose }: { operator: string; onClose: () => v
 export default function AnalyticsPage({ operator = 'DDD' }: { operator?: string }) {
   const [reportOpen, setReportOpen] = useState(false);
   const passSales = useAppSelector(s => s.passes.passSales);
-  const [section, setSection] = useState<'od'|'heures'|'revenus'|'pass'>('od');
+  const [section, setSection] = useState<'od'|'heures'|'revenus'|'pass'|'heatmap'>('od');
   const cfg = OPERATORS[operator] || OPERATORS['DDD'];
   const totalPassRev = Object.entries(passSales).reduce((sum, [type, count]) => {
     return sum + (PASS_CATALOG[type as keyof typeof PASS_CATALOG]?.price || 0) * count;
   }, 0);
 
   const totalRevenue = (operator === 'DDD' ? 3_684_000 : 1_851_000) + totalPassRev + Math.round(getTotalAdRevenue() * 0.5);
+
+  const [liveRevenue, setLiveRevenue] = useState(totalRevenue);
+  const [tickerFlash, setTickerFlash] = useState(false);
+
+  React.useEffect(() => {
+    setLiveRevenue(totalRevenue);
+  }, [totalRevenue]);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      const increment = [200, 300, 450, 500, 1000][Math.floor(Math.random() * 5)];
+      setLiveRevenue(r => r + increment);
+      setTickerFlash(true);
+      const timeout = setTimeout(() => setTickerFlash(false), 900);
+      return () => clearTimeout(timeout);
+    }, 4000 + Math.random() * 3000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -256,7 +275,14 @@ export default function AnalyticsPage({ operator = 'DDD' }: { operator?: string 
         {/* Global KPIs */}
         <div className="px-4 mb-4 grid grid-cols-2 gap-2">
           <KPI icon="🚌" label="Voyages aujourd'hui" value={fmt(operator==='DDD'?18420:12340)} sub="+4% vs hier" color="#60a5fa" />
-          <KPI icon="💰" label="Revenus totaux" value={fmtFcfa(totalRevenue)+' F'} sub="billetterie+pass+pub" color="#4ade80" />
+          <div className="relative">
+            <KPI icon="💰" label="Revenus totaux (Live)" value={fmt(liveRevenue)+' F'} sub="billetterie+pass+pub" color="#4ade80" />
+            {tickerFlash && (
+              <span className="absolute right-4 top-2 text-[9px] font-black text-emerald-400 animate-fade-up">
+                + transaction
+              </span>
+            )}
+          </div>
           <KPI icon="⏱" label="Ponctualité" value={operator==='DDD'?'87%':'91%'} sub="objectif: 90%" color={operator==='DDD'?'#fbbf24':'#4ade80'} />
           <KPI icon="📢" label="Revenus pub" value={fmtFcfa(getTotalAdRevenue())+' F'} sub={fmt(getTotalImpressions())+' impressions'} color="#fbbf24" />
         </div>
@@ -268,6 +294,7 @@ export default function AnalyticsPage({ operator = 'DDD' }: { operator?: string 
             { id:'heures',  label:'Heures de pointe' },
             { id:'revenus', label:'Revenus par ligne' },
             { id:'pass',    label:'Pass & Abonnements' },
+            { id:'heatmap',  label:'Affluence Arrêts' },
           ] as const).map(s => (
             <button key={s.id} onClick={() => setSection(s.id)}
               className="flex-shrink-0 px-3 py-2 rounded-xl text-xs font-black transition-all"
@@ -460,6 +487,48 @@ export default function AnalyticsPage({ operator = 'DDD' }: { operator?: string 
                   s + count * Object.values(PASS_CATALOG)[i].price, 0) + totalPassRev)} FCFA
               </span>
             </div>
+          </div>
+        )}
+
+        {/* ── Fréquentation des arrêts (Heatmap) ── */}
+        {section === 'heatmap' && (
+          <div className="px-4 space-y-3">
+            <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color:'#64748b' }}>
+              POINTS CHAUDS & AFFLUENCE AUX ARRÊTS (Temps réel)
+            </p>
+            
+            {[
+              { stop: "Gare Petersen", load: 96, status: "Critique", color: "#ef4444", trend: "↗ +12% vs hier", advice: "Régulation requise : +3 bus L1 pour désengorger" },
+              { stop: "Croisement Colobane", load: 84, status: "Critique", color: "#ef4444", trend: "→ Stable", advice: "Fréquence actuelle satisfaisante" },
+              { stop: "Rond-point Liberté 6", load: 72, status: "Élevée", color: "#f59e0b", trend: "↘ -5% vs hier", advice: "Contrôleurs en place" },
+              { stop: "Patte d'Oie Interchange", load: 65, status: "Modérée", color: "#f59e0b", trend: "↗ +8% vs hier", advice: "Aucune action requise" },
+              { stop: "Gare de Dakar (TER)", load: 58, status: "Modérée", color: "#f59e0b", trend: "→ Stable", advice: "Flux passager régulier" },
+              { stop: "Terminus Pikine", load: 45, status: "Faible", color: "#10b981", trend: "↘ -10% vs hier", advice: "Baisse d'affluence constatée" },
+            ].map((item, idx) => (
+              <div key={idx} className="rounded-xl p-4" style={{ background:'var(--c-surface)', border: `1px solid ${item.load > 80 ? 'rgba(239,68,68,0.25)' : 'var(--c-border2)'}` }}>
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h4 className="text-xs font-black text-white">{item.stop}</h4>
+                    <span className="text-[9px] font-bold" style={{ color: '#64748b' }}>{item.trend}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-black px-2.5 py-0.5 rounded-full" style={{ background: item.color + '20', color: item.color }}>
+                      {item.status} ({item.load}%)
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Visual heat gauge */}
+                <div className="h-2 rounded-full overflow-hidden mb-2.5" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                  <div className="h-full rounded-full" style={{ width: `${item.load}%`, background: `linear-gradient(90deg, #10b981 0%, #f59e0b 50%, #ef4444 100%)` }} />
+                </div>
+                
+                {/* AI Advice note */}
+                <p className="text-[10px] leading-relaxed italic" style={{ color: '#94a3b8' }}>
+                  📢 <span className="font-bold">Note de régulation:</span> {item.advice}
+                </p>
+              </div>
+            ))}
           </div>
         )}
       </div>

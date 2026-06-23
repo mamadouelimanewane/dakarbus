@@ -12,7 +12,6 @@ import WalkToStopGuide from '@/components/WalkToStopGuide';
 import type { JourneyStatus } from '@/types';
 import type { RouteStep } from '@/utils/routeFinder';
 
-// ── Sons d'alerte via Web Audio API ──────────────────────────
 function playBeep(freq = 660, dur = 0.18, vol = 0.25) {
   try {
     const ctx = new AudioContext();
@@ -25,6 +24,15 @@ function playBeep(freq = 660, dur = 0.18, vol = 0.25) {
     osc.start(); osc.stop(ctx.currentTime + dur);
     setTimeout(() => ctx.close(), 500);
   } catch { /* AudioContext non dispo */ }
+}
+
+function speak(text: string) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'fr-FR';
+  utterance.rate = 1.1;
+  window.speechSynthesis.speak(utterance);
 }
 
 const STATUS_CONFIG: Record<JourneyStatus, { emoji: string; label: string; color: string }> = {
@@ -137,6 +145,7 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
   const { active } = useAppSelector(s => s.journey);
   const { myTickets } = useAppSelector(s => s.tickets);
   const { userLocation } = useAppSelector(s => s.mobility);
+  const { a11yMode, notifEnabled } = useAppSelector(s => s.ui);
   const [elapsed, setElapsed] = useState(0);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showWalkGuide, setShowWalkGuide] = useState(false);
@@ -161,6 +170,10 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
       if (active.status === 'arrived')  { playBeep(880, 0.15); setTimeout(() => playBeep(1100, 0.2), 200); }
       const cfg = STATUS_CONFIG[active.status];
       dispatch(showToast({ type: 'info', message: `${cfg.emoji} ${cfg.label}` }));
+      if (a11yMode) speak(cfg.label);
+      if (notifEnabled && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification('SunuBus', { body: `Trajet : ${cfg.label}`, icon: '/icon-192.png' });
+      }
     }
     prevStatus.current = active.status;
   }, [active?.status]);
@@ -247,6 +260,16 @@ export default function ActiveJourneyPage({ onGoToMap }: { onGoToMap?: () => voi
 
   return (
     <div className="flex flex-col h-full overflow-y-auto pb-6">
+
+      {/* Bouton de lecture vocale (A11y) */}
+      {a11yMode && (
+        <button onClick={() => speak(`${STATUS_CONFIG[active.status].label}. ${active.originStop.name} vers ${active.destinationStop.name}`)}
+          className="absolute top-4 right-4 w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg z-50 transition-all active:scale-90"
+          style={{ background: 'var(--c-surface)', border: '2px solid var(--c-border)' }}
+          aria-label="Lecture vocale de l'état du trajet">
+          🔊
+        </button>
+      )}
 
       {/* Status hero */}
       <div className="m-4 rounded-3xl overflow-hidden"

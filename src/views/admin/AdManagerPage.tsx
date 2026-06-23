@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { setAdOverride } from '@/store/store';
+import { setAdOverride, addCampaign } from '@/store/store';
 import { AD_CAMPAIGNS } from '@/data/ads';
 import type { AdCampaign, AdCategory, AdStatus } from '@/data/ads';
 import { getAdStats, getTotalAdRevenue, getTotalImpressions, getTotalClicks } from '@/services/adEngine';
@@ -220,6 +220,67 @@ function CampaignModal({ ad, onClose }: { ad: AdCampaign; onClose: () => void })
   );
 }
 
+// ── Create Ad Modal ───────────────────────────────────────────────
+function CreateAdModal({ onClose }: { onClose: () => void }) {
+  const dispatch = useAppDispatch();
+  const [advertiser, setAdvertiser] = useState('');
+  const [title, setTitle] = useState('');
+  const [geoTarget, setGeoTarget] = useState('');
+
+  const handleSave = () => {
+    if (!advertiser || !title) return;
+    const newAd: AdCampaign = {
+      id: 'custom_' + Date.now(),
+      advertiser,
+      logo: '⭐',
+      tagline: 'Annonce locale',
+      category: 'retail',
+      title,
+      body: 'Description de la publicité...',
+      ctaLabel: 'En savoir plus',
+      ctaUrl: 'https://sunubus.sn',
+      accentColor: '#10b981',
+      bgColor: 'rgba(16,185,129,.12)',
+      format: 'card',
+      geoTarget: geoTarget || undefined,
+      targeting: {},
+      startDate: Date.now(),
+      endDate: Date.now() + 30 * 86400000,
+      budgetFcfa: 100000,
+      spentFcfa: 0,
+      cpmFcfa: 1000,
+      maxImpressions: 100000,
+      status: 'active',
+      priority: 2,
+      freqCap: 2,
+    };
+    dispatch(addCampaign(newAd));
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
+      style={{ background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(12px)' }}>
+      <div className="w-full max-w-sm rounded-3xl p-5 animate-fade-up"
+        style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border2)' }}>
+        <h2 className="font-black text-white text-lg mb-4">Nouvelle Campagne</h2>
+        <div className="space-y-3">
+          <input className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-emerald-500 transition-colors"
+            placeholder="Annonceur (ex: Wave)" value={advertiser} onChange={e => setAdvertiser(e.target.value)} />
+          <input className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-emerald-500 transition-colors"
+            placeholder="Titre de la publicité" value={title} onChange={e => setTitle(e.target.value)} />
+          <input className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-emerald-500 transition-colors"
+            placeholder="Ciblage géo (Commune ou Ligne)" value={geoTarget} onChange={e => setGeoTarget(e.target.value)} />
+        </div>
+        <div className="flex gap-2 mt-5">
+          <button onClick={onClose} className="flex-1 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 text-sm font-bold transition-all">Annuler</button>
+          <button onClick={handleSave} className="flex-1 py-2 rounded-xl text-white text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.98]" style={{ background: '#10b981' }}>Créer</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main AdManagerPage ────────────────────────────────────────────
 export default function AdManagerPage() {
   const dispatch  = useAppDispatch();
@@ -229,14 +290,15 @@ export default function AdManagerPage() {
   const [categoryFilter, setCategoryFilter] = useState<AdCategory | 'all'>('all');
   const [statusFilter,   setStatusFilter]   = useState<AdStatus | 'all'>('all');
   const [selectedAd,     setSelectedAd]     = useState<AdCampaign | null>(null);
+  const [showCreate,     setShowCreate]     = useState(false);
 
   // Applique les surcharges admin au status effectif
   const campaigns = useMemo(() =>
-    AD_CAMPAIGNS.map(ad => ({
+    [...AD_CAMPAIGNS, ...adsState.customCampaigns].map(ad => ({
       ...ad,
       status: (overrides[ad.id] || ad.status) as AdStatus,
     })),
-    [overrides]
+    [overrides, adsState.customCampaigns]
   );
 
   const filtered = useMemo(() => campaigns.filter(ad => {
@@ -257,6 +319,9 @@ export default function AdManagerPage() {
       {selectedAd && (
         <CampaignModal ad={selectedAd} onClose={() => setSelectedAd(null)} />
       )}
+      {showCreate && (
+        <CreateAdModal onClose={() => setShowCreate(false)} />
+      )}
 
       <div className="flex-1 overflow-y-auto pb-4">
         {/* Header KPIs */}
@@ -268,9 +333,16 @@ export default function AdManagerPage() {
                 {activeCampaigns} campagne{activeCampaigns > 1 ? 's' : ''} active{activeCampaigns > 1 ? 's' : ''}
               </p>
             </div>
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center text-lg"
-              style={{ background: 'rgba(251,191,36,.15)', border: '1px solid rgba(251,191,36,.25)' }}>
-              📢
+            <div className="flex gap-2">
+              <button onClick={() => setShowCreate(true)}
+                className="px-3 rounded-xl flex items-center justify-center text-xs font-black transition-all active:scale-95 text-white"
+                style={{ background: '#10b981', boxShadow: '0 4px 12px rgba(16,185,129,.3)' }}>
+                + Nouvelle
+              </button>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center text-lg"
+                style={{ background: 'rgba(251,191,36,.15)', border: '1px solid rgba(251,191,36,.25)' }}>
+                📢
+              </div>
             </div>
           </div>
 
@@ -363,6 +435,10 @@ export default function AdManagerPage() {
                         style={{ background: stCfg.bg, color: stCfg.color }}>{stCfg.label}</span>
                       <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
                         style={{ background: `${cat.color}12`, color: cat.color }}>{cat.emoji}</span>
+                      {ad.geoTarget && (
+                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full"
+                          style={{ background: 'rgba(139,92,246,.15)', color: '#a78bfa' }}>📍 Géociblé : {ad.geoTarget}</span>
+                      )}
                     </div>
 
                     <div className="text-[11px] mt-0.5 truncate" style={{ color: '#64748b' }}>{ad.title}</div>

@@ -3,11 +3,12 @@ import { usePopBack } from '@/hooks/usePopBack';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setActiveTab, setSelectedStop, setMapCenter, setMapZoom, setFocusedLine } from '@/store/store';
 import { STOPS, LINES, OPERATORS } from '@/data/transportData';
+import { DAKAR_PLACES, CATEGORY_META } from '@/data/dakarPlaces';
 import { searchStops } from '@/utils/fuzzy';
 import { haptic } from '@/utils/haptic';
 
 interface Result {
-  type: 'stop' | 'line' | 'zone';
+  type: 'stop' | 'line' | 'zone' | 'place';
   id: string;
   label: string;
   sub: string;
@@ -15,6 +16,7 @@ interface Result {
   icon: string;
   lat?: number;
   lng?: number;
+  nearestStopId?: string;
 }
 
 export default function GlobalSearch({ onClose }: { onClose: () => void }) {
@@ -24,6 +26,16 @@ export default function GlobalSearch({ onClose }: { onClose: () => void }) {
   const [listening, setListening] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  // Load and manage search history
+  const [history, setHistory] = useState<string[]>(() => {
+    try {
+      const s = localStorage.getItem('sunubus_global_search_history');
+      return s ? JSON.parse(s) : [];
+    } catch {
+      return [];
+    }
+  });
 
   useEffect(() => { inputRef.current?.focus(); }, []);
   usePopBack(onClose);
@@ -51,12 +63,27 @@ export default function GlobalSearch({ onClose }: { onClose: () => void }) {
     setListening(false);
   }, []);
 
+  const addToHistory = useCallback((queryStr: string) => {
+    if (!queryStr.trim() || queryStr.trim().length < 2) return;
+    const clean = queryStr.trim();
+    setHistory(prev => {
+      const updated = [clean, ...prev.filter(h => h.toLowerCase() !== clean.toLowerCase())].slice(0, 5);
+      localStorage.setItem('sunubus_global_search_history', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const clearHistory = useCallback(() => {
+    setHistory([]);
+    localStorage.removeItem('sunubus_global_search_history');
+  }, []);
+
   const results: Result[] = q.trim().length < 2 ? [] : (() => {
     const out: Result[] = [];
     const lq = q.toLowerCase();
 
     // Stops (fuzzy)
-    const stops = searchStops(q, STOPS, userLocation?.[0], userLocation?.[1]).slice(0, 5);
+    const stops = searchStops(q, STOPS, userLocation?.[0], userLocation?.[1]).slice(0, 4);
     stops.forEach(s => {
       const op = OPERATORS[s.operators[0]];
       out.push({ type: 'stop', id: s.id, label: s.name, sub: s.zone, color: op?.color || '#2563eb', icon: op?.icon || '📍', lat: s.lat, lng: s.lng });
@@ -67,25 +94,47 @@ export default function GlobalSearch({ onClose }: { onClose: () => void }) {
       l.name.toLowerCase().includes(lq) ||
       l.id.toLowerCase().includes(lq) ||
       l.route.toLowerCase().includes(lq)
-    ).slice(0, 4);
+    ).slice(0, 3);
     lines.forEach(l => {
       out.push({ type: 'line', id: l.id, label: l.name, sub: l.route, color: l.color, icon: OPERATORS[l.operator]?.icon || '🚌' });
+    });
+
+    // POIs/Places
+    const places = DAKAR_PLACES.filter(p =>
+      p.name.toLowerCase().includes(lq) ||
+      p.aliases.some(a => a.toLowerCase().includes(lq)) ||
+      (p.commune && p.commune.toLowerCase().includes(lq))
+    ).slice(0, 4);
+    places.forEach(p => {
+      const stop = STOPS.find(s => s.id === p.nearestStopId);
+      out.push({
+        type: 'place',
+        id: p.id,
+        label: p.name,
+        sub: `${CATEGORY_META[p.category]?.label || 'Lieu'} · près de l'arrêt ${stop?.name || 'proche'}`,
+        color: CATEGORY_META[p.category]?.color || '#64748b',
+        icon: p.emoji || '📍',
+        lat: p.lat,
+        lng: p.lng,
+        nearestStopId: p.nearestStopId,
+      });
     });
 
     // Zones
     const zones = [...new Set(STOPS.map(s => s.zone))]
       .filter(z => z.toLowerCase().includes(lq))
-      .slice(0, 3);
+      .slice(0, 2);
     zones.forEach(z => {
       const s = STOPS.find(x => x.zone === z);
       out.push({ type: 'zone', id: z, label: z, sub: `${STOPS.filter(x => x.zone === z).length} arrêts`, color: '#64748b', icon: '📌', lat: s?.lat, lng: s?.lng });
     });
 
-    return out.slice(0, 8);
+    return out.slice(0, 10);
   })();
 
   const handleSelect = (r: Result) => {
     haptic('medium');
+    addToHistory(q.trim() || r.label);
     if (r.type === 'stop') {
       dispatch(setSelectedStop(r.id));
       dispatch(setActiveTab('stops'));
@@ -96,6 +145,15 @@ export default function GlobalSearch({ onClose }: { onClose: () => void }) {
     } else if (r.type === 'zone') {
       dispatch(setActiveTab('stops'));
       if (r.lat && r.lng) { dispatch(setMapCenter([r.lat, r.lng])); dispatch(setMapZoom(14)); }
+    } else if (r.type === 'place') {
+      const nearestStopId = r.nearestStopId;
+      if (nearestStopId) {
+        dispatch(setSelectedStop(nearestStopId));
+        dispatch(setActiveTab('stops'));
+      } else {
+        dispatch(setActiveTab('plan'));
+      }
+      if (r.lat && r.lng) { dispatch(setMapCenter([r.lat, r.lng])); dispatch(setMapZoom(16)); }
     }
     onClose();
   };
@@ -112,7 +170,7 @@ export default function GlobalSearch({ onClose }: { onClose: () => void }) {
           ref={inputRef}
           value={q}
           onChange={e => setQ(e.target.value)}
-          placeholder="Arrêt, ligne, quartier…"
+          placeholder="Arrêt, ligne, quartier, lieu…"
           className="flex-1 bg-transparent text-white text-base font-semibold outline-none placeholder-slate-600"
           style={{ caretColor: '#3b82f6' }}
         />
@@ -128,28 +186,54 @@ export default function GlobalSearch({ onClose }: { onClose: () => void }) {
           style={{ background: 'rgba(255,255,255,.1)', color: '#94a3b8' }}>✕</button>
       </div>
 
-      {/* Quick categories when empty */}
+      {/* Searches history & Quick categories when empty */}
       {q.trim().length < 2 && (
-        <div className="px-4 pt-5">
-          <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: '#334155' }}>
-            Catégories
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { label: 'Arrêts BRT',  icon: '🚍', color: '#7c3aed', q: 'BRT' },
-              { label: 'Lignes DDD',  icon: '🚌', color: '#1d4ed8', q: 'Ligne' },
-              { label: 'Gares TER',   icon: '🚆', color: '#059669', q: 'Gare TER' },
-              { label: 'Pikine',      icon: '📍', color: '#e11d48', q: 'Pikine' },
-              { label: 'Parcelles',   icon: '📍', color: '#d97706', q: 'Parcelles' },
-              { label: 'Guédiawaye', icon: '📍', color: '#0ea5e9', q: 'Guédiawaye' },
-            ].map(c => (
-              <button key={c.q} onClick={() => setQ(c.q)}
-                className="flex items-center gap-3 p-3 rounded-2xl text-left transition-all active:scale-95"
-                style={{ background: c.color + '12', border: `1px solid ${c.color}25` }}>
-                <span className="text-2xl">{c.icon}</span>
-                <span className="text-sm font-bold text-white">{c.label}</span>
-              </button>
-            ))}
+        <div className="px-4 pt-4 space-y-5">
+          {/* History */}
+          {history.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-2.5">
+                <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#334155' }}>
+                  Recherches récentes
+                </p>
+                <button onClick={clearHistory} className="text-[10px] font-bold text-slate-500 hover:text-slate-300">
+                  Effacer
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {history.map((h, i) => (
+                  <button key={i} onClick={() => { setQ(h); inputRef.current?.focus(); }}
+                    className="px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95"
+                    style={{ background: 'rgba(255,255,255,.05)', border: '1px solid var(--c-border)', color: '#cbd5e1' }}>
+                    🕐 {h}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Categories */}
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: '#334155' }}>
+              Catégories populaires
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: 'Arrêts BRT',  icon: '🚍', color: '#7c3aed', q: 'BRT' },
+                { label: 'Lignes DDD',  icon: '🚌', color: '#1d4ed8', q: 'Ligne' },
+                { label: 'Gares TER',   icon: '🚆', color: '#059669', q: 'Gare TER' },
+                { label: 'Pikine',      icon: '📍', color: '#e11d48', q: 'Pikine' },
+                { label: 'Parcelles',   icon: '📍', color: '#d97706', q: 'Parcelles' },
+                { label: 'Guédiawaye', icon: '📍', color: '#0ea5e9', q: 'Guédiawaye' },
+              ].map(c => (
+                <button key={c.q} onClick={() => { setQ(c.q); inputRef.current?.focus(); }}
+                  className="flex items-center gap-3 p-3 rounded-2xl text-left transition-all active:scale-95"
+                  style={{ background: c.color + '12', border: `1px solid ${c.color}25` }}>
+                  <span className="text-2xl">{c.icon}</span>
+                  <span className="text-sm font-bold text-white">{c.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -174,7 +258,7 @@ export default function GlobalSearch({ onClose }: { onClose: () => void }) {
               </div>
               <div className="text-[10px] font-black px-2 py-1 rounded-lg flex-shrink-0"
                 style={{ background: r.color + '20', color: r.color }}>
-                {r.type === 'stop' ? 'Arrêt' : r.type === 'line' ? 'Ligne' : 'Zone'}
+                {r.type === 'stop' ? 'Arrêt' : r.type === 'line' ? 'Ligne' : r.type === 'place' ? 'Lieu' : 'Zone'}
               </div>
             </button>
           ))}

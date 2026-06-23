@@ -315,6 +315,81 @@ function MessageModal({ vehicle, messages, onClose, onSend }: {
   );
 }
 
+// ── Incident Replay Modal ─────────────────────────────────────────
+function IncidentReplayModal({ incident, onClose }: { incident: FleetIncident; onClose: () => void }) {
+  const loc = incident.location || [14.7167, -17.4677];
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    let p = 0;
+    const t = setInterval(() => {
+      p += 1;
+      if (p > 100) p = 100;
+      setProgress(p);
+      if (p >= 100) clearInterval(t);
+    }, 50);
+    return () => clearInterval(t);
+  }, [incident.id]);
+
+  const path: [number, number][] = [
+    [loc[0] - 0.005, loc[1] - 0.005],
+    [loc[0] - 0.002, loc[1] - 0.001],
+    [loc[0], loc[1]], 
+    [loc[0] + 0.003, loc[1] + 0.004],
+  ];
+
+  const currentIdx = Math.floor((progress / 100) * (path.length - 1));
+  const currentPos = path[currentIdx];
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(10px)' }}>
+      <div className="w-full max-w-md rounded-3xl overflow-hidden flex flex-col shadow-2xl animate-fade-up"
+        style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border2)' }}>
+        
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--c-border)' }}>
+          <div>
+            <h3 className="font-black text-lg text-white flex items-center gap-2">⏪ Replay Incident</h3>
+            <p className="text-[11px]" style={{ color: 'var(--c-muted)' }}>{incident.description}</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-xl transition-all hover:bg-white/10 text-white">✕</button>
+        </div>
+
+        <div className="h-64 relative bg-slate-900">
+          <MapContainer center={loc as any} zoom={14} style={{ width: '100%', height: '100%' }} zoomControl={false} attributionControl={false}>
+            <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+            <Polyline positions={path} pathOptions={{ color: '#3b82f6', weight: 4, opacity: 0.5 }} />
+            <CircleMarker center={currentPos as any} radius={6} pathOptions={{ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 1 }}>
+              <Popup className="custom-popup">
+                <div className="font-bold text-xs">{incident.vehiclePlate}</div>
+              </Popup>
+            </CircleMarker>
+            <CircleMarker center={loc as any} radius={12} pathOptions={{ color: '#f59e0b', fillColor: 'transparent', weight: 2, dashArray: '4' }} />
+          </MapContainer>
+          
+          <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-md rounded-2xl p-4 border" style={{ borderColor: 'rgba(255,255,255,.1)' }}>
+            <div className="flex justify-between text-[10px] font-black text-white mb-2">
+              <span style={{ color: '#94a3b8' }}>T-5m</span>
+              <span className="text-red-400">Impact : {formatTime(incident.timestamp)}</span>
+              <span style={{ color: '#94a3b8' }}>T+10m</span>
+            </div>
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,.1)' }}>
+              <div className="h-full rounded-full transition-all duration-75"
+                style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #3b82f6, #ef4444)' }} />
+            </div>
+            {progress >= 100 && (
+               <button onClick={() => setProgress(0)} className="w-full mt-3 py-1.5 rounded-lg text-xs font-black transition-all active:scale-95"
+                 style={{ background: 'rgba(255,255,255,.1)', color: 'white' }}>
+                 🔄 Rejouer
+               </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════════
 //  MAIN COMPONENT
 // ══════════════════════════════════════════════════════════════════
@@ -331,10 +406,11 @@ export default function FleetManagerApp({ operator }: { operator: 'DDD' | 'AFTU'
   const [messages, setMessages]   = useState<FleetMessage[]>(() => generateMessages(getFleet(operator), operator));
   const [msgVehicle, setMsgVehicle] = useState<FleetVehicle | null>(null);
   const [fleetSearch, setFleetSearch] = useState('');
-  const [fleetStatusFilter, setFleetStatusFilter] = useState<VehicleStatus | 'all'>('all');
+  const [fleetStatusFilter, setFleetStatusFilter] = useState<VehicleStatus | 'all' | 'maintenance'>('all');
   const [lineFilter, setLineFilter] = useState('');
   const [alertFilter, setAlertFilter] = useState<'all' | 'pending' | 'critique'>('all');
   const [highlightId, setHighlightId] = useState<string | null>(null);
+  const [replayIncident, setReplayIncident] = useState<FleetIncident | null>(null);
   const [tick, setTick]           = useState(0);
 
   // ── Data ───────────────────────────────────────────────────────
@@ -406,6 +482,7 @@ export default function FleetManagerApp({ operator }: { operator: 'DDD' | 'AFTU'
       v.plate.toLowerCase().includes(fleetSearch.toLowerCase()) ||
       v.driverName.toLowerCase().includes(fleetSearch.toLowerCase()) ||
       v.lineId.toLowerCase().includes(fleetSearch.toLowerCase());
+    if (fleetStatusFilter === 'maintenance') return matchSearch && v.lastMaintenanceDays > 90;
     const matchStatus = fleetStatusFilter === 'all' || v.status === fleetStatusFilter;
     return matchSearch && matchStatus;
   }), [fleet, fleetSearch, fleetStatusFilter]);
@@ -695,14 +772,14 @@ export default function FleetManagerApp({ operator }: { operator: 'DDD' | 'AFTU'
           )}
         </div>
         <div className="flex gap-1.5 overflow-x-auto">
-          {(['all', ...Object.keys(STATUS_CFG)] as ('all' | VehicleStatus)[]).map(s => (
+          {(['all', ...Object.keys(STATUS_CFG), 'maintenance'] as ('all' | VehicleStatus | 'maintenance')[]).map(s => (
             <button key={s}
               onClick={() => setFleetStatusFilter(s)}
               className="flex-shrink-0 px-3 py-2 rounded-full text-xs font-black transition-all"
               style={fleetStatusFilter === s
-                ? { background: s === 'all' ? cfg.color : STATUS_CFG[s as VehicleStatus]?.color ?? cfg.color, color: '#fff' }
+                ? { background: s === 'all' ? cfg.color : s === 'maintenance' ? '#ef4444' : STATUS_CFG[s as VehicleStatus]?.color ?? cfg.color, color: '#fff' }
                 : { background: 'rgba(255,255,255,.05)', color: '#475569', border: '1px solid var(--c-border)', minHeight: 36 }}>
-              {s === 'all' ? `Tous (${fleet.length})` : `${STATUS_CFG[s as VehicleStatus].emoji} ${STATUS_CFG[s as VehicleStatus].label} (${fleet.filter(v => v.status === s).length})`}
+              {s === 'all' ? `Tous (${fleet.length})` : s === 'maintenance' ? `🔧 À réviser (${fleet.filter(v => v.lastMaintenanceDays > 90).length})` : `${STATUS_CFG[s as VehicleStatus].emoji} ${STATUS_CFG[s as VehicleStatus].label} (${fleet.filter(v => v.status === s).length})`}
             </button>
           ))}
         </div>
@@ -805,6 +882,29 @@ export default function FleetManagerApp({ operator }: { operator: 'DDD' | 'AFTU'
                           style={{ background: 'rgba(37,99,235,.15)', color: '#60a5fa', minHeight: 36 }}>
                           🚌 Bus
                         </button>
+                        <button
+                          onClick={() => {
+                            const desc = window.prompt(`Saisir le message de déviation pour la ligne ${lh.line.name} :`);
+                            if (desc) {
+                              setIncidents(prev => [{
+                                id: `dev_${Date.now()}`,
+                                vehicleId: '',
+                                vehiclePlate: 'Flotte',
+                                lineId: lh.line.id,
+                                lineName: lh.line.name,
+                                type: 'deviation',
+                                severity: 'moyen',
+                                description: `DÉVIATION : ${desc}`,
+                                timestamp: Date.now(),
+                                acknowledged: true,
+                              }, ...prev]);
+                              dispatch(showToast({ type: 'success', message: 'Déviation annoncée avec succès.' }));
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-lg text-xs font-black transition-all active:scale-90"
+                          style={{ background: 'rgba(217,119,6,.15)', color: '#fbbf24', minHeight: 36 }}>
+                          🔀 Déviation
+                        </button>
                         {lh.hasIncident && (
                           <button
                             onClick={() => { setAlertFilter('pending'); setTab('alerts'); }}
@@ -885,44 +985,38 @@ export default function FleetManagerApp({ operator }: { operator: 'DDD' | 'AFTU'
                 </div>
               </div>
 
-              {!inc.resolvedAt && (
-                <div className="flex gap-2 mt-3">
-                  {!inc.acknowledged && (
-                    <button onClick={() => ackIncident(inc.id)}
+              <div className="flex gap-2 mt-3 flex-wrap">
+                <button onClick={() => setReplayIncident(inc)}
+                  className="flex-1 py-2 rounded-xl text-[11px] font-black transition-all active:scale-95"
+                  style={{ background: 'rgba(139,92,246,.15)', color: '#a78bfa', border: '1px solid rgba(139,92,246,.2)', minWidth: '40%' }}>
+                  ⏪ Replay
+                </button>
+                {!inc.resolvedAt && (
+                  <>
+                    {!inc.acknowledged && (
+                      <button onClick={() => ackIncident(inc.id)}
+                        className="flex-1 py-2 rounded-xl text-[11px] font-black transition-all active:scale-95"
+                        style={{ background: 'rgba(100,116,139,.15)', color: '#94a3b8', border: '1px solid rgba(100,116,139,.2)', minWidth: '40%' }}>
+                        ✓ Acquitter
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        const v = fleet.find(f => f.id === inc.vehicleId);
+                        if (v) setMsgVehicle(v);
+                      }}
                       className="flex-1 py-2 rounded-xl text-[11px] font-black transition-all active:scale-95"
-                      style={{ background: 'rgba(100,116,139,.15)', color: '#94a3b8', border: '1px solid rgba(100,116,139,.2)' }}>
-                      ✓ Acquitter
+                      style={{ background: 'rgba(37,99,235,.15)', color: '#60a5fa', border: '1px solid rgba(37,99,235,.2)', minWidth: '40%' }}>
+                      💬 Contacter
                     </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      const v = fleet.find(f => f.id === inc.vehicleId);
-                      if (v) setMsgVehicle(v);
-                    }}
-                    className="flex-1 py-2 rounded-xl text-[11px] font-black transition-all active:scale-95"
-                    style={{ background: 'rgba(37,99,235,.15)', color: '#60a5fa', border: '1px solid rgba(37,99,235,.2)' }}>
-                    💬 Contacter
-                  </button>
-                  <button
-                    onClick={() => {
-                      // Simulation envoi SMS aux passagers abonnés à la ligne
-                      const count = Math.floor(800 + Math.random() * 2400);
-                      dispatch(showToast({
-                        type: 'success',
-                        message: `📱 SMS envoyé à ${count.toLocaleString('fr-FR')} passagers abonnés — ${inc.lineName}`,
-                      }));
-                    }}
-                    className="flex-1 py-2 rounded-xl text-[11px] font-black transition-all active:scale-95"
-                    style={{ background: 'rgba(251,191,36,.12)', color: '#fbbf24', border: '1px solid rgba(251,191,36,.2)' }}>
-                    📱 SMS
-                  </button>
-                  <button onClick={() => resolveIncident(inc.id)}
-                    className="flex-1 py-2 rounded-xl text-[11px] font-black transition-all active:scale-95"
-                    style={{ background: 'rgba(16,185,129,.15)', color: '#34d399', border: '1px solid rgba(16,185,129,.2)' }}>
-                    ✅ Résoudre
-                  </button>
-                </div>
-              )}
+                    <button onClick={() => resolveIncident(inc.id)}
+                      className="flex-1 py-2 rounded-xl text-[11px] font-black transition-all active:scale-95"
+                      style={{ background: 'rgba(16,185,129,.15)', color: '#34d399', border: '1px solid rgba(16,185,129,.2)', minWidth: '40%' }}>
+                      ✅ Résoudre
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           );
         })}
@@ -1009,6 +1103,14 @@ export default function FleetManagerApp({ operator }: { operator: 'DDD' | 'AFTU'
           messages={messages}
           onClose={() => setMsgVehicle(null)}
           onSend={text => { sendMessage(msgVehicle.id, text); }}
+        />
+      )}
+
+      {/* Replay Modal */}
+      {replayIncident && (
+        <IncidentReplayModal
+          incident={replayIncident}
+          onClose={() => setReplayIncident(null)}
         />
       )}
     </div>

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { toggleFavStop, toggleFavLine, logout, setRouteOrigin, setRouteDestination, setActiveTab, toggleDarkMode, setTheme, setAutoTheme, setNotifEnabled, setLang, BADGES_DEF } from '@/store/store';
+import { toggleFavStop, toggleFavLine, logout, setRouteOrigin, setRouteDestination, setActiveTab, toggleDarkMode, setTheme, setAutoTheme, setNotifEnabled, toggleA11yMode, setLang, BADGES_DEF } from '@/store/store';
 import type { AppTheme } from '@/store/store';
 import { STOPS, LINES, OPERATORS } from '@/data/transportData';
 import type { Lang } from '@/types';
+import { ConfettiBurst, WeeklyObjectives, Leaderboard } from '@/components/Gamification';
 
 const LEVEL_CONFIG = {
   bronze:   { label: 'Bronze',   color: '#cd7f32', emoji: '🥉', next: 80,  bar: '#cd7f32' },
@@ -30,8 +31,9 @@ export default function ProfilePage() {
   const { myTickets } = useAppSelector(s => s.tickets);
   const { name } = useAppSelector(s => s.auth);
   const { history } = useAppSelector(s => s.journey);
-  const { darkMode, theme, autoTheme, notifEnabled, lang } = useAppSelector(s => s.ui);
+  const { darkMode, theme, autoTheme, notifEnabled, a11yMode, lang } = useAppSelector(s => s.ui);
   const [tab, setTab] = useState<'stats' | 'badges' | 'history' | 'favs' | 'settings'>('stats');
+  const [confettiActive, setConfettiActive] = useState(false);
   const { points, badges, level } = useAppSelector(s => s.gamif);
   const lvlCfg = LEVEL_CONFIG[level];
   const nextThreshold = lvlCfg.next;
@@ -174,25 +176,86 @@ export default function ProfilePage() {
 
         {/* ── BADGES TAB ────────────────────────────── */}
         {tab === 'badges' && (
-          <div className="space-y-3">
+          <div className="space-y-4">
+            {/* Confetti overlay */}
+            <ConfettiBurst active={confettiActive} onDone={() => setConfettiActive(false)} />
+
+            {/* Résumé compact */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '12px 16px', borderRadius: 16,
+              background: 'linear-gradient(135deg,rgba(37,99,235,.1),rgba(124,58,237,.1))',
+              border: '1px solid rgba(37,99,235,.2)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 20 }}>🏅</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: 'white' }}>{badges.length} / {BADGES_DEF.length} badges</div>
+                  <div style={{ fontSize: 10, color: '#475569' }}>Touchez un badge obtenu pour célébrer !</div>
+                </div>
+              </div>
+              <div style={{
+                fontSize: 16, fontWeight: 900, color: '#a78bfa',
+                padding: '4px 10px', borderRadius: 10,
+                background: 'rgba(124,58,237,.15)',
+              }}>
+                {Math.round((badges.length / BADGES_DEF.length) * 100)}%
+              </div>
+            </div>
+
+            {/* Grille des badges */}
             <div className="grid grid-cols-3 gap-2">
               {BADGES_DEF.map(def => {
                 const earned = badges.find(b => b.id === def.id);
                 return (
-                  <div key={def.id} className="rounded-2xl p-3 text-center"
-                    style={{ background: earned ? 'rgba(37,99,235,.12)' : 'rgba(255,255,255,.03)', border: `1px solid ${earned ? 'rgba(37,99,235,.3)' : 'rgba(255,255,255,.06)'}`, opacity: earned ? 1 : 0.45 }}>
-                    <div className="text-2xl mb-1">{def.emoji}</div>
+                  <div key={def.id}
+                    onClick={() => { if (earned) setConfettiActive(true); }}
+                    className="rounded-2xl p-3 text-center transition-all"
+                    style={{
+                      background: earned ? 'rgba(37,99,235,.12)' : 'rgba(255,255,255,.03)',
+                      border: `1px solid ${earned ? 'rgba(37,99,235,.3)' : 'rgba(255,255,255,.06)'}`,
+                      opacity: earned ? 1 : 0.45,
+                      cursor: earned ? 'pointer' : 'default',
+                    }}>
+                    <div style={{
+                      fontSize: 28, marginBottom: 4,
+                      transition: 'transform 0.3s',
+                      filter: earned ? 'drop-shadow(0 0 8px rgba(96,165,250,0.5))' : 'grayscale(1)',
+                    }}>{def.emoji}</div>
                     <div className="text-[10px] font-black text-white leading-tight">{def.label}</div>
                     <div className="text-[11px] mt-1 font-bold" style={{ color: earned ? '#60a5fa' : '#334155' }}>
                       {earned ? `+${def.pts} pts` : `${def.pts} pts`}
                     </div>
-                    {earned && <div className="text-[8px] mt-0.5" style={{ color: '#22c55e' }}>✓ Obtenu</div>}
+                    {earned && (
+                      <div style={{
+                        fontSize: 9, marginTop: 3, fontWeight: 700,
+                        color: '#22c55e',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
+                      }}>
+                        <span style={{
+                          display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
+                          background: '#22c55e',
+                          boxShadow: '0 0 6px rgba(34,197,94,0.6)',
+                        }} />
+                        Obtenu
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
 
-            {/* Share stats */}
+            {/* Objectifs hebdomadaires */}
+            <WeeklyObjectives
+              tripCount={tripCount}
+              reportCount={0}
+              co2Kg={co2SavedKg}
+            />
+
+            {/* Classement anonyme */}
+            <Leaderboard myPoints={points} myName={name || 'Voyageur'} />
+
+            {/* Partager */}
             <button onClick={async () => {
               const text = `🚌 Mon profil SunuBus :\n${points} points · Niveau ${lvlCfg.label}\n${tripCount} voyages · ${co2SavedKg.toFixed(1)} kg CO₂ économisés\n${badges.length} badges obtenus 🏅`;
               if (navigator.share) { try { await navigator.share({ title: 'Mon profil SunuBus', text }); } catch {} }
@@ -315,19 +378,21 @@ export default function ProfilePage() {
               </div>
               <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--c-border)' }}>
                 <div className="text-sm font-bold mb-2" style={{ color: 'var(--c-text)' }}>Thème</div>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   {([
-                    { value: 'dark',    icon: '🌑', label: 'Sombre'  },
-                    { value: 'dim',     icon: '🌓', label: 'Tamisé'  },
-                    { value: 'light',   icon: '☀️', label: 'Clair'   },
-                    { value: 'natural', icon: '🌿', label: 'Jour'    },
+                    { value: 'dark',        icon: '🌑', label: 'Sombre'  },
+                    { value: 'dim',         icon: '🌓', label: 'Tamisé'  },
+                    { value: 'light',       icon: '☀️', label: 'Clair'   },
+                    { value: 'natural',     icon: '🌿', label: 'Jour'    },
+                    { value: 'dakar-night', icon: '🌃', label: 'Dakar Night' },
+                    { value: 'sahel',       icon: '🏜️', label: 'Sahel'   },
                   ] as { value: AppTheme; icon: string; label: string }[]).map(opt => {
                     const active = (theme ?? (darkMode ? 'dark' : 'light')) === opt.value;
                     return (
                       <button
                         key={opt.value}
                         onClick={() => { dispatch(setTheme(opt.value)); }}
-                        className="flex-1 flex flex-col items-center gap-1 py-2 rounded-xl text-xs font-bold transition-all"
+                        className="flex flex-col items-center gap-1 py-2 rounded-xl text-xs font-bold transition-all"
                         style={{
                           background: active ? 'var(--blue)' : 'var(--c-surface2)',
                           color: active ? '#fff' : 'var(--c-muted)',
@@ -336,7 +401,7 @@ export default function ProfilePage() {
                         }}
                       >
                         <span className="text-base">{opt.icon}</span>
-                        <span>{opt.label}</span>
+                        <span className="text-[10px] truncate max-w-full px-1">{opt.label}</span>
                       </button>
                     );
                   })}
@@ -362,6 +427,21 @@ export default function ProfilePage() {
                   <div className="text-[10px]" style={{ color: 'var(--c-muted)' }}>Incidents & perturbations</div>
                 </div>
                 <Toggle value={notifEnabled} onChange={handleNotifToggle} />
+              </div>
+            </div>
+
+            {/* Accessibilité */}
+            <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+              <div className="px-4 pt-3 pb-1 flex items-center gap-2">
+                <span className="text-lg">👁️</span>
+                <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Accessibilité</p>
+              </div>
+              <div className="px-4 py-3 flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-bold" style={{ color: 'var(--c-text)' }}>Haut contraste & TTS</div>
+                  <div className="text-[10px]" style={{ color: 'var(--c-muted)' }}>Optimisation malvoyants & lecture vocale</div>
+                </div>
+                <Toggle value={a11yMode} onChange={() => dispatch(toggleA11yMode())} />
               </div>
             </div>
 

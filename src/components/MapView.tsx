@@ -774,6 +774,167 @@ function ZoomTracker({ onZoom }: { onZoom: (z: number) => void }) {
   return null;
 }
 
+// ── Stop clustering icons & logic ───────────────────────────
+const makeClusterIcon = (count: number, popularity: number) => {
+  let color = '#2563eb'; // bleu (DDD / BRT / default)
+  let glow = 'rgba(37, 99, 235, 0.4)';
+  if (count > 8) {
+    color = '#7c3aed'; // violet (BRT / premium)
+    glow = 'rgba(124, 58, 237, 0.5)';
+  } else if (count > 3) {
+    color = '#d97706'; // orange/ambre (AFTU / warning)
+    glow = 'rgba(217, 119, 6, 0.5)';
+  }
+
+  const size = Math.min(50, Math.max(32, 26 + count * 2));
+
+  return L.divIcon({
+    className: '',
+    html: `
+      <div style="
+        position:relative;
+        width:${size}px;
+        height:${size}px;
+        border-radius:50%;
+        background:${color};
+        border:3.5px solid white;
+        box-shadow:0 0 16px ${glow}, 0 4px 12px rgba(0,0,0,0.4);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        color:white;
+        font-family:'Inter',sans-serif;
+        font-size:12px;
+        font-weight:900;
+        cursor:pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      " class="stop-cluster-marker">
+        ${count}
+        <div style="
+          position:absolute;
+          inset:-6px;
+          border-radius:50%;
+          border:1.5px solid ${color};
+          opacity:0.3;
+          animation: cluster-pulse 2s infinite ease-out;
+        "></div>
+      </div>
+      <style>
+        @keyframes cluster-pulse {
+          0% { transform: scale(0.95); opacity: 0.5; }
+          100% { transform: scale(1.35); opacity: 0; }
+        }
+        .stop-cluster-marker:hover {
+          transform: scale(1.12);
+          box-shadow: 0 0 20px ${color}, 0 6px 16px rgba(0,0,0,0.5);
+        }
+      </style>
+    `,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+};
+
+const getClusterThreshold = (zoom: number): number => {
+  if (zoom >= 16) return 0.0002;
+  if (zoom === 15) return 0.0012;
+  if (zoom === 14) return 0.0028;
+  if (zoom === 13) return 0.0055;
+  if (zoom === 12) return 0.011;
+  if (zoom === 11) return 0.022;
+  return 0.045;
+};
+
+interface StopCluster {
+  id: string;
+  lat: number;
+  lng: number;
+  stops: Stop[];
+  popularity: number;
+}
+
+const performClustering = (stops: Stop[], zoom: number): StopCluster[] => {
+  const clusters: StopCluster[] = [];
+  const threshold = getClusterThreshold(zoom);
+
+  stops.forEach(stop => {
+    let merged = false;
+    for (const cluster of clusters) {
+      const dlat = stop.lat - cluster.lat;
+      const dlng = stop.lng - cluster.lng;
+      const dist = Math.sqrt(dlat * dlat + dlng * dlng);
+      if (dist < threshold) {
+        cluster.stops.push(stop);
+        const len = cluster.stops.length;
+        cluster.lat = (cluster.lat * (len - 1) + stop.lat) / len;
+        cluster.lng = (cluster.lng * (len - 1) + stop.lng) / len;
+        cluster.popularity += stop.lines.length;
+        merged = true;
+        break;
+      }
+    }
+
+    if (!merged) {
+      clusters.push({
+        id: `cluster-${stop.id}`,
+        lat: stop.lat,
+        lng: stop.lng,
+        stops: [stop],
+        popularity: stop.lines.length,
+      });
+    }
+  });
+
+  return clusters;
+};
+
+function ClusteredStops({ stops, zoom }: { stops: Stop[]; zoom: number }) {
+  const map = useMap();
+  const dispatch = useAppDispatch();
+  const clusters = performClustering(stops, zoom);
+
+  return (
+    <>
+      {clusters.map(cluster => {
+        if (cluster.stops.length > 1) {
+          const icon = makeClusterIcon(cluster.stops.length, cluster.popularity);
+          return (
+            <Marker
+              key={cluster.id}
+              position={[cluster.lat, cluster.lng]}
+              icon={icon}
+              eventHandlers={{
+                click: () => {
+                  map.setView([cluster.lat, cluster.lng], Math.min(17, map.getZoom() + 2), { animate: true });
+                }
+              }}
+            />
+          );
+        } else {
+          const stop = cluster.stops[0];
+          const mainOp = stop.operators[0];
+          const color = OPERATORS[mainOp]?.color || '#1a56db';
+          const isHub = stop.lines.length > 2;
+          const size = isHub ? 15 : (stop.lines.length > 1 ? 12 : 10);
+          const icon = isHub ? makeTerminusIcon(color) : makeStopIcon(color, size);
+          return (
+            <Marker
+              key={stop.id}
+              position={[stop.lat, stop.lng]}
+              icon={icon}
+              eventHandlers={{ click: () => dispatch(setSelectedStop(stop.id)) }}>
+              <Popup maxWidth={240} minWidth={210}>
+                <StopPopup stop={stop} />
+              </Popup>
+            </Marker>
+          );
+        }
+      })}
+    </>
+  );
+}
+
+
 export default function MapView() {
   const dispatch = useAppDispatch();
   const { selectedOperator, userLocation, route, focusedLine, busPositions, routeDisplay } = useAppSelector(s => s.mobility);
@@ -1022,19 +1183,10 @@ export default function MapView() {
             {visibleLines.map(line => (
               <BusLine key={line.id} line={line} isFocused={false} hasFocus={false} />
             ))}
-            {/* Stops uniquement au zoom >= 13 pour éviter la surcharge sur mobile */}
-            {currentZoom >= 13 && visibleStops.map(stop => {
-              const mainOp = stop.operators[0];
-              const color  = OPERATORS[mainOp]?.color || '#1a56db';
-              const isHub  = stop.lines.length > 2;
-              const icon   = isHub ? makeTerminusIcon(color) : makeStopIcon(color, stop.operators.length > 1 ? 13 : 10);
-              return (
-                <Marker key={stop.id} position={[stop.lat, stop.lng]} icon={icon}
-                  eventHandlers={{ click: () => dispatch(setSelectedStop(stop.id)) }}>
-                  <Popup maxWidth={240} minWidth={210}><StopPopup stop={stop} /></Popup>
-                </Marker>
-              );
-            })}
+            {/* Stops et clusters au zoom >= 11 pour éviter la surcharge globale */}
+            {currentZoom >= 11 && (
+              <ClusteredStops stops={visibleStops} zoom={currentZoom} />
+            )}
           </>
         )}
 

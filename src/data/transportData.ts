@@ -7,6 +7,13 @@ export const OPERATORS: Record<string, Operator> = {
   TER:  { id:'TER',  name:'TER',  fullName:'Train Express Régional', icon:'🚆', color:'#059669', bg:'#ecfdf5', tarif:500, climatise:true  },
 };
 
+export const INCIDENT_TYPES: { id: 'delay'|'accident'|'crowd'|'other'; emoji: string; label: string; color: string }[] = [
+  { id:'delay',    emoji:'🐌', label:'Bouchon',   color:'#d97706' },
+  { id:'accident', emoji:'💥', label:'Accident',  color:'#dc2626' },
+  { id:'crowd',    emoji:'👥', label:'Affluence', color:'#2563eb' },
+  { id:'other',    emoji:'⚠️', label:'Autre',     color:'#64748b' },
+];
+
 export const TER_TARIFS = [
   { from:'Dakar', to:'Thiaroye',   prix:500,  classe:'2e' },
   { from:'Dakar', to:'Rufisque',   prix:900,  classe:'2e' },
@@ -85,7 +92,7 @@ export function getTerSchedule(gareName: string): { time: string; waitMin: numbe
 //    (correspondances DDD ↔ AFTU).
 // ══════════════════════════════════════════════════════════════
 
-export const STOPS: Stop[] = [
+const INITIAL_STOPS: Stop[] = [
 
   // ════════════════════════════════════════════════════════════
   //  HUBS INTERMODAUX — DDD + AFTU (correspondances)
@@ -723,6 +730,28 @@ const AFTU_LINES: Line[] = [
   { id:'A86', name:'AFTU 86', operator:'AFTU', route:'Hann Maristes ↔ Hann Pêcheurs ↔ Petersen', color:AC[1], freq:'15 min', tarif:150, stops:['ha7','ha6','ha8','ha5','ha3','hr1','ha2','bm1','p02'] },
 ];
 
+const getStoredCustomStops = (): Stop[] => {
+  try {
+    const raw = localStorage.getItem('sunubus_custom_stops');
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const STOPS: Stop[] = [...INITIAL_STOPS, ...getStoredCustomStops()];
+
+export function addCustomStop(stop: Stop) {
+  try {
+    const current = getStoredCustomStops();
+    current.push(stop);
+    localStorage.setItem('sunubus_custom_stops', JSON.stringify(current));
+    STOPS.push(stop);
+  } catch (e) {
+    console.error('Failed to save custom stop', e);
+  }
+}
+
 const BRT_LINES: Line[] = [
   { id:'BRT-L1', name:'BRT L1', operator:'BRT',
     route:'Petersen ↔ Guédiawaye', color:'#7c3aed', freq:'5 min', tarif:300,
@@ -735,7 +764,40 @@ const TER_LINES: Line[] = [
     stops:['p01','th1','rf1','t04','t05','t06','t07'] },
 ];
 
-export const LINES: Line[] = [...DDD_LINES, ...AFTU_LINES, ...BRT_LINES, ...TER_LINES];
+const getStoredCustomLines = (): Line[] => {
+  try {
+    const raw = localStorage.getItem('sunubus_custom_lines');
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const LINES: Line[] = [...DDD_LINES, ...AFTU_LINES, ...BRT_LINES, ...TER_LINES, ...getStoredCustomLines()];
+
+export function addCustomLine(line: Line) {
+  try {
+    const current = getStoredCustomLines();
+    current.push(line);
+    localStorage.setItem('sunubus_custom_lines', JSON.stringify(current));
+    LINES.push(line);
+  } catch (e) {
+    console.error('Failed to save custom line', e);
+  }
+}
+
+export function removeCustomLine(id: string) {
+  try {
+    const current = getStoredCustomLines().filter(l => l.id !== id);
+    localStorage.setItem('sunubus_custom_lines', JSON.stringify(current));
+    const idx = LINES.findIndex(l => l.id === id);
+    if (idx !== -1) {
+      LINES.splice(idx, 1);
+    }
+  } catch (e) {
+    console.error('Failed to remove custom line', e);
+  }
+}
 
 export const getLinesByOp = (op: string) => op === 'all' ? LINES : LINES.filter(l => l.operator === op);
 export const getStopsByOp = (op: string) => op === 'all' ? STOPS : STOPS.filter(s => s.operators.includes(op as OperatorId));

@@ -29,6 +29,7 @@ export interface AdCampaign {
   accentColor:  string;       // couleur de marque
   bgColor:      string;       // fond de la bannière
   format:       AdFormat;
+  geoTarget?:   string;       // ciblage géographique (commune ou ligne)
   targeting:    AdTargeting;
   // Budget & programmation
   startDate:    number;       // timestamp ms

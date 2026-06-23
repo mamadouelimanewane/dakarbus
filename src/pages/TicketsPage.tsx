@@ -5,6 +5,7 @@ import type { PassType } from '@/store/store';
 import { usePopBack } from '@/hooks/usePopBack';
 import { QRCodeSVG } from 'qrcode.react';
 import { AdSlot } from '@/components/AdBanner';
+import PaymentModal from '@/components/PaymentModal';
 
 const OPS = [
   { op:'DDD'  as const, p:200, c:'#2563eb', e:'🚌', l:'Bus Urbain',    s:'Dakar Dem Dikk' },
@@ -39,14 +40,16 @@ function PassSection() {
   const [buying, setBuying] = useState<PassType | null>(null);
   const [holderName, setHolderName] = useState('');
   const [passTab, setPassTab] = useState<'mes_pass'|'acheter'>('mes_pass');
-  usePopBack(() => { setBuying(null); setHolderName(''); }, !!buying);
+  const [showPayModal, setShowPayModal] = useState(false);
+  usePopBack(() => { setShowPayModal(false); setBuying(null); setHolderName(''); }, showPayModal || !!buying);
 
   const activeCount = myPasses.filter(p => p.status === 'active').length;
 
-  const confirmBuy = (method: string) => {
+  const confirmBuy = (method: string, _ref: string) => {
     if (!buying) return;
     dispatch(buyPass({ type: buying, holderName: holderName || 'Passager', payMethod: method }));
-    dispatch(showToast({ type: 'success', message: `Pass activé ! Valable 30 jours.` }));
+    dispatch(showToast({ type: 'success', message: `✅ Pass activé ! Valable 30 jours.` }));
+    setShowPayModal(false);
     setBuying(null);
     setHolderName('');
     setPassTab('mes_pass');
@@ -177,25 +180,23 @@ function PassSection() {
               />
             </div>
 
-            <div>
-              <p className="text-xs font-black uppercase tracking-widest mb-3" style={{ color:'var(--c-muted)' }}>Payer avec</p>
-              <div className="space-y-2.5">
-                {PAY_METHODS.map(m => (
-                  <button key={m.id} onClick={() => confirmBuy(m.l)}
-                    className="w-full flex items-center justify-between p-4 rounded-2xl text-white font-bold transition-all active:scale-[.98]"
-                    style={{ background:m.g, boxShadow:'0 8px 28px rgba(0,0,0,.3)' }}>
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{m.e}</span>
-                      <div className="text-left">
-                        <div className="font-black">{m.l}</div>
-                        <div className="text-xs opacity-60">Paiement sécurisé · activé instantanément</div>
-                      </div>
-                    </div>
-                    <span className="font-black">{PASS_CATALOG[buying].price.toLocaleString('fr-FR')} F</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <button
+              onClick={() => setShowPayModal(true)}
+              className="w-full py-4 rounded-2xl font-black text-white text-lg transition-all active:scale-[.98]"
+              style={{ background: 'linear-gradient(135deg,#2563eb,#7c3aed)', boxShadow: '0 8px 28px rgba(37,99,235,.35)' }}
+            >
+              💳 Payer {PASS_CATALOG[buying].price.toLocaleString('fr-FR')} FCFA
+            </button>
+
+            {showPayModal && (
+              <PaymentModal
+                amount={PASS_CATALOG[buying].price}
+                label={PASS_CATALOG[buying].label}
+                emoji={PASS_CATALOG[buying].emoji}
+                onSuccess={confirmBuy}
+                onCancel={() => setShowPayModal(false)}
+              />
+            )}
           </div>
         )}
       </div>
@@ -264,16 +265,19 @@ export default function TicketsPage() {
   const [selOp, setSelOp]     = useState<typeof OPS[number]['op']>('DDD');
   const [expanded, setExpanded]= useState<string|null>(null);
   const [confirming, setConfirming] = useState<string|null>(null);
-  // Retour Android : ferme la confirmation avant de quitter la page
+  const [showTicketPayModal, setShowTicketPayModal] = useState(false);
+  // Retour Android
   usePopBack(() => setConfirming(null), !!confirming);
   usePopBack(() => setExpanded(null),   !!expanded && !confirming);
+  usePopBack(() => setShowTicketPayModal(false), showTicketPayModal);
   const op = OPS.find(o=>o.op===selOp)!;
   const validCount = myTickets.filter(t=>t.status==='valid').length;
   const activePassCount = useAppSelector(s => s.passes.myPasses.filter(p => p.status === 'active').length);
 
-  const buy = (method:string) => {
+  const buy = (method: string, _ref: string) => {
     dispatch(buyTicket({operator:selOp, price:op.p}));
-    dispatch(showToast({type:'success',message:`Billet ${selOp} acheté via ${method} !`}));
+    dispatch(showToast({type:'success',message:`✅ Billet ${selOp} acheté via ${method} !`}));
+    setShowTicketPayModal(false);
     setTab('wallet');
   };
 
@@ -412,25 +416,23 @@ export default function TicketsPage() {
               </div>
             </div>
 
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{color:'var(--c-muted)'}}>Payer avec</p>
-              <div className="space-y-2.5">
-                {PAY.map(m=>(
-                  <button key={m.id} onClick={()=>buy(m.l)}
-                    className="w-full flex items-center justify-between p-4 rounded-2xl text-white font-bold transition-all hover:scale-[1.01] active:scale-[.98]"
-                    style={{background:m.g,boxShadow:'0 8px 28px rgba(0,0,0,.3)'}}>
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{m.e}</span>
-                      <div className="text-left">
-                        <div className="font-black">{m.l}</div>
-                        <div className="text-xs opacity-60">Paiement instantané · sécurisé</div>
-                      </div>
-                    </div>
-                    <span className="font-black text-xl">{op.p} F</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <button
+              onClick={() => setShowTicketPayModal(true)}
+              className="w-full py-4 rounded-2xl font-black text-white text-lg transition-all active:scale-[.98]"
+              style={{ background: op.c, boxShadow: `0 8px 28px ${op.c}50` }}
+            >
+              {op.e} Payer {op.p} FCFA avec Wave / Orange Money
+            </button>
+
+            {showTicketPayModal && (
+              <PaymentModal
+                amount={op.p}
+                label={op.l}
+                emoji={op.e}
+                onSuccess={buy}
+                onCancel={() => setShowTicketPayModal(false)}
+              />
+            )}
           </div>
         )}
       </div>

@@ -120,7 +120,7 @@ const authSlice = createSlice({
 });
 
 // ── UI Slice ──────────────────────────────────────────────────
-export type AppTheme = 'dark' | 'dim' | 'light' | 'natural';
+export type AppTheme = 'dark' | 'dim' | 'light' | 'natural' | 'dakar-night' | 'sahel';
 
 interface UIState {
   darkMode: boolean;   // true si theme !== 'light' (rétro-compat MapView etc.)
@@ -130,6 +130,7 @@ interface UIState {
   sidebarCollapsed: boolean;
   showQR: boolean;
   notifEnabled: boolean;
+  a11yMode: boolean;
 }
 
 function getAutoTheme(): AppTheme {
@@ -147,6 +148,7 @@ const uiSlice = createSlice({
     sidebarCollapsed: false,
     showQR: false,
     notifEnabled: false,
+    a11yMode: false,
   } as UIState,
   reducers: {
     toggleDarkMode: (s) => {
@@ -170,6 +172,7 @@ const uiSlice = createSlice({
     toggleSidebar: (s) => { s.sidebarCollapsed = !s.sidebarCollapsed; },
     setShowQR: (s, a: PayloadAction<boolean>) => { s.showQR = a.payload; },
     setNotifEnabled: (s, a: PayloadAction<boolean>) => { s.notifEnabled = a.payload; },
+    toggleA11yMode: (s) => { s.a11yMode = !s.a11yMode; },
   },
 });
 
@@ -416,15 +419,17 @@ const gamifSlice = createSlice({
 });
 
 // ── Ads Slice ─────────────────────────────────────────────────
+import type { AdCampaign } from '@/data/ads';
 interface AdsState {
   impressions: Record<string, number>;  // adId → count
   clicks:      Record<string, number>;  // adId → count
   // Surcharges admin (activer/désactiver une campagne en live)
   overrides:   Record<string, 'active' | 'paused'>;
+  customCampaigns: AdCampaign[];
 }
 const adsSlice = createSlice({
   name: 'ads',
-  initialState: { impressions: {}, clicks: {}, overrides: {} } as AdsState,
+  initialState: { impressions: {}, clicks: {}, overrides: {}, customCampaigns: [] } as AdsState,
   reducers: {
     recordImpression: (s, a: PayloadAction<string>) => {
       s.impressions[a.payload] = (s.impressions[a.payload] || 0) + 1;
@@ -434,6 +439,9 @@ const adsSlice = createSlice({
     },
     setAdOverride: (s, a: PayloadAction<{ id: string; status: 'active' | 'paused' }>) => {
       s.overrides[a.payload.id] = a.payload.status;
+    },
+    addCampaign: (s, a: PayloadAction<AdCampaign>) => {
+      s.customCampaigns.push(a.payload);
     },
   },
 });
@@ -484,13 +492,13 @@ export const {
 } = mobilitySlice.actions;
 
 export const { loginPassenger, loginDriver, loginAdmin, logout } = authSlice.actions;
-export const { toggleDarkMode, setTheme, setAutoTheme, setLang, toggleSidebar, setShowQR, setNotifEnabled } = uiSlice.actions;
+export const { toggleDarkMode, setTheme, setAutoTheme, setLang, toggleSidebar, setShowQR, setNotifEnabled, toggleA11yMode } = uiSlice.actions;
 export const { buyTicket, useTicket, addReport, upvoteReport, acknowledgeReport } = ticketSlice.actions;
 export const { toggleFavStop, toggleFavLine, recordTrip, visitLine } = favSlice.actions;
 export const { showToast, dismissToast } = toastSlice.actions;
 export const { startJourney, updateJourneyStatus, attachTicketToJourney, finishJourney, cancelJourney, dismissEndModal } = journeySlice.actions;
 export const { addPoints, earnBadge, addCarpoolRequest, removeCarpoolRequest, addRecurringTrip, removeRecurringTrip } = gamifSlice.actions;
 export const { loginFleetManager, logoutFleetManager } = fleetSlice.actions;
-export const { recordImpression, recordClick, setAdOverride } = adsSlice.actions;
+export const { recordImpression, recordClick, setAdOverride, addCampaign } = adsSlice.actions;
 export const { buyPass, usePassRide, expirePasses } = passSlice.actions;
 export { BADGES_DEF };

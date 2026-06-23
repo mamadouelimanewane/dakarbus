@@ -57,12 +57,19 @@ function resolveStop(text: string, userLat?: number, userLng?: number): Stop | n
   return null;
 }
 
-const SUGGESTIONS = [
+const BASE_SUGGESTIONS = [
   'Comment aller à Sandaga depuis UCAD ?',
   'Aller à l\'hôpital Principal depuis Parcelles',
   'Trajet de Ouakam à la Gare Routière',
   'Comment aller à la plage de Yoff ?',
 ];
+
+function getDynamicSuggestions() {
+  const h = new Date().getHours();
+  if (h >= 6 && h < 10) return ["Aller au Plateau", "Trajet vers l'école", ...BASE_SUGGESTIONS.slice(0, 2)];
+  if (h >= 17 && h < 21) return ["Rentrer à la maison", "Aller au stade", ...BASE_SUGGESTIONS.slice(2, 4)];
+  return BASE_SUGGESTIONS;
+}
 
 export default function ChatBot() {
   const dispatch = useAppDispatch();
@@ -76,6 +83,47 @@ export default function ChatBot() {
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLInputElement>(null);
+  const [isListening, setIsListening] = useState(false);
+  const [suggestions] = useState(getDynamicSuggestions());
+
+  const speak = (text: string) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text.replace(/[*_~]/g, ''));
+      u.lang = 'fr-FR';
+      window.speechSynthesis.speak(u);
+    }
+  };
+
+  const addBotMessage = (text: string, stops?: { origin?: Stop; dest?: Stop }) => {
+    setMessages(m => [...m, { role: 'bot', text, stops }]);
+    speak(text);
+  };
+
+  const toggleListening = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      dispatch(showToast({ type: 'error', message: 'Reconnaissance vocale non supportée.' }));
+      return;
+    }
+    if (isListening) return;
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'fr-FR';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onresult = (event: any) => {
+      const text = event.results[0][0].transcript;
+      setInput(text);
+      handleSend(text);
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+
+    recognition.start();
+  };
 
   // ── Drag ──────────────────────────────────────────────────────
   // Position en px depuis le coin bas-droit (valeurs positives = distance depuis le bord)
@@ -155,14 +203,14 @@ export default function ChatBot() {
 
       // Detect greeting
       if (/^(bonjour|salut|hello|hi|bonsoir)\b/.test(q)) {
-        setMessages(m => [...m, { role: 'bot', text: 'Bonjour ! Comment puis-je vous aider ? Dites-moi où vous souhaitez aller 😊' }]);
+        addBotMessage('Bonjour ! Comment puis-je vous aider ? Dites-moi où vous souhaitez aller 😊');
         setLoading(false);
         return;
       }
 
       // Detect "merci"
       if (/\bmerci\b/.test(q)) {
-        setMessages(m => [...m, { role: 'bot', text: 'De rien ! Bon voyage 🚌' }]);
+        addBotMessage('De rien ! Bon voyage 🚌');
         setLoading(false);
         return;
       }
@@ -175,7 +223,7 @@ export default function ChatBot() {
       const destStop   = toText   ? resolveStop(toText,   userLat, userLng) : null;
 
       if (!fromText && !toText) {
-        setMessages(m => [...m, { role: 'bot', text: 'Je n\'ai pas compris votre demande. Essayez :\n"Aller à [destination] depuis [départ]"' }]);
+        addBotMessage('Je n\'ai pas compris votre demande. Essayez :\n"Aller à [destination] depuis [départ]"');
         setLoading(false);
         return;
       }
@@ -183,7 +231,7 @@ export default function ChatBot() {
       if (destStop && !originStop) {
         dispatch(setRouteDestination(destStop));
         dispatch(setActiveTab('plan'));
-        setMessages(m => [...m, { role: 'bot', text: `Destination trouvée : **${destStop.name}**\nIndiquez votre point de départ dans l'onglet Planifier 🗺️`, stops: { dest: destStop } }]);
+        addBotMessage(`Destination trouvée : **${destStop.name}**\nIndiquez votre point de départ dans l'onglet Planifier 🗺️`, { dest: destStop });
         setLoading(false);
         return;
       }
@@ -191,7 +239,7 @@ export default function ChatBot() {
       if (originStop && !destStop) {
         dispatch(setRouteOrigin(originStop));
         dispatch(setActiveTab('plan'));
-        setMessages(m => [...m, { role: 'bot', text: `Départ : **${originStop.name}**\nIndiquez votre destination dans l'onglet Planifier 🗺️`, stops: { origin: originStop } }]);
+        addBotMessage(`Départ : **${originStop.name}**\nIndiquez votre destination dans l'onglet Planifier 🗺️`, { origin: originStop });
         setLoading(false);
         return;
       }
@@ -200,17 +248,13 @@ export default function ChatBot() {
         dispatch(setRouteOrigin(originStop));
         dispatch(setRouteDestination(destStop));
         dispatch(setActiveTab('plan'));
-        setMessages(m => [...m, {
-          role: 'bot',
-          text: `Itinéraire trouvé !\n🟢 Départ : **${originStop.name}**\n🔴 Arrivée : **${destStop.name}**\n\nCalcul en cours dans l'onglet Planifier... 🗺️`,
-          stops: { origin: originStop, dest: destStop }
-        }]);
+        addBotMessage(`Itinéraire trouvé !\n🟢 Départ : **${originStop.name}**\n🔴 Arrivée : **${destStop.name}**\n\nCalcul en cours dans l'onglet Planifier... 🗺️`, { origin: originStop, dest: destStop });
         dispatch(showToast({ type: 'success', message: `Itinéraire : ${originStop.name} → ${destStop.name}` }));
         setLoading(false);
         return;
       }
 
-      setMessages(m => [...m, { role: 'bot', text: `Désolé, je n'ai pas trouvé "${toText || fromText}" dans ma base de données.\nEssayez un nom d'arrêt ou de quartier connu.` }]);
+      addBotMessage(`Désolé, je n'ai pas trouvé "${toText || fromText}" dans ma base de données.\nEssayez un nom d'arrêt ou de quartier connu.`);
       setLoading(false);
     }, 600);
   };
@@ -301,7 +345,7 @@ export default function ChatBot() {
           {/* Suggestions */}
           {messages.length === 1 && (
             <div className="px-3 pb-2 flex gap-1.5 overflow-x-auto flex-shrink-0" style={{ scrollbarWidth: 'none' }}>
-              {SUGGESTIONS.slice(0, 2).map((s, i) => (
+              {suggestions.slice(0, 2).map((s, i) => (
                 <button key={i} onClick={() => handleSend(s)}
                   className="text-[10px] font-semibold px-2.5 py-1.5 rounded-xl flex-shrink-0 transition-all active:scale-95"
                   style={{ background: 'rgba(37,99,235,.15)', color: '#60a5fa', border: '1px solid rgba(37,99,235,.25)' }}>
@@ -325,8 +369,14 @@ export default function ChatBot() {
                 background: 'var(--c-surface2)',
                 border: '1.5px solid var(--c-border)',
                 color: 'var(--c-text)',
+                paddingRight: 40,
               }}
             />
+            <button onClick={toggleListening}
+              className="absolute right-14 bottom-[22px] w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+              style={{ background: isListening ? '#ef4444' : 'transparent', color: isListening ? 'white' : '#94a3b8', animation: isListening ? 'pulse-ring 1s infinite' : 'none' }}>
+              🎙️
+            </button>
             <button onClick={() => handleSend()}
               disabled={!input.trim()}
               className="w-9 h-9 rounded-xl flex items-center justify-center text-sm transition-all active:scale-90"

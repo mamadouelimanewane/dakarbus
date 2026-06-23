@@ -1,17 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout, addReport, showToast, setUserLocation } from '@/store/store';
-import { LINES, STOPS } from '@/data/transportData';
+import { LINES, STOPS, INCIDENT_TYPES } from '@/data/transportData';
 import ToastContainer from '@/components/ToastContainer';
 import jsQR from 'jsqr';
 import type { CrowdsourceReport } from '@/types';
-
-const INCIDENT_TYPES: { id: CrowdsourceReport['type']; emoji: string; label: string; color: string }[] = [
-  { id:'delay',    emoji:'🐌', label:'Bouchon',   color:'#d97706' },
-  { id:'accident', emoji:'💥', label:'Accident',  color:'#dc2626' },
-  { id:'crowd',    emoji:'👥', label:'Affluence', color:'#2563eb' },
-  { id:'other',    emoji:'⚠️', label:'Autre',     color:'#64748b' },
-];
 
 function StatCard({ label, value, unit, color = '#f1f5f9' }: { label:string; value:string|number; unit?:string; color?:string }) {
   return (
@@ -24,39 +17,16 @@ function StatCard({ label, value, unit, color = '#f1f5f9' }: { label:string; val
   );
 }
 
-// Occupancy bar indicator
-function OccupancyBar({ pct }: { pct: number }) {
-  const color = pct > 80 ? '#dc2626' : pct > 50 ? '#f59e0b' : '#22c55e';
-  const label = pct > 80 ? 'Complet' : pct > 50 ? 'Chargé' : 'Disponible';
-  return (
-    <div>
-      <div className="flex justify-between text-[10px] mb-1.5" style={{ color: 'rgba(255,255,255,.4)' }}>
-        <span>Taux d'occupation</span>
-        <span style={{ color }}>{label} · {pct}%</span>
-      </div>
-      <div className="rounded-full overflow-hidden" style={{ height: 6, background: 'rgba(255,255,255,.08)' }}>
-        <div className="h-full rounded-full transition-all duration-700"
-          style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${color}88, ${color})` }} />
-      </div>
-    </div>
-  );
+interface NextStopsPanelProps {
+  lineId: string;
+  currentPassengers: number;
+  lineColor: string;
+  currentStopIdx: number;
+  eta: number;
 }
 
-// Next stops panel for active line
-function NextStopsPanel({ lineId, currentPassengers, lineColor }: { lineId: string; currentPassengers: number; lineColor: string }) {
+function NextStopsPanel({ lineId, currentPassengers, lineColor, currentStopIdx, eta }: NextStopsPanelProps) {
   const line = LINES.find(l => l.id === lineId);
-  const [currentStopIdx, setCurrentStopIdx] = useState(0);
-  const [eta, setEta] = useState(0); // seconds to next stop
-
-  useEffect(() => {
-    setEta(Math.floor(2 + Math.random() * 4) * 60);
-    const t = setInterval(() => setEta(s => {
-      if (s <= 0) { setCurrentStopIdx(i => (i + 1) % (line?.stops.length || 1)); return Math.floor(2 + Math.random() * 4) * 60; }
-      return s - 1;
-    }), 1000);
-    return () => clearInterval(t);
-  }, [line?.id]);
-
   if (!line) return null;
 
   const upcomingStopIds = line.stops.slice(currentStopIdx, currentStopIdx + 4);
@@ -64,6 +34,8 @@ function NextStopsPanel({ lineId, currentPassengers, lineColor }: { lineId: stri
 
   const mm = Math.floor(eta / 60), ss = eta % 60;
   const etaStr = mm > 0 ? `${mm}:${String(ss).padStart(2, '0')}` : `${ss}s`;
+
+  const occPct = Math.min(100, Math.round((currentPassengers / 45) * 100));
 
   return (
     <div className="rounded-2xl card overflow-hidden">
@@ -92,7 +64,18 @@ function NextStopsPanel({ lineId, currentPassengers, lineColor }: { lineId: stri
         </div>
       ))}
       <div className="px-4 py-3" style={{ borderTop: '1px solid var(--c-border)' }}>
-        <OccupancyBar pct={Math.min(100, Math.round((currentPassengers / 45) * 100))} />
+        <div>
+          <div className="flex justify-between text-[10px] mb-1.5" style={{ color: 'rgba(255,255,255,.4)' }}>
+            <span>Taux d'occupation</span>
+            <span style={{ color: occPct > 80 ? '#dc2626' : occPct > 50 ? '#f59e0b' : '#22c55e' }}>
+              {occPct > 80 ? 'Complet' : occPct > 50 ? 'Chargé' : 'Disponible'} · {occPct}%
+            </span>
+          </div>
+          <div className="rounded-full overflow-hidden" style={{ height: 6, background: 'rgba(255,255,255,.08)' }}>
+            <div className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${occPct}%`, background: `linear-gradient(90deg, ${occPct > 80 ? '#dc2626' : occPct > 50 ? '#f59e0b' : '#22c55e'}88, ${occPct > 80 ? '#dc2626' : occPct > 50 ? '#f59e0b' : '#22c55e'})` }} />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -101,6 +84,7 @@ function NextStopsPanel({ lineId, currentPassengers, lineColor }: { lineId: stri
 export default function DriverApp() {
   const dispatch = useAppDispatch();
   const { name, lineId } = useAppSelector(s => s.auth);
+  const { reports } = useAppSelector(s => s.tickets);
   const [status, setStatus]             = useState<'idle'|'driving'>('idle');
   const [location, setLocation]         = useState<[number,number]|null>(null);
   const [speed, setSpeed]               = useState(0);
@@ -115,39 +99,72 @@ export default function DriverApp() {
   const [incidentType, setIncidentType] = useState<CrowdsourceReport['type']>('delay');
   const [incidentDesc, setIncidentDesc] = useState('');
   const [activeTab, setActiveTab_]      = useState<'drive'|'stops'|'stats'>('drive');
+  const [ecoScore, setEcoScore]         = useState(100);
+  const [pttActive, setPttActive]       = useState(false);
+  const [immersiveNightMode, setImmersiveNightMode] = useState(false);
   const videoRef       = useRef<HTMLVideoElement>(null);
   const canvasRef      = useRef<HTMLCanvasElement>(null);
   const scanActiveRef  = useRef(false);
 
+  const [currentStopIdx, setCurrentStopIdx] = useState(0);
+  const [eta, setEta] = useState(0); // seconds to next stop
+
   const activeLine = LINES.find(l => l.id === lineId);
   const lineColor  = activeLine?.color || '#2563eb';
 
+  // Geolocation tracker
   useEffect(() => {
     if (status !== 'driving' || !navigator.geolocation) return;
     const id = navigator.geolocation.watchPosition(
       p => {
         const l: [number,number] = [p.coords.latitude, p.coords.longitude];
         setLocation(l); dispatch(setUserLocation(l));
-        setSpeed(p.coords.speed != null && p.coords.speed > 0
+        const currentSpeed = p.coords.speed != null && p.coords.speed > 0
           ? Math.round(p.coords.speed * 3.6)
-          : Math.floor(25 + Math.random() * 30));
+          : Math.floor(25 + Math.random() * 30);
+        setSpeed(currentSpeed);
+        setEcoScore(prev => {
+          let pen = 0;
+          if (currentSpeed > 50) pen += 2;
+          else if (currentSpeed < 10) pen += 0.5;
+          return Math.max(0, Math.min(100, prev + (currentSpeed >= 20 && currentSpeed <= 45 ? 1 : -pen)));
+        });
       },
-      () => setSpeed(Math.floor(30 + Math.random() * 20)),
+      () => {
+        const fakeSpeed = Math.floor(30 + Math.random() * 20);
+        setSpeed(fakeSpeed);
+        setEcoScore(prev => Math.max(0, Math.min(100, prev + (fakeSpeed >= 20 && fakeSpeed <= 45 ? 1 : -0.5))));
+      },
       { enableHighAccuracy: true, timeout: 10000 }
     );
     return () => navigator.geolocation.clearWatch(id);
   }, [status, dispatch]);
 
+  // Duration, simulated earnings, and next stop index increments
   useEffect(() => {
     if (status !== 'driving') return;
     const t = setInterval(() => {
       setShiftSecs(s => s + 1);
-      // Simulate earnings (tarif per minute)
       if (passengers > 0) setEarnings(e => e + (activeLine?.tarif || 200) / 60 * passengers / 60);
     }, 1000);
     return () => clearInterval(t);
   }, [status, passengers]);
 
+  // Timer for eta and stop advancement
+  useEffect(() => {
+    if (status !== 'driving' || !activeLine) return;
+    setEta(Math.floor(2 + Math.random() * 4) * 60);
+    const t = setInterval(() => setEta(s => {
+      if (s <= 0) {
+        setCurrentStopIdx(i => (i + 1) % (activeLine?.stops.length || 1));
+        return Math.floor(2 + Math.random() * 4) * 60;
+      }
+      return s - 1;
+    }), 1000);
+    return () => clearInterval(t);
+  }, [status, activeLine?.id]);
+
+  // QR Camera Scanner hook
   useEffect(() => {
     if (!scanMode) return;
     let stream: MediaStream | null = null;
@@ -182,7 +199,9 @@ export default function DriverApp() {
       })
       .catch(e => {
         const msg = e.name === 'NotAllowedError' ? 'Accès caméra refusé.'
-          : e.name === 'NotFoundError' ? 'Aucune caméra détectée.' : `Erreur: ${e.message}`;
+          : e.name === 'NotFoundError' ? 'Aucune caméra détectée.' 
+          : e.name === 'NotReadableError' ? 'Caméra déjà utilisée ou bloquée.' 
+          : `Erreur: ${e.message}`;
         setCameraError(msg);
         dispatch(showToast({ type: 'error', message: msg }));
       });
@@ -194,11 +213,25 @@ export default function DriverApp() {
     if (!d) return;
     dispatch(addReport({
       id: Math.random().toString(36).substring(2, 11), type: incidentType,
-      description: `[${name}] ${d}`,
-      location: location ?? [14.7167, -17.4677], timestamp: Date.now(), upvotes: 0,
+      description: `[👨‍✈️ Chauffeur - Ligne ${activeLine?.name || lineId}] ${d}`,
+      location: location ?? [14.7167, -17.4677], timestamp: Date.now(), upvotes: 5,
     }));
     dispatch(showToast({ type: 'success', message: 'Incident signalé !' }));
     setShowIncident(false); setIncidentDesc('');
+  };
+
+  const handleSOS = () => {
+    if (!window.confirm("⚠️ SIGNALER UNE DETRESSE SOS ⚠️\n\nEnvoyer une alerte de détresse immédiate à la centrale et aux secours avec votre position GPS actuelle ?")) return;
+    
+    dispatch(addReport({
+      id: Math.random().toString(36).substring(2, 11),
+      type: 'accident',
+      description: `🚨 [SOS CHAUFFEUR URGENT] Le chauffeur ${name} de la ligne ${activeLine?.name || lineId} a déclenché une alerte de détresse SOS ! Assistance requise immédiatement.`,
+      location: location ?? [14.7167, -17.4677],
+      timestamp: Date.now(),
+      upvotes: 99,
+    }));
+    dispatch(showToast({ type: 'error', message: '🚨 ALERTE SOS TRANSMISSE! Secours et centrale notifiés.' }));
   };
 
   const fmt = (s: number) => {
@@ -224,6 +257,11 @@ export default function DriverApp() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={() => setImmersiveNightMode(p => !p)}
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all active:scale-90"
+            style={{ background: immersiveNightMode ? '#fbbf24' : 'rgba(255,255,255,.05)', color: immersiveNightMode ? 'black' : 'white' }}>
+            {immersiveNightMode ? '☀️' : '🌙'}
+          </button>
           {status === 'driving' && (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-black"
               style={{ background: 'rgba(5,150,105,.15)', border: '1px solid rgba(5,150,105,.3)', color: '#34d399' }}>
@@ -237,8 +275,29 @@ export default function DriverApp() {
         </div>
       </header>
 
-      {/* Tab nav */}
-      <div className="flex-shrink-0 flex px-4 pt-3 gap-2">
+      {immersiveNightMode && status === 'driving' ? (
+        <main className="flex-1 flex flex-col justify-center items-center p-6 space-y-8" style={{ background: '#000' }}>
+          <div className="text-center">
+            <div className="text-[140px] font-black text-white leading-none tracking-tighter" style={{ textShadow: `0 0 40px ${lineColor}55` }}>{speed}</div>
+            <div className="text-2xl font-bold uppercase tracking-widest" style={{ color: lineColor }}>km/h</div>
+          </div>
+          {activeLine && activeLine.stops[currentStopIdx] && (() => {
+             const nextStop = STOPS.find(s => s.id === activeLine.stops[currentStopIdx]);
+             const mm = Math.floor(eta / 60), ss = eta % 60;
+             const etaStr = mm > 0 ? `${mm}:${String(ss).padStart(2, '0')}` : `${ss}s`;
+             return (
+               <div className="text-center mt-12 w-full max-w-sm rounded-3xl p-6" style={{ background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.1)' }}>
+                 <div className="text-sm font-black uppercase tracking-widest mb-2" style={{ color: 'var(--c-muted)' }}>Prochain Arrêt</div>
+                 <div className="text-3xl font-black text-white mb-4">{nextStop?.name || 'Arrêt'}</div>
+                 <div className="text-5xl font-black" style={{ color: lineColor }}>{etaStr}</div>
+               </div>
+             );
+          })()}
+        </main>
+      ) : (
+      <>
+        {/* Tab nav */}
+        <div className="flex-shrink-0 flex px-4 pt-3 gap-2">
         {(['drive','stops','stats'] as const).map(t => (
           <button key={t} onClick={() => setActiveTab_(t)}
             className="flex-1 py-2 rounded-xl text-xs font-black transition-all"
@@ -250,9 +309,9 @@ export default function DriverApp() {
         ))}
       </div>
 
-      <main className="flex-1 overflow-y-auto p-4 space-y-3 pb-safe">
+      <main className="flex-1 overflow-y-auto p-4 space-y-4 pb-safe">
 
-        {/* ── DRIVE TAB ─────────────────────────── */}
+        {/* ── SERVICE TAB ─────────────────────────── */}
         {activeTab === 'drive' && (
           <>
             {/* Status hero */}
@@ -266,14 +325,25 @@ export default function DriverApp() {
               {status === 'driving' && (
                 <div className="flex gap-2 mb-4">
                   <StatCard label="Vitesse"    value={speed}            unit="km/h"  color="#34d399" />
+                  <StatCard label="Éco-Score"  value={Math.round(ecoScore)} unit="/100"  color={ecoScore > 80 ? '#10b981' : ecoScore > 50 ? '#f59e0b' : '#ef4444'} />
                   <StatCard label="Passagers"  value={passengers}                    color="#60a5fa" />
-                  <StatCard label="Durée"      value={fmt(shiftSecs)}               color="#c084fc" />
                 </div>
               )}
 
               {status === 'driving' && (
                 <div className="mb-4">
-                  <OccupancyBar pct={occPct} />
+                  <div>
+                    <div className="flex justify-between text-[10px] mb-1.5" style={{ color: 'rgba(255,255,255,.4)' }}>
+                      <span>Taux d'occupation</span>
+                      <span style={{ color: occPct > 80 ? '#dc2626' : occPct > 50 ? '#f59e0b' : '#22c55e' }}>
+                        {occPct > 80 ? 'Complet' : occPct > 50 ? 'Chargé' : 'Disponible'} · {occPct}%
+                      </span>
+                    </div>
+                    <div className="rounded-full overflow-hidden" style={{ height: 6, background: 'rgba(255,255,255,.08)' }}>
+                      <div className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${occPct}%`, background: `linear-gradient(90deg, ${occPct > 80 ? '#dc2626' : occPct > 50 ? '#f59e0b' : '#22c55e'}88, ${occPct > 80 ? '#dc2626' : occPct > 50 ? '#f59e0b' : '#22c55e'})` }} />
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -297,9 +367,48 @@ export default function DriverApp() {
                   : { background: 'linear-gradient(135deg,#065f46,#059669)', boxShadow: '0 6px 24px rgba(5,150,105,.35)' }}>
                 {status === 'driving' ? '■  Terminer le service' : '▶  Démarrer le service'}
               </button>
+
+              {status === 'driving' && (
+                <button
+                  onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); setPttActive(true); navigator.vibrate?.(50); }}
+                  onPointerUp={(e) => { e.currentTarget.releasePointerCapture(e.pointerId); setPttActive(false); dispatch(showToast({ type: 'success', message: '🎙️ Message vocal envoyé au dispatch.' })); }}
+                  className="w-full py-3.5 rounded-2xl font-black text-sm transition-all mt-3 select-none touch-none"
+                  style={pttActive
+                    ? { background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white', boxShadow: '0 0 20px rgba(245,158,11,.6)', transform: 'scale(0.98)' }
+                    : { background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.1)', color: '#fbbf24' }}>
+                  {pttActive ? '🎙️ ENREGISTREMENT...' : '🎙️ Maintenir pour Parler (PTT)'}
+                </button>
+              )}
             </div>
 
-            {/* Actions */}
+            {/* Next Stop Dashboard Widget */}
+            {status === 'driving' && activeLine && activeLine.stops[currentStopIdx] && (() => {
+              const nextStop = STOPS.find(s => s.id === activeLine.stops[currentStopIdx]);
+              const mm = Math.floor(eta / 60), ss = eta % 60;
+              const etaStr = mm > 0 ? `${mm}:${String(ss).padStart(2, '0')}` : `${ss}s`;
+              return (
+                <div className="rounded-2xl p-4 flex items-center justify-between animate-fade-up"
+                  style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border2)' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                      style={{ background: lineColor + '20', color: lineColor }}>
+                      🚏
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--c-muted)' }}>Prochain Arrêt</p>
+                      <p className="text-sm font-black text-white">{nextStop?.name || 'Arrêt'}</p>
+                      <p className="text-[10px]" style={{ color: '#475569' }}>Zone: {nextStop?.zone || 'Dakar'}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-black" style={{ color: lineColor }}>⏱ {etaStr}</p>
+                    <p className="text-[10px] font-medium" style={{ color: 'var(--c-muted)' }}>~250m restant</p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Actions Grid */}
             {status === 'driving' && (
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={() => { setScanMode(true); setScanResult(null); setCameraError(null); }}
@@ -308,24 +417,36 @@ export default function DriverApp() {
                   <span className="text-2xl">📷</span><span>Scanner M-Ticket</span>
                 </button>
 
-                <div className="flex flex-col items-center gap-2.5 py-3 px-3 rounded-2xl card">
-                  <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Passagers</p>
-                  <div className="flex items-center gap-3">
+                <div className="col-span-2 flex flex-col items-center gap-2.5 py-3 px-3 rounded-2xl card">
+                  <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--c-muted)' }}>Passagers à bord</p>
+                  <div className="flex items-center gap-4">
                     <button onClick={() => setPassengers(n => Math.max(0, n - 1))}
-                      className="w-11 h-11 rounded-xl font-black text-lg transition-all active:scale-90"
+                      className="w-12 h-12 rounded-xl font-black text-lg transition-all active:scale-90"
                       style={{ background: 'rgba(255,255,255,.07)', color: '#94a3b8' }}>−</button>
-                    <span className="text-xl font-black text-white w-8 text-center">{passengers}</span>
+                    <span className="text-2xl font-black text-white w-12 text-center">{passengers}</span>
                     <button onClick={() => setPassengers(n => Math.min(50, n + 1))}
-                      className="w-11 h-11 rounded-xl font-black text-lg transition-all active:scale-90"
+                      className="w-12 h-12 rounded-xl font-black text-lg transition-all active:scale-90"
                       style={{ background: 'rgba(37,99,235,.3)', color: '#60a5fa' }}>+</button>
                   </div>
                 </div>
 
                 <button onClick={() => setShowIncident(true)}
-                  className="flex flex-col items-center gap-2.5 py-3 rounded-2xl font-bold transition-all active:scale-95"
+                  className="flex flex-col items-center gap-2 py-3 rounded-2xl font-bold transition-all active:scale-95"
                   style={{ background: 'rgba(217,119,6,.1)', border: '1px solid rgba(217,119,6,.2)', color: '#fbbf24' }}>
                   <span className="text-2xl">🚧</span>
-                  <span className="text-xs font-black">Incident</span>
+                  <span className="text-xs font-black">Rapporter Incident</span>
+                </button>
+
+                <button onClick={handleSOS}
+                  className="flex flex-col items-center justify-center gap-2 py-3 rounded-2xl font-black text-white transition-all active:scale-95"
+                  style={{
+                    background: 'rgba(220,38,38,0.15)',
+                    border: '1.5px solid rgba(220,38,38,0.4)',
+                    color: '#f87171',
+                    boxShadow: '0 0 15px rgba(220,38,38,0.15)',
+                  }}>
+                  <span className="text-2xl animate-pulse">🚨</span>
+                  <span className="text-xs font-black">SOS Urgence</span>
                 </button>
               </div>
             )}
@@ -352,12 +473,55 @@ export default function DriverApp() {
                 </div>
               </div>
             )}
+
+            {/* Incidents Network Board */}
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest mb-2.5" style={{ color: 'var(--c-muted)' }}>
+                ⚠️ Infos Trafic & Incidents Réseau
+              </p>
+              {reports.length === 0 ? (
+                <div className="rounded-2xl p-4 text-center text-xs" style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', color: '#475569' }}>
+                  Aucun incident signalé actuellement. Tout est fluide !
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {reports.map(r => {
+                    const isUrgent = r.description.includes('SOS') || r.upvotes > 30;
+                    return (
+                      <div key={r.id} className="rounded-xl p-3 flex items-start gap-3 animate-fade-up"
+                        style={{
+                          background: isUrgent ? 'rgba(220,38,38,0.08)' : 'var(--c-surface)',
+                          border: `1px solid ${isUrgent ? 'rgba(220,38,38,0.25)' : 'var(--c-border)'}`,
+                        }}>
+                        <span className="text-xl flex-shrink-0">
+                          {isUrgent ? '🚨' : r.type === 'delay' ? '🐌' : r.type === 'accident' ? '💥' : r.type === 'crowd' ? '👥' : '⚠️'}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-black truncate" style={{ color: isUrgent ? '#f87171' : 'white' }}>
+                            {isUrgent ? 'DÉTRESSE SIGNALÉE' : r.type === 'delay' ? 'Retard / Bouchon' : r.type === 'accident' ? 'Accident' : r.type === 'crowd' ? 'Forte Affluence' : 'Incident'}
+                          </p>
+                          <p className="text-[10px] mt-0.5" style={{ color: '#94a3b8', whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                            {r.description}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </>
         )}
 
         {/* ── STOPS TAB ─────────────────────────── */}
         {activeTab === 'stops' && lineId && (
-          <NextStopsPanel lineId={lineId} currentPassengers={passengers} lineColor={lineColor} />
+          <NextStopsPanel
+            lineId={lineId}
+            currentPassengers={passengers}
+            lineColor={lineColor}
+            currentStopIdx={currentStopIdx}
+            eta={eta}
+          />
         )}
         {activeTab === 'stops' && !lineId && (
           <div className="text-center py-12 text-sm" style={{ color: '#475569' }}>Aucune ligne assignée</div>
@@ -456,6 +620,7 @@ export default function DriverApp() {
             className="mt-6 btn btn-ghost px-8">Fermer</button>
         </div>
       )}
+      </>)}
     </div>
   );
 }

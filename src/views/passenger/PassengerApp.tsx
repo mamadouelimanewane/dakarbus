@@ -66,11 +66,11 @@ function OfflineBanner() {
   if (online || dismissed) return null;
 
   return (
-    <div className="fixed top-0 inset-x-0 z-[9990] flex items-center justify-between gap-3 px-4 py-2.5 animate-slide-down"
+    <div className="fixed bottom-24 inset-x-4 z-[9990] flex items-center justify-between gap-3 px-4 py-3 animate-slide-up rounded-2xl"
       style={{
         background: 'linear-gradient(135deg,rgba(217,119,6,.97),rgba(180,83,9,.97))',
         backdropFilter: 'blur(12px)',
-        boxShadow: '0 4px 20px rgba(0,0,0,.4)',
+        boxShadow: '0 8px 32px rgba(0,0,0,.4)',
       }}>
       <div className="flex items-center gap-2.5">
         <span className="text-xl">📵</span>
@@ -389,10 +389,12 @@ export default function PassengerApp() {
                 const badge  = getBadge(tab.id);
                 return (
                   <button key={tab.id} onClick={() => goTab(tab.id)} title={tab.label}
-                    className="relative w-12 h-12 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all active:scale-90"
+                    className="relative w-12 h-12 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all duration-300 active:scale-90"
                     style={{
                       background: active ? accentColor + '22' : 'transparent',
                       border: `1px solid ${active ? accentColor + '40' : 'transparent'}`,
+                      boxShadow: active ? `0 0 12px ${accentColor}40` : undefined,
+                      transform: active ? 'scale(1.08)' : 'scale(1)',
                     }}>
                     {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 rounded-r-full" style={{ background: accentColor }} />}
                     <span className="text-lg leading-none">{tab.icon}</span>
@@ -758,8 +760,12 @@ export default function PassengerApp() {
                       style={{ background: color, boxShadow: `0 2px 10px ${color}80` }} />
                   )}
                   <div className="relative w-12 h-12 flex items-center justify-center rounded-[18px] transition-all duration-300"
-                    style={{ background: active ? color + '20' : 'transparent', transform: active ? 'translateY(-2px)' : 'translateY(0)' }}>
-                    <span className="text-3xl leading-none" style={{ transform: active ? 'scale(1.15)' : 'scale(1)', transition: 'transform 0.3s' }}>{tab.icon}</span>
+                    style={{
+                      background: active ? color + '20' : 'transparent',
+                      boxShadow: active ? `0 0 16px ${color}50` : undefined,
+                      transform: active ? 'scale(1.1)' : 'scale(1)',
+                    }}>
+                    <span className="text-[28px] leading-none">{tab.icon}</span>
                     {badge !== null && (
                       <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full text-white text-[11px] font-black flex items-center justify-center"
                         style={{ background: '#dc2626', boxShadow: '0 2px 8px rgba(220,38,38,.6)', border: '2px solid rgba(6,10,20,.98)' }}>

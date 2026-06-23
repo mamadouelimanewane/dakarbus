@@ -48,7 +48,7 @@ function PinModal({ role, onClose, onSuccess }: {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-0 transition-opacity"
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-0 transition-opacity overflow-y-auto"
       style={{ background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
 
@@ -176,7 +176,7 @@ function FleetPinModal({ operator, onClose, onSuccess }: {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-0 transition-opacity"
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-0 transition-opacity overflow-y-auto"
       style={{ background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="w-full max-w-sm rounded-[32px] overflow-hidden animate-slide-up shadow-2xl mb-safe"
@@ -290,7 +290,7 @@ export default function RoleSelection() {
             style={{ background:'linear-gradient(135deg, #059669, #10b981)', boxShadow:'0 8px 24px rgba(5,150,105,.6), inset 0 2px 4px rgba(255,255,255,0.3)' }}>✓</div>
         </div>
         <h1 className="text-6xl font-black tracking-tighter text-transparent bg-clip-text"
-            style={{ backgroundImage: 'linear-gradient(to right, #ffffff, #93c5fd)', dropShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>SunuBus</h1>
+            style={{ backgroundImage: 'linear-gradient(to right, #ffffff, #93c5fd)', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>SunuBus</h1>
         <p className="text-base mt-2 font-semibold tracking-wide" style={{ color:'rgba(147,197,253,.8)' }}>DakarBus v5 · Sénégal 🇸🇳</p>
       </div>
 

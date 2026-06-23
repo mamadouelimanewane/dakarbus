@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import AdManagerPage from './AdManagerPage';
 import AnalyticsPage from './AnalyticsPage';
+import LineCreator from '@/components/admin/LineCreator';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout, acknowledgeReport, showToast } from '@/store/store';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { LINES, OPERATORS } from '@/data/transportData';
+import { LINES, OPERATORS, INCIDENT_TYPES } from '@/data/transportData';
 import { MOCK_DRIVERS } from '@/services/simulation';
 import type { BusPosition, OperatorId } from '@/types';
 import ToastContainer from '@/components/ToastContainer';
@@ -167,7 +168,7 @@ export default function AdminApp() {
   const { name }                  = useAppSelector(s => s.auth);
   const darkMode                  = useAppSelector(s => s.ui.darkMode);
 
-  const [activeTab, setActiveTab] = useState<'map'|'fleet'|'routes'|'alerts'|'finance'|'ads'|'analytics'>('map');
+  const [activeTab, setActiveTab] = useState<'map'|'fleet'|'routes'|'alerts'|'finance'|'ads'|'analytics'|'audit'>('map');
   const [selectedLine, setSelectedLine] = useState<string|null>(null);
   const [mapSidebarOpen, setMapSidebarOpen] = useState(false);
   const [fleet, setFleet]         = useState<FleetBus[]>(INITIAL_FLEET);
@@ -177,6 +178,10 @@ export default function AdminApp() {
   const [searchQ, setSearchQ]     = useState('');
   const [statusFilter, setStatusFilter] = useState<BusStatus|'all'>('all');
   const [selectedBusModal, setSelectedBusModal] = useState<FleetBus|null>(null);
+  const [showLineCreator, setShowLineCreator] = useState(false);
+  const [auditLogs, setAuditLogs] = useState<{id:string, time:number, action:string}[]>([
+    { id: 'a1', time: Date.now() - 3600000, action: 'Connexion administrateur' },
+  ]);
 
   const totalRevenue = (['DDD','AFTU','BRT','TER'] as OperatorId[]).reduce((s,op)=>s+adminRevenue[op],0);
   const pendingAlerts = reports.filter(r=>Date.now()-r.timestamp<1000*60*60).length;
@@ -200,6 +205,7 @@ export default function AdminApp() {
   const updateBus = (id: string, updates: Partial<FleetBus>) => {
     setFleet(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
     dispatch(showToast({ type: 'success', message: 'Bus mis à jour !' }));
+    setAuditLogs(p => [{ id: `log_${Date.now()}`, time: Date.now(), action: `Mise à jour du bus ${id}` }, ...p]);
   };
 
   const addBus = () => {
@@ -210,6 +216,7 @@ export default function AdminApp() {
     if (Object.keys(e).length) return;
     setFleet(p=>[...p,{...newBus,id:`bus_${Date.now()}`,status:'idle',kmTotal:0,avgOccupancy:0}]);
     dispatch(showToast({type:'success',message:'Véhicule ajouté !'}));
+    setAuditLogs(p => [{ id: `log_${Date.now()}`, time: Date.now(), action: `Ajout nouveau bus: ${newBus.plate}` }, ...p]);
     setShowAdd(false); setNewBus({plate:'',operator:'DDD',lineId:'L8',driver:'',driverPhone:''});
   };
 
@@ -222,6 +229,15 @@ export default function AdminApp() {
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
     a.download=`dakarbus_${new Date().toISOString().slice(0,10)}.csv`; a.click();
     dispatch(showToast({type:'success',message:'CSV téléchargé !'}));
+    setAuditLogs(p => [{ id: `log_${Date.now()}`, time: Date.now(), action: `Export CSV des revenus` }, ...p]);
+  };
+
+  const exportPDF = () => {
+    dispatch(showToast({ type: 'info', message: 'Génération du PDF en cours...' }));
+    setTimeout(() => {
+      window.print();
+      setAuditLogs(p => [{ id: `log_${Date.now()}`, time: Date.now(), action: `Export PDF Rapport Réseau` }, ...p]);
+    }, 1000);
   };
 
   const tabs: {id:typeof activeTab;label:string;icon:string;badge?:number}[] = [
@@ -232,6 +248,7 @@ export default function AdminApp() {
     {id:'finance',   label:'Revenus',   icon:'💰'},
     {id:'analytics', label:'Analytics', icon:'📊'},
     {id:'ads',       label:'Pub',       icon:'📢'},
+    {id:'audit',     label:'Audit',     icon:'📋'},
   ];
 
   return (
@@ -243,9 +260,19 @@ export default function AdminApp() {
           onUpdate={updateBus} />
       )}
 
+      {showLineCreator && (
+        <LineCreator 
+          onClose={() => setShowLineCreator(false)}
+          onSave={() => {
+            setShowLineCreator(false);
+            dispatch(showToast({ type: 'success', message: 'Ligne créée avec succès !' }));
+          }}
+        />
+      )}
+
       {/* Header */}
-      <header className="flex-shrink-0 h-14 flex items-center justify-between px-4"
-        style={{background:'rgba(10,15,30,.95)',backdropFilter:'blur(20px)',borderBottom:'1px solid var(--c-border)'}}>
+      <header className="flex-shrink-0 h-14 flex items-center justify-between px-4 glass-panel"
+        style={{borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center"
             style={{background:'linear-gradient(135deg,#5b21b6,#7c3aed)',boxShadow:'0 4px 16px rgba(124,58,237,.4)',fontSize:15}}>🛡️</div>
@@ -264,10 +291,10 @@ export default function AdminApp() {
       </header>
 
       {/* Tabs */}
-      <div className="flex-shrink-0 flex" style={{background:'rgba(10,15,30,.9)',borderBottom:'1px solid var(--c-border)'}}>
+      <div className="flex-shrink-0 flex overflow-x-auto whitespace-nowrap scrollbar-hide glass" style={{borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
         {tabs.map(t=>(
           <button key={t.id} onClick={()=>setActiveTab(t.id)}
-            className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors"
+            className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors min-w-[75px] px-2"
             style={{color:activeTab===t.id?'#a78bfa':'#475569',borderBottom:activeTab===t.id?'2px solid #7c3aed':'2px solid transparent',minHeight:48}}>
             <span className="text-base">{t.icon}</span>
             <span className="text-[10px] font-black">{t.label}</span>
@@ -423,7 +450,12 @@ export default function AdminApp() {
                 const cfg=STATUS_CONFIG[bus.status];
                 return(
                   <div key={bus.id}
-                    className="card rounded-2xl p-4 cursor-pointer transition-all active:scale-[.98] hover:border-white/15"
+                    className={`card rounded-2xl p-4 cursor-pointer hover-scale transition-all ${
+                      bus.operator === 'DDD' ? 'glow-card-ddd' :
+                      bus.operator === 'AFTU' ? 'glow-card-aftu' :
+                      bus.operator === 'BRT' ? 'glow-card-brt' :
+                      bus.operator === 'TER' ? 'glow-card-ter' : ''
+                    }`}
                     onClick={()=>setSelectedBusModal(bus)}>
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
@@ -453,11 +485,16 @@ export default function AdminApp() {
         {/* ── ROUTES ── */}
         {activeTab==='routes'&&(
           <div className="flex-1 overflow-y-auto p-4">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-4 gap-2">
               <h2 className="font-black text-white">{LINES.length} lignes</h2>
-              <span className="badge" style={{background:'rgba(74,222,128,.1)',color:'#4ade80',border:'1px solid rgba(74,222,128,.2)'}}>
-                {busPositions.length} bus actifs
-              </span>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowLineCreator(true)} className="btn btn-primary" style={{padding:'8px 14px',fontSize:12,minHeight:40}}>
+                  + Créer une ligne
+                </button>
+                <span className="badge" style={{background:'rgba(74,222,128,.1)',color:'#4ade80',border:'1px solid rgba(74,222,128,.2)'}}>
+                  {busPositions.length} bus actifs
+                </span>
+              </div>
             </div>
             {(['DDD','AFTU','BRT','TER'] as const).map(op=>{
               const opLines=LINES.filter(l=>l.operator===op);
@@ -471,7 +508,12 @@ export default function AdminApp() {
                   {opLines.map(line=>{
                     const n=busPositions.filter((b:BusPosition)=>b.lineId===line.id).length;
                     return(
-                      <div key={line.id} className="card rounded-xl p-3 mb-1.5 flex items-center gap-3">
+                      <div key={line.id} className={`card rounded-xl p-3 mb-1.5 flex items-center gap-3 hover-scale transition-all ${
+                        line.operator === 'DDD' ? 'glow-card-ddd' :
+                        line.operator === 'AFTU' ? 'glow-card-aftu' :
+                        line.operator === 'BRT' ? 'glow-card-brt' :
+                        line.operator === 'TER' ? 'glow-card-ter' : ''
+                      }`}>
                         <span className="w-1.5 h-10 rounded-full flex-shrink-0" style={{background:line.color}}/>
                         <div className="flex-1 min-w-0">
                           <div className="font-bold text-white text-sm">{line.name}</div>
@@ -505,7 +547,8 @@ export default function AdminApp() {
             ):(
               <div className="space-y-3">
                 {reports.map(r=>{
-                  const meta={delay:{e:'🐌',c:'#d97706',l:'Retard'},accident:{e:'💥',c:'#dc2626',l:'Accident'},crowd:{e:'👥',c:'#2563eb',l:'Affluence'},other:{e:'⚠️',c:'#64748b',l:'Autre'}}[r.type]||{e:'⚠️',c:'#64748b',l:'Incident'};
+                  const incType = INCIDENT_TYPES.find(t => t.id === r.type);
+                  const meta = incType ? { e: incType.emoji, c: incType.color, l: incType.label } : { e: '⚠️', c: '#64748b', l: 'Incident' };
                   const min=Math.floor((Date.now()-r.timestamp)/60000);
                   return(
                     <div key={r.id} className="card rounded-2xl p-4">
@@ -535,8 +578,8 @@ export default function AdminApp() {
         {/* ── FINANCE ── */}
         {activeTab==='finance'&&(
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            <div className="rounded-3xl p-6 relative overflow-hidden"
-              style={{background:'linear-gradient(135deg,#4c1d95,#2563eb)',boxShadow:'0 24px 60px rgba(109,40,217,.3)'}}>
+            <div className="rounded-3xl p-6 relative overflow-hidden gradient-border-animated shadow-xl"
+              style={{background:'linear-gradient(135deg,#2e1065,#1d4ed8)'}}>
               <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-10" style={{background:'white'}}/>
               <p className="text-sm font-semibold mb-2 relative" style={{color:'rgba(216,180,254,.8)'}}>CA Global · Aujourd'hui</p>
               <h3 className="text-4xl font-black text-white tracking-tight relative">
@@ -551,7 +594,12 @@ export default function AdminApp() {
               {(['DDD','AFTU','BRT','TER'] as OperatorId[]).map(op=>{
                 const pct=totalRevenue>0?(adminRevenue[op]/totalRevenue*100):0;
                 return(
-                  <div key={op} className="card rounded-2xl p-4">
+                  <div key={op} className={`card rounded-2xl p-4 hover-scale transition-all ${
+                    op === 'DDD' ? 'glow-card-ddd' :
+                    op === 'AFTU' ? 'glow-card-aftu' :
+                    op === 'BRT' ? 'glow-card-brt' :
+                    op === 'TER' ? 'glow-card-ter' : ''
+                  }`}>
                     <div className="flex items-center gap-2 mb-3">
                       <span className="w-3.5 h-3.5 rounded-full" style={{background:opColor(op)}}/>
                       <span className="text-[10px] font-black uppercase tracking-widest" style={{color:'#475569'}}>{op}</span>
@@ -568,7 +616,10 @@ export default function AdminApp() {
             <div className="card rounded-2xl p-4">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xs font-black uppercase tracking-widest" style={{color:'#475569'}}>Transactions récentes</h3>
-                <button onClick={exportCSV} className="btn" style={{padding:'8px 14px',fontSize:12,minHeight:40,background:'rgba(5,150,105,.15)',color:'#34d399',border:'1px solid rgba(5,150,105,.2)'}}>⬇ CSV</button>
+                <div className="flex gap-2">
+                  <button onClick={exportCSV} className="btn" style={{padding:'8px 14px',fontSize:12,minHeight:40,background:'rgba(5,150,105,.15)',color:'#34d399',border:'1px solid rgba(5,150,105,.2)'}}>⬇ CSV</button>
+                  <button onClick={exportPDF} className="btn" style={{padding:'8px 14px',fontSize:12,minHeight:40,background:'rgba(220,38,38,.15)',color:'#f87171',border:'1px solid rgba(220,38,38,.2)'}}>📄 PDF</button>
+                </div>
               </div>
               <div className="space-y-2">
                 {[{id:'T-8F9A',op:'BRT',p:300,t:"À l'instant",m:'Wave'},{id:'T-2B4C',op:'DDD',p:200,t:'Il y a 2 min',m:'Orange Money'},{id:'T-9D1E',op:'AFTU',p:150,t:'Il y a 5 min',m:'Wave'},{id:'T-5C7F',op:'TER',p:500,t:'Il y a 8 min',m:'Free Money'}].map((tx,i)=>(
@@ -597,6 +648,27 @@ export default function AdminApp() {
         {activeTab==='ads'&&(
           <div className="flex-1 overflow-hidden">
             <AdManagerPage />
+          </div>
+        )}
+
+        {/* ── AUDIT ── */}
+        {activeTab==='audit'&&(
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <h2 className="font-black text-white text-lg mb-4">Journal d'Audit (Logs)</h2>
+            {auditLogs.map(log => (
+              <div key={log.id} className="card rounded-2xl p-4 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0" style={{background:'rgba(124,58,237,.15)'}}>
+                  📋
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-black text-white text-sm truncate">{log.action}</div>
+                  <div className="text-[11px]" style={{color:'#64748b'}}>Il y a {Math.floor((Date.now() - log.time)/60000)} min</div>
+                </div>
+                <div className="text-xs font-bold px-2 py-1 rounded-md" style={{background:'rgba(255,255,255,.05)',color:'#475569'}}>
+                  {new Date(log.time).toLocaleTimeString('fr-FR')}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

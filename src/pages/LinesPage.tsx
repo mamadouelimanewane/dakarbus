@@ -42,10 +42,10 @@ function LineCard({ line, busCount, isFav, isRecent, onSelect, onFav }: {
           </div>
 
           {/* Ligne 2 : Départ → Destination */}
-          <div className="flex items-center gap-1.5 mb-1">
-            <span className="text-[11px] font-bold truncate max-w-[90px]" style={{ color: '#e2e8f0' }}>{depart}</span>
-            <span style={{ color: line.color, fontSize: 11, fontWeight: 900 }}>→</span>
-            <span className="text-[11px] font-bold truncate max-w-[90px]" style={{ color: '#e2e8f0' }}>{arrivee}</span>
+          <div className="flex items-center gap-1.5 mb-1 w-full">
+            <span className="text-[11px] font-bold truncate flex-1 min-w-0" style={{ color: '#e2e8f0' }}>{depart}</span>
+            <span className="flex-shrink-0" style={{ color: line.color, fontSize: 11, fontWeight: 900 }}>→</span>
+            <span className="text-[11px] font-bold truncate flex-1 min-w-0" style={{ color: '#e2e8f0' }}>{arrivee}</span>
           </div>
 
           {/* Ligne 3 : méta */}
